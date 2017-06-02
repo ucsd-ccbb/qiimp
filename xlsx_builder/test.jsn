@@ -12,12 +12,6 @@
         "minLength": 1,
         "maxLength": 250
       },
-      "has_default": {
-        "title": "Default Value",
-        "type": "boolean",
-        "format": "checkbox",
-        "default": "true"
-      },
       "type_specific_contents": {
         "title": "Kind of Data",
         "type": "object",
@@ -56,11 +50,11 @@
                   {
                     "title": "Whole Number",
                     "properties": {
-                      "minimum_value": {
+                      "minimum_integer": {
                         "title": "Minimum Value",
                         "type": "integer"
                       },
-                      "maximum_value": {
+                      "maximum_integer": {
                         "title": "Maximum Value",
                         "type": "integer"
                       }
@@ -70,11 +64,11 @@
                   {
                     "title": "Decimal",
                     "properties": {
-                      "minimum_value": {
+                      "minimum_decimal": {
                         "title": "Minimum Value",
                         "type": "number"
                       },
-                      "maximum_value": {
+                      "maximum_decimal": {
                         "title": "Maximum Value",
                         "type": "number"
                       }
@@ -84,11 +78,11 @@
                   {
                     "title": "Date/Time",
                     "properties": {
-                      "minimum_value": {
+                      "minimum_datetime": {
                         "title": "Minimum Value",
                         "type": "date-time"
                       },
-                      "maximum_value": {
+                      "maximum_datetime": {
                         "title": "Maximum Value",
                         "type": "date-time"
                       }
@@ -105,6 +99,50 @@
             "type": "object"
           }
         ]
+      },
+      "default_value": {
+        "title": "Set Default",
+        "type": "object",
+        "oneOf": [
+          {
+              "title": "True",
+              "type": "object",
+              "properties": {
+                    "default_value_inner": {
+                        "title":"Default Value",
+                        "type": "string",
+                        "default": "Not Provided"
+                     }
+               }
+          },
+          {
+            "title": "False",
+            "type": "null"
+          }
+        ],
+        "default":"True"
+      },
+      "allowed_missing_vals": {
+        "title": "Allow Missing Values",
+        "type": "object",
+        "oneOf": [
+          {
+              "title": "True",
+              "type": "object",
+              "properties": {
+                    "allowed_missing_values_list": {
+                        "title":"Allowed Missing Values",
+                        "type": "string",
+                        "default": "Not Applicable, Not Provided, Restricted"
+                     }
+               }
+          },
+          {
+            "title": "False",
+            "type": "null"
+          }
+        ],
+        "default":"True"
       }
     }
   }
