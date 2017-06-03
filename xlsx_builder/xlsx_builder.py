@@ -31,25 +31,27 @@ def dig_down(key, potentially_iterable_val):
             min_val = found_min_val if found_min_val is not None else min_val
             num_type = found_num_type if found_num_type is not None else num_type
 
-    if key in ["true_value", "false_value", "allowed_missing_values_list", "allowed_values", "default_value_inner"]:
-        split_vals = [x.strip() for x in potentially_iterable_val.split(",")]  # if no comma in value, returns list with just one item
-        excel_safe_string_split_vals = ["'{0}".format(x) if x.lower() in ["true", "false"] else x for x in split_vals]
-        allowed_vals.extend(excel_safe_string_split_vals)
+    if key in ["boolean_true", "boolean_false", "categorical_values", "default_value", "allowed_missing_vals"]:
+        if potentially_iterable_val is not None:
+            split_vals = [x.strip() for x in potentially_iterable_val.split(",")]  # if no comma in value, returns list with just one item
+            excel_safe_string_split_vals = ["'{0}".format(x) if x.lower() in ["true", "false"] else x for x in split_vals]
+            allowed_vals.extend(excel_safe_string_split_vals)
 
-    if key == "default_value_inner":
-        default_val = potentially_iterable_val
+    if key == "default_value":
+        if potentially_iterable_val is not None:
+            default_val = potentially_iterable_val
 
-    if key.endswith("integer"):
+    if key.startswith("integer"):
         num_type = int
-    elif key.endswith("decimal"):
+    elif key.startswith("decimal"):
         num_type = float
-    elif key.endswith("datetime"):
+    elif key.startswith("datetime"):
         num_type = datetime.datetime
 
-    if key.startswith("maximum_"):
+    if key.endswith("_maximum"):
         max_val = potentially_iterable_val
 
-    if key.startswith("minimum_"):
+    if key.endswith("_minimum"):
         min_val = potentially_iterable_val
 
     return allowed_vals, default_val, max_val, min_val, num_type
@@ -196,10 +198,69 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 if __name__ == "__main__":
-    # json_string = '[ { "field_name": "ispatient", "type_specific_contents": { "true_value": "true", "false_value": "false" }, "has_default": { "default_value_inner": "Not Provided" }, "has_missings": {} } ]'
-    # json_string = '[ { "field_name": "age", "type_specific_contents": { "measurement": { "minimum_integer": 18, "maximum_integer": 115 }, "unit": "years" }, "default_value": { "default_value_inner": "Not Provided" }, "allowed_missing_vals": {} }, { "field_name": "is_patient", "type_specific_contents": { "true_value": "Yes", "false_value": "No" }, "default_value": {}, "allowed_missing_vals": { "allowed_missing_values_list": "Not Applicable, Not Provided, Restricted" } }, { "field_name": "patient_group", "type_specific_contents": { "allowed_values": "Healthy Control, Mild Disease, Severe Disease" }, "default_value": {}, "allowed_missing_vals": {} } ]'
-    # temp = parse_json(json_string)
-    # write_workbook(temp)
+    #json_string = '[ { "field_name": "ispatient", "type_specific_contents": { "true_value": "true", "false_value": "false" }, "has_default": { "default_value_inner": "Not Provided" }, "has_missings": {} } ]'
+    # json_string = '[ { "field_name": "age", "type_specific_contents": { "measurement": { "minimum_integer": 18, "maximum_integer": 115 }, "unit": "years" }, "default_value": { "default_value_inner": "-1" }, "allowed_missing_vals": {} }, { "field_name": "is_patient", "type_specific_contents": { "true_value": "Yes", "false_value": "No" }, "default_value": {}, "allowed_missing_vals": { "allowed_missing_values_list": "Not Applicable, Not Provided, Restricted" } }, { "field_name": "patient_group", "type_specific_contents": { "allowed_values": "Healthy Control, Mild Disease, Severe Disease" }, "default_value": {}, "allowed_missing_vals": {} } ]'
+#     json_string = """[
+#   {
+#     "field_name": "age",
+#     "type_specific_contents": {
+#       "continuous": {
+#         "integer_minimum": 18,
+#         "integer_maximum": 115
+#       },
+#       "unit": "years"
+#     },
+#     "default_setting": {
+#       "default_value": "Not Provided"
+#     },
+#     "missing_vals_setting": {
+#       "allowed_missing_vals": "Not Provided, Restricted"
+#     }
+#   },
+#   {
+#     "field_name": "is_patient",
+#     "type_specific_contents": {
+#       "boolean_true": "Yes",
+#       "boolean_false": "No"
+#     },
+#     "default_setting": {
+#       "default_value": null
+#     },
+#     "missing_vals_setting": {
+#       "allowed_missing_vals": "Not Applicable, Not Provided, Restricted"
+#     }
+#   },
+#   {
+#     "field_name": "disease_group",
+#     "type_specific_contents": {
+#       "categorical_values": "Mild Disease, Severe Disease, Healthy Control"
+#     },
+#     "default_setting": {
+#       "default_value": null
+#     },
+#     "missing_vals_setting": {
+#       "allowed_missing_vals": null
+#     }
+#   },
+#   {
+#     "field_name": "dosage",
+#     "type_specific_contents": {
+#       "continuous": {
+#         "decimal_minimum": 0.1,
+#         "decimal_maximum": 1.2
+#       },
+#       "unit": "cc"
+#     },
+#     "default_setting": {
+#       "default_value": "0.5"
+#     },
+#     "missing_vals_setting": {
+#       "allowed_missing_vals": "Not Applicable, Not Provided, Restricted"
+#     }
+#   }
+# ]"""
+#     temp = parse_json(json_string)
+#     write_workbook(temp)
 
     settings = {
         "static_path": os.path.dirname(__file__)
