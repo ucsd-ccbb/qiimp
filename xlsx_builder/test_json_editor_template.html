@@ -58,11 +58,11 @@
           {
             "title": "Boolean",
             "properties": {
-              "boolean_true": {
+              "true_value": {
                 "title": "True Value",
                 "type": "string"
               },
-              "boolean_false": {
+              "false_value": {
                 "title": "False Value",
                 "type": "string"
               }
@@ -72,7 +72,7 @@
           {
             "title": "Categorical",
             "properties": {
-              "categorical_values": {
+              "allowed_values": {
                 "title": "Allowed Values",
                 "type": "string"
               }
@@ -82,18 +82,18 @@
           {
             "title": "Continuous",
             "properties": {
-              "continuous": {
+              "measurement": {
                 "title": "Kind of Measurement",
                 "type": "object",
                 "anyOf": [
                   {
                     "title": "Whole Number",
                     "properties": {
-                      "integer_minimum": {
+                      "minimum_integer": {
                         "title": "Minimum Value",
                         "type": "integer"
                       },
-                      "integer_maximum": {
+                      "maximum_integer": {
                         "title": "Maximum Value",
                         "type": "integer"
                       }
@@ -103,11 +103,11 @@
                   {
                     "title": "Decimal",
                     "properties": {
-                      "decimal_minimum": {
+                      "minimum_decimal": {
                         "title": "Minimum Value",
                         "type": "number"
                       },
-                      "decimal_maximum": {
+                      "maximum_decimal": {
                         "title": "Maximum Value",
                         "type": "number"
                       }
@@ -117,11 +117,11 @@
                   {
                     "title": "Date/Time",
                     "properties": {
-                      "datetime_minimum": {
+                      "minimum_datetime": {
                         "title": "Minimum Value",
                         "type": "date-time"
                       },
-                      "datetime_maximum": {
+                      "maximum_datetime": {
                         "title": "Maximum Value",
                         "type": "date-time"
                       }
@@ -139,7 +139,7 @@
           }
         ]
       },
-      "default_setting": {
+      "default_value": {
         "title": "Set Default",
         "type": "object",
         "oneOf": [
@@ -147,7 +147,7 @@
               "title": "True",
               "type": "object",
               "properties": {
-                    "default_value": {
+                    "default_value_inner": {
                         "title":"Default Value",
                         "type": "string",
                         "default": "Not Provided"
@@ -156,18 +156,12 @@
           },
           {
             "title": "False",
-            "type": "object",
-            "properties": {
-               "default_value": {
-                   "title":"No Default Allowed",
-                   "type":"null"
-                }
-             }
+            "type": "null"
           }
         ],
         "default":"True"
       },
-      "missing_vals_setting": {
+      "allowed_missing_vals": {
         "title": "Allow Missing Values",
         "type": "object",
         "oneOf": [
@@ -175,7 +169,7 @@
               "title": "True",
               "type": "object",
               "properties": {
-                    "allowed_missing_vals": {
+                    "allowed_missing_values_list": {
                         "title":"Allowed Missing Values",
                         "type": "string",
                         "default": "Not Applicable, Not Provided, Restricted"
@@ -184,13 +178,7 @@
           },
           {
             "title": "False",
-            "type": "object",
-            "properties": {
-               "allowed_missing_vals": {
-                   "title":"No Missing Values Allowed",
-                   "type":"null"
-                }
-             }
+            "type": "null"
           }
         ],
         "default":"True"
