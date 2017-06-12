@@ -14,6 +14,12 @@ def parse_json(json_string):
     return temp
 
 
+def write_schema_worksheet(workbook, json_string):
+    schema_worksheet = workbook.add_worksheet("metadata_schema")
+    schema_worksheet.protect()
+    schema_worksheet.write_string("A1", json_string)
+
+
 def dig_down(key, potentially_iterable_val):
     allowed_vals = []
     default_val = None
@@ -55,23 +61,22 @@ def dig_down(key, potentially_iterable_val):
     return allowed_vals, default_val, max_val, min_val, num_type
 
 
-def write_workbook(json_dict_list):
-    workbook = xlsxwriter.Workbook('demo.xlsx', {'strings_to_numbers':  False,
-                               'strings_to_formulas': True,
-                               'strings_to_urls':     True})
-    worksheet = workbook.add_worksheet()
-
-    # Add a bold format to use to highlight cells.
-    bold = workbook.add_format({'bold': True})
+def write_metadata_sheet(workbook, json_dict_list):
+    worksheet = workbook.add_worksheet("metadata")
+    worksheet.protect()
+    locked_and_bold = workbook.add_format({'locked': 1, 'bold': True})
+    unlocked_format = workbook.add_format({'locked': 0})
+    worksheet.set_column('A:XFD', None, unlocked_format)
 
     # Write some simple text.
-    worksheet.write('A1', 'sample_name', bold)
-    worksheet.data_validation("A2:A1048576", {'validate': 'length',
-                                              'criteria': 'between',
-                                              'minimum': 1,
-                                              'maximum': 250,
+    worksheet.write('A1', 'sample_name', locked_and_bold)
+    # construct formula
+    validation_formula = "=NOT(OR(LEN(A2)<0, LEN(A2)>250, 1<COUNTIF(A:A, A2)))"
+    worksheet.data_validation("A2:A1048576", {'validate': 'custom', 'value': validation_formula,
                                               'input_title': 'Enter a sample_name:',
-                                              'input_message': 'sample_name must be between 1 and 250 characters long'})
+                                              'input_message': 'sample_name must be a unique string between 1 and 250 characters long'})
+
+    worksheet.freeze_panes(1, 0)
 
     curr_col_index = 1  # not a mistake: although we write to A1 above, excel is 1-based but ascii indexes are zero-based :)
     name_row_index = 1
@@ -89,7 +94,7 @@ def write_workbook(json_dict_list):
             if key == "field_name":
                 field_name = val
                 col_letter = (string.ascii_lowercase[curr_col_index]).upper()
-                worksheet.write("{0}{1}".format(col_letter, name_row_index), field_name, bold)
+                worksheet.write("{0}{1}".format(col_letter, name_row_index), field_name, locked_and_bold)
                 curr_col_index += 1
             else:
                 found_allowed_values, found_default_val, found_max_val, found_min_val, found_num_type = dig_down(key, val)
@@ -161,25 +166,22 @@ def write_workbook(json_dict_list):
                                                         'input_message': validation_msg})
 
         if default_val is not None:
-            for i in range(2, 25):
-                cell_name = "{0}{1}".format(col_letter, i)
-                worksheet.write_formula(cell_name, '=IF(A{0}="", "", "{1}")'.format(i, default_val))  # A should always be sample_name
+            hidden_unlocked = workbook.add_format({'locked': 0, 'hidden': 1})
+            for i in range(2,250):  # TODO: extend to whole column
+                curr_cell = "{0}{1}".format(col_letter, i)
+                formula_str = '=IF(A{0}="", "", "{1}")'.format(i, default_val)
+                # A should always be sample_name
+                worksheet.write_formula(curr_cell, formula_str, hidden_unlocked)
     # end this field
 
-    # Widen the first column to make the text clearer.
-    #worksheet.set_column('A:A', 20)
 
-
-    # =IF(ISNUMBER(E3),AND(0<=E3,E3<=40,INT(E3)=E3),OR(E3 = "Not Applicable", E3 = "Unknown"))
-    # [ { "field_name": "ispatient", "type_specific_contents": { "true_value": "true", "false_value": "false" }, "has_default": { "true_value": "Not Provided" }, "has_missings": {} } ]
-
-    # Write some numbers, with row/column notation.
-    #worksheet.write(2, 0, 123)
-    #worksheet.write(3, 0, 123.456)
-
-    # Insert an image.
-    #worksheet.insert_image('B5', 'logo.png')
-
+def write_workbook(json_string):
+    workbook = xlsxwriter.Workbook('demo.xlsx', {'strings_to_numbers':  False,
+                               'strings_to_formulas': True,
+                               'strings_to_urls':     True})
+    json_dict_list = parse_json(json_string)
+    write_metadata_sheet(workbook, json_dict_list)
+    write_schema_worksheet(workbook, json_string)
     workbook.close()
 
 
@@ -190,8 +192,7 @@ class MainHandler(tornado.web.RequestHandler):
 
     def post(self):
         noun1 = self.get_argument('schema_json')
-        temp = parse_json(noun1)
-        write_workbook(temp)
+        write_workbook(noun1)
         self.write(noun1)
 
 
