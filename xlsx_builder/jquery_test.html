@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dynamic Form POC</title>
+    <!-- bootstrap stylesheet -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+
+    <style type="text/css">
+        .fieldTemplate {
+            display:none;
+        }
+        .floating {
+        }
+    </style>
+
+
+    <!-- jquery -->
+    <script src="jquery-3.2.1.js"></script>
+
+    <!-- jquery validation plugin -->
+    <script src="jquery.validate.min.js"></script>
+
+    <!-- bootstrap js -->
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
+
+    <script src="metadata_wizard.js"></script>
+</head>
+<body>
+<form id ="metadata_form">
+    <div>
+        <input name = "study_name" type="text" placeholder="Study name" />
+        <div class="container" id="container">
+            <div class="row fieldTemplate">
+                <div class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">Field Name</div>
+                                <div class="panel-body">
+                                    <input placeholder="e.g., age" type="text" name="field_name" id="field_name_template" />
+                                </div>
+                            </div>
+                            <div class="panel panel-default">
+                                <div class="panel-heading">Field Type</div>
+                                <div class="panel-body">
+                                    <select name="field_type" id="field_type_template" >
+                                        <option value="">--e.g., Categorical--</option>
+                                        <option value="text">Free-form text</option>
+                                        <option value="categorical">Categorical</option>
+                                        <option value="boolean">Boolean</option>
+                                        <option value="continuous">Continuous</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="panel panel-default" id="allowed_missing_vals_div_template">
+                                <div class="panel-heading">Allowed Missing Values (Optional)</div>
+                                <div class="panel-body">
+                                    <input type="checkbox" name="allowed_missing_vals" id="allowed_missing_vals_na_template" value="not_applicable"/>Not Applicable<br />
+                                    <input type="checkbox" name="allowed_missing_vals" id="allowed_missing-vals_not_provided_template" value="not_provided"/>Missing: Not Provided<br />
+                                    <input type="checkbox" name="allowed_missing_vals" id="allowed_missing_vals_not_collected_template" value="not_recorded"/>Missing: Not Collected<br/>
+                                    <input type="checkbox" name="allowed_missing_vals" id="allowed_missing_vals_restricted_template" value="restricted"/>Missing: Restricted Access<br/>
+                                </div>
+                            </div>
+                            <div class="panel panel-default" id="default_div_template">
+                                <div class="panel-heading">Default Value</div>
+                                <div class="panel-body">
+                                    <input type="radio" name="default_value_template" id = "no_default_template" value="no_default" checked="checked">
+                                    <label for="no_default">&nbsp;No Default</label><br />
+                                    <input type="radio" name="default_value_template" id = "allowed_missing_default_template" value="allowed_missing_default">
+                                    <label for="allowed_missing_default">&nbsp;Allowed Missing Default</label><br />
+                                    <input type="radio" name="default_value_template" class="initially_hidden hidden" id = "categorical_default_template" value="categorical_default">
+                                    <label class="initially_hidden hidden" id="categorical_default_label_template" for="categorical_default">&nbsp;Categorical Default<br /></label>
+                                    <input type="radio" name="default_value_template" class="initially_hidden hidden" id = "continuous_default_value_template" value="continuous_default">
+                                    <label class="initially_hidden hidden" id="continuous_default_label_template" for="continuous_default">&nbsp;Continuous Default<br /></label>
+                                    <input type="radio" name="default_value_template" class="initially_hidden hidden" id = "boolean_default_value_template" value="boolean_default">
+                                    <label class="initially_hidden hidden" id="boolean_default_label_template" for="boolean_default">&nbsp;Boolean Default</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <fieldset class="initially_hidden hidden" id="field_details_div_template">
+                                <div class="panel panel-default initially_hidden hidden floating" id="boolean_true_div_template">
+                                    <div class="panel-heading">True Value</div>
+                                    <div class="panel-body">
+                                        <input type ="text" name="true_value_template" id="true_value_template" placeholder="e.g., Yes" /><br />
+                                    </div>
+                                </div>
+                                <div class="panel panel-default initially_hidden hidden floating" id="boolean_false_div_template">
+                                    <div class="panel-heading">False Value</div>
+                                    <div class="panel-body">
+                                        <input type ="text" name="false_value_template" id="false_value_template" placeholder="e.g., No" /><br />
+                                    </div>
+                                </div>
+                                <div class = "panel panel-default initially_hidden hidden floating" id="data_type_div_template">
+                                    <div class="panel-heading">Data Type</div>
+                                    <div class="panel-body">
+                                        <select name="continuous_type" id="data_type_template" >
+                                            <option value="">--e.g., Integer--</option>
+                                            <option value="integer">Integer</option>
+                                            <option value="float">Decimal</option>
+                                            <option value="date">Date</option>
+                                            <option value="time">Time</option>
+                                            <option value="datetime">Date and Time</option>
+                                        </select><br />
+                                    </div>
+                                </div>
+                                <div class="panel panel-default initially_hidden hidden floating" id="categorical_div_template">
+                                    <div class="panel-heading">Categorical Values (One Per Line)</div>
+                                    <div class="panel-body">
+                                        <textarea rows="5`" cols="25" name="categorical_values_template" id="categorical_values_template" placeholder="e.g., Low&#10;Medium&#10;High"></textarea>
+                                    </div>
+                                </div>
+                                <div class = "panel panel-default initially_hidden hidden floating" id="minimum_div_template">
+                                    <div class="panel-heading">Minimum (Optional)</div>
+                                    <div class="panel-body">
+                                        <select name="minimum_comparison" id="minimum_comparison_template">
+                                            <option value="">--e.g., Greater Than--</option>
+                                            <option value="greater_than">Greater Than</option>
+                                            <option value="greater_than_or_equal_to">Greater Than Or Equal To</option>
+                                        </select><br />
+                                        <input type ="text" name="minimum_value" id="minimum_value_template" placeholder="e.g., 3" />
+                                    </div>
+                                </div>
+                                <div class="panel panel-default initially_hidden hidden floating" id="maximum_div_template">
+                                    <div class="panel-heading">Maximum (Optional)</div>
+                                    <div class="panel-body">
+                                        <select name="maximum_comparison" id="maximum_comparison_template">
+                                            <option value="">--e.g., Less Than--</option>
+                                            <option value="less_than">Less Than</option>
+                                            <option value="less_than_or_equal_to">Less Than Or Equal To</option>
+                                        </select><br />
+                                        <input type ="text" name="maximum_value" id="maximum_value_template" placeholder="e.g, 10" /><br />
+                                    </div>
+                                </div>
+                                <div class="panel panel-default initially_hidden hidden floating" id="units_div_template">
+                                    <div class="panel-heading">Units (Optional)</div>
+                                    <div class="panel-body">
+                                        <input name="units" id="units_template" type="text" placeholder="e.g., years" />
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <input class="submit" type="submit" value="Submit">
+</form>
+    <a href="#" id="addRow"><i class="icon-plus-sign icon-white"></i> Add field</a>
+</body>
+</html>

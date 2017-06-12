@@ -17,6 +17,21 @@
         "type": "object",
         "oneOf": [
           {
+            "title":"Free-Form Text",
+            "properties": {
+              "text_minimum": {
+                "title": "Minimum Text Length",
+                "description": "If there is no minimum length, enter zero.",
+                "type": "integer"
+              },
+              "text_maximum": {
+                "title": "Maximum Text Length",
+                "description": "If there is no maximum length, enter zero.",
+                "type": "integer"
+              }
+            }
+          },
+          {
             "title": "Boolean",
             "properties": {
               "true_value": {
@@ -35,6 +50,7 @@
             "properties": {
               "allowed_values": {
                 "title": "Allowed Values",
+                "description": "Enter allowed values separated by commas.",
                 "type": "string"
               }
             },
@@ -132,6 +148,7 @@
               "properties": {
                     "allowed_missing_values_list": {
                         "title":"Allowed Missing Values",
+                        "description": "Enter allowed values separated by commas.",
                         "type": "string",
                         "default": "Not Applicable, Not Provided, Restricted"
                      }
