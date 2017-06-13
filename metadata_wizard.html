@@ -17,15 +17,15 @@
 
 
     <!-- jquery -->
-    <script src="jquery-3.2.1.js"></script>
+    <script src="third-party/jquery-3.2.1.min.js"></script>
 
     <!-- jquery validation plugin -->
-    <script src="jquery.validate.min.js"></script>
+    <script src="third-party/jquery_validation/jquery.validate.min.js"></script>
 
     <!-- bootstrap js -->
     <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
 
-    <script src="metadata_wizard.js"></script>
+    <script src="metadataWizard.js"></script>
 </head>
 <body>
 <form id ="metadata_form">
@@ -39,13 +39,13 @@
                             <div class="panel panel-default">
                                 <div class="panel-heading">Field Name</div>
                                 <div class="panel-body">
-                                    <input placeholder="e.g., age" type="text" name="field_name" id="field_name_template" />
+                                    <input placeholder="e.g., age" type="text" name="field_name_template" id="field_name_template" />
                                 </div>
                             </div>
                             <div class="panel panel-default">
                                 <div class="panel-heading">Field Type</div>
                                 <div class="panel-body">
-                                    <select name="field_type" id="field_type_template" >
+                                    <select name="field_type_template" id="field_type_template" >
                                         <option value="">--e.g., Categorical--</option>
                                         <option value="text">Free-form text</option>
                                         <option value="categorical">Categorical</option>
@@ -59,25 +59,50 @@
                             <div class="panel panel-default" id="allowed_missing_vals_div_template">
                                 <div class="panel-heading">Allowed Missing Values (Optional)</div>
                                 <div class="panel-body">
-                                    <input type="checkbox" name="allowed_missing_vals" id="allowed_missing_vals_na_template" value="not_applicable"/>Not Applicable<br />
-                                    <input type="checkbox" name="allowed_missing_vals" id="allowed_missing-vals_not_provided_template" value="not_provided"/>Missing: Not Provided<br />
-                                    <input type="checkbox" name="allowed_missing_vals" id="allowed_missing_vals_not_collected_template" value="not_recorded"/>Missing: Not Collected<br/>
-                                    <input type="checkbox" name="allowed_missing_vals" id="allowed_missing_vals_restricted_template" value="restricted"/>Missing: Restricted Access<br/>
+                                    <fieldset name="allowed_missing_vals_fieldset_template" id="allowed_missing_vals_fieldset_template">
+                                        <input type="checkbox" name="allowed_missing_vals_template[]" id="allowed_missing_vals_na_template" value="not_applicable"/>Not Applicable<br />
+                                        <input type="checkbox" name="allowed_missing_vals_template[]" id="allowed_missing-vals_not_provided_template" value="not_provided"/>Missing: Not Provided<br />
+                                        <input type="checkbox" name="allowed_missing_vals_template[]" id="allowed_missing_vals_not_collected_template" value="not_recorded"/>Missing: Not Collected<br/>
+                                        <input type="checkbox" name="allowed_missing_vals_template[]" id="allowed_missing_vals_restricted_template" value="restricted"/>Missing: Restricted Access
+                                    </fieldset>
                                 </div>
                             </div>
                             <div class="panel panel-default" id="default_div_template">
                                 <div class="panel-heading">Default Value</div>
                                 <div class="panel-body">
                                     <input type="radio" name="default_value_template" id = "no_default_template" value="no_default" checked="checked">
-                                    <label for="no_default">&nbsp;No Default</label><br />
-                                    <input type="radio" name="default_value_template" id = "allowed_missing_default_template" value="allowed_missing_default">
-                                    <label for="allowed_missing_default">&nbsp;Allowed Missing Default</label><br />
-                                    <input type="radio" name="default_value_template" class="initially_hidden hidden" id = "categorical_default_template" value="categorical_default">
-                                    <label class="initially_hidden hidden" id="categorical_default_label_template" for="categorical_default">&nbsp;Categorical Default<br /></label>
-                                    <input type="radio" name="default_value_template" class="initially_hidden hidden" id = "continuous_default_value_template" value="continuous_default">
-                                    <label class="initially_hidden hidden" id="continuous_default_label_template" for="continuous_default">&nbsp;Continuous Default<br /></label>
-                                    <input type="radio" name="default_value_template" class="initially_hidden hidden" id = "boolean_default_value_template" value="boolean_default">
-                                    <label class="initially_hidden hidden" id="boolean_default_label_template" for="boolean_default">&nbsp;Boolean Default</label>
+                                    <label for="no_default_template">&nbsp;No Default</label><br />
+
+                                    <div id="allowed_missing_default_div_template">
+                                        <input type="radio" name="default_value_template" id = "allowed_missing_default_template" value="allowed_missing_default">
+                                        <label for="allowed_missing_default_template">&nbsp;Allowed Missing Default</label><br />
+                                        <select name="allowed_missing_default_select_template" id="allowed_missing_default_select_template" disabled>
+                                            <option value="">--Select One--</option>
+                                            <option value="not_applicable" disabled>Not Applicable</option>
+                                            <option value="not_provided" disabled>Missing: Not Provided</option>
+                                            <option value="not_recorded" disabled>Missing: Not Collected</option>
+                                            <option value="restricted" disabled>Missing: Restricted Access</option>
+                                        </select>
+                                    </div>
+                                    <div class="initially_hidden hidden" id="categorical_default_div_template">
+                                        <input type="radio" name="default_value_template" id = "categorical_default_template" value="categorical_default">
+                                        <label id="categorical_default_label_template" for="categorical_default_template">&nbsp;Categorical Default</label><br />
+                                        <select name="categorical_default_select_template" id="categorical_default_select_template" disabled>
+                                            <option value="">--Select One--</option>
+                                        </select>
+                                    </div>
+                                    <div class="initially_hidden hidden" id = "continuous_default_div_template">
+                                        <input type="radio" name="default_value_template" id = "continuous_default_value_template" value="continuous_default">
+                                        <label id="continuous_default_label_template" for="continuous_default_value_template">&nbsp;Continuous Default</label><br />
+                                        <input type="text" name="continuous_default_template" id="continuous_default_template" placeholder="e.g., 3" disabled>
+                                    </div>
+                                    <div class="initially_hidden hidden" id = "boolean_default_div_template">
+                                        <input type="radio" name="default_value_template" id = "boolean_default_value_template" value="boolean_default">
+                                        <label id="boolean_default_label_template" for="boolean_default_value_template">&nbsp;Boolean Default</label>
+                                        <select name="boolean_default_select_template" id="boolean_default_select_template" disabled>
+                                            <option value="">--Select One--</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
