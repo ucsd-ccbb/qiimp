@@ -13,6 +13,10 @@
         }
         .floating {
         }
+        .field {
+            padding: 2px;
+            border-top: 1px solid black;
+        }
     </style>
 
 
@@ -25,13 +29,20 @@
     <!-- bootstrap js -->
     <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
 
+    <script src="metadataWizardHelpers.js"></script>
+    <script src="metadataWizardEventHandlers.js"></script>
     <script src="metadataWizard.js"></script>
 </head>
 <body>
 <form id ="metadata_form">
     <div>
-        <input name = "study_name" type="text" placeholder="Study name" />
         <div class="container" id="container">
+            <div class="row">
+                <div class="col-sm-12">
+                    <label for="study_name">Study Name:</label>
+                    <input id="study_name" name = "study_name" type="text" placeholder="Study name" />
+                </div>
+            </div>
             <div class="row fieldTemplate">
                 <div class="col-sm-12">
                     <div class="row">
@@ -76,7 +87,7 @@
                                     <div id="allowed_missing_default_div_template">
                                         <input type="radio" name="default_value_template" id = "allowed_missing_default_template" value="allowed_missing_default">
                                         <label for="allowed_missing_default_template">&nbsp;Allowed Missing Default</label><br />
-                                        <select name="allowed_missing_default_select_template" id="allowed_missing_default_select_template" disabled>
+                                        <select name="allowed_missing_default_select_template" id="allowed_missing_default_select_template" disabled required>
                                             <option value="">--Select One--</option>
                                             <option value="not_applicable" disabled>Not Applicable</option>
                                             <option value="not_provided" disabled>Missing: Not Provided</option>
@@ -87,7 +98,7 @@
                                     <div class="initially_hidden hidden" id="categorical_default_div_template">
                                         <input type="radio" name="default_value_template" id = "categorical_default_template" value="categorical_default">
                                         <label id="categorical_default_label_template" for="categorical_default_template">&nbsp;Categorical Default</label><br />
-                                        <select name="categorical_default_select_template" id="categorical_default_select_template" disabled>
+                                        <select name="categorical_default_select_template" id="categorical_default_select_template" disabled required>
                                             <option value="">--Select One--</option>
                                         </select>
                                     </div>
@@ -99,7 +110,7 @@
                                     <div class="initially_hidden hidden" id = "boolean_default_div_template">
                                         <input type="radio" name="default_value_template" id = "boolean_default_value_template" value="boolean_default">
                                         <label id="boolean_default_label_template" for="boolean_default_value_template">&nbsp;Boolean Default</label>
-                                        <select name="boolean_default_select_template" id="boolean_default_select_template" disabled>
+                                        <select name="boolean_default_select_template" id="boolean_default_select_template" disabled required>
                                             <option value="">--Select One--</option>
                                         </select>
                                     </div>
@@ -123,13 +134,12 @@
                                 <div class = "panel panel-default initially_hidden hidden floating" id="data_type_div_template">
                                     <div class="panel-heading">Data Type</div>
                                     <div class="panel-body">
-                                        <select name="continuous_type" id="data_type_template" >
+                                        <select name="data_type_template" id="data_type_template" >
                                             <option value="">--e.g., Integer--</option>
                                             <option value="integer">Integer</option>
                                             <option value="float">Decimal</option>
-                                            <option value="date">Date</option>
-                                            <option value="time">Time</option>
-                                            <option value="datetime">Date and Time</option>
+                                            <option value="text">Text</option>
+                                            <option value="date" disabled>Date/Time (Not Yet Implemented)</option>
                                         </select><br />
                                     </div>
                                 </div>
@@ -174,8 +184,14 @@
             </div>
         </div>
     </div>
-    <input class="submit" type="submit" value="Submit">
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <input class="submit" type="submit" value="Submit">&nbsp;<input type="button" value="Add Field" id="addField">
+            </div>
+        </div>
+    </div>
 </form>
-    <a href="#" id="addRow"><i class="icon-plus-sign icon-white"></i> Add field</a>
 </body>
 </html>
