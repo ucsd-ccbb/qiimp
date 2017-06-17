@@ -208,5 +208,5 @@ def get_formula_constraint(field_schema_dict):
     # make an 'and' clause for the constraints
     and_constraint_clause = _make_logical_constraint(and_constraints, True)
 
-    # get the default [NB: not a constraint] (default)
+    # TODO: get the default [NB: not a constraint] (default)
     return and_constraint_clause
