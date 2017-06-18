@@ -1,3 +1,4 @@
+import os
 import string
 
 import tornado.ioloop
@@ -6,7 +7,6 @@ import xlsxwriter
 import yaml
 
 import constraint_builder
-import package_schemas
 
 
 def write_workbook(yaml_string):
@@ -64,6 +64,7 @@ def write_metadata_sheet(workbook, schema_dict):
 
             worksheet.data_validation(whole_col_range, validation_dict)
 
+        _add_default_if_any(workbook, worksheet, col_letter, field_specs_dict)
         curr_col_index += 1
 
 
@@ -85,28 +86,45 @@ def _get_col_letters(curr_col_index):
     return result
 
 
+def _add_default_if_any(workbook, worksheet, col_letter, field_specs_dict):
+    default_formula = constraint_builder.get_default_formula(field_specs_dict)
+    if default_formula is not None:
+        hidden_unlocked = workbook.add_format({'locked': 0, 'hidden': 1})
+        for i in range(2,250):  # TODO: extend to whole column
+            curr_cell = "{0}{1}".format(col_letter, i)
+            completed_default_formula = default_formula.format(curr_row_num=i)
+            # A should always be sample_name
+            worksheet.write_formula(curr_cell, completed_default_formula, hidden_unlocked)
+
+
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("test_json_editor_template.html")
+        self.render("metadata_wizard_template.html")
 
     def post(self):
-        noun1 = self.get_argument('schema_json')
-        write_workbook(noun1)
-        self.write(noun1)
+        # noun1 = self.get_argument('metadata_form')
+        details = ""
+        for f in self.request.arguments.values():
+            details += "<hr/>" + ", ".join(f)
+        self.write(details)
+
+        #write_workbook(noun1)
+        # TODO: figure out how to write back download link for newly-generated spreadsheet
+        #self.write(noun1)
 
 
 if __name__ == "__main__":
-    hs_vaginal_fixed_schema_yaml = package_schemas.ridiculously_large_temporary_function()
-    write_workbook(hs_vaginal_fixed_schema_yaml)
+    # hs_vaginal_fixed_schema_yaml = package_schemas.ridiculously_large_temporary_function()
+    # write_workbook(hs_vaginal_fixed_schema_yaml)
 
-    # settings = {
-    #     "static_path": os.path.dirname(__file__)
-    # }
-    # application = tornado.web.Application([
-    #     (r"/", MainHandler),
-    #     (r"/(apple-touch-icon\.png)", tornado.web.StaticFileHandler,
-    #      dict(path=settings['static_path'])),
-    # ], **settings)
-    #
-    # application.listen(8898)
-    # tornado.ioloop.IOLoop.instance().start()
+    settings = {
+        "static_path": os.path.dirname(__file__)
+    }
+    application = tornado.web.Application([
+        (r"/", MainHandler),
+        (r"/(apple-touch-icon\.png)", tornado.web.StaticFileHandler,
+         dict(path=settings['static_path'])),
+    ], **settings)
+
+    application.listen(8898)
+    tornado.ioloop.IOLoop.instance().start()

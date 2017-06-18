@@ -45,7 +45,7 @@ def _make_formula_constraint(field_name, field_schema_dict):
         result = {
             'validate': 'custom', 'value': formula_string,
             'input_title': 'Enter {0}:'.format(field_name),
-            'input_message': ""
+            'input_message': 'placeholder'
         }
     return result
 
@@ -59,7 +59,7 @@ def _roll_up_allowed_onlies(field_schema_dict):
             if subschema_allowed_vals is None:
                 return None
             else:
-                all_allowed_vals.append(subschema_allowed_vals)
+                all_allowed_vals.extend(subschema_allowed_vals)
             # end check of constraints in this subschema
         # next subschema
     # end if there are subschemas
@@ -68,7 +68,7 @@ def _roll_up_allowed_onlies(field_schema_dict):
         curr_allowed_vals = field_schema_dict[package_schemas.allowed]
         all_allowed_vals.extend(curr_allowed_vals)
     else:
-        curr_formula_constraint = get_formula_constraint(field_schema_dict)
+        curr_formula_constraint = get_single_level_formula_constraint(field_schema_dict)
         if curr_formula_constraint is not None:
             return None
 
@@ -76,32 +76,34 @@ def _roll_up_allowed_onlies(field_schema_dict):
 
 
 def _make_logical_constraint(constraints, is_and):
-    result = None
-    if len(constraints) > 0:
+    if len(constraints) == 0:
+        result = None
+    elif len(constraints) == 1:
+        result = constraints[0]
+    else:
         logical_str = "AND" if is_and else "OR"
         joined_constraints = ",".join(constraints)
         result = "{0}({1})".format(logical_str, joined_constraints)
     return result
 
 
-def _make_allowed_constraint(field_schema_dict):
+def _make_allowed_constraint(field_schema_dict, field_data_type):
     constraint = None
     if package_schemas.allowed in field_schema_dict:
-        field_type = _get_field_data_type(field_schema_dict)
         allowed_vals_list = field_schema_dict[package_schemas.allowed]
-        allowed_vals_list = ['"{0}"'.format(x) if field_type is str else x for x in allowed_vals_list]
+        allowed_vals_list = ['"{0}"'.format(x) if field_data_type is str else x for x in allowed_vals_list]
+        # TODO: Decide whether to change this to exact(a,b) as a=b is apparently case-insensitive?
         allowed_constraints = ["{0}={1}".format(cell_placeholder, x) for x in allowed_vals_list]
         constraint = _make_logical_constraint(allowed_constraints, False)
     return constraint
 
 
 # TODO: get rid of copy/paste code
-def _make_forbidden_constraint(field_schema_dict):
+def _make_forbidden_constraint(field_schema_dict, field_data_type):
     constraint = None
     if package_schemas.forbidden in field_schema_dict:
-        field_type = _get_field_data_type(field_schema_dict)
         forbidden_list = field_schema_dict[package_schemas.forbidden]
-        forbidden_list = ['"{0}"'.format(x) if field_type is str else x for x in forbidden_list]
+        forbidden_list = ['"{0}"'.format(x) if field_data_type is str else x for x in forbidden_list]
         forbidden_constraints = ["{0}<>{1}".format(cell_placeholder, x) for x in forbidden_list]
         constraint = _make_logical_constraint(forbidden_constraints, True)
 
@@ -138,7 +140,7 @@ def _get_field_data_type(field_schema_dict):
 
 def _parse_field_type(field_schema_dict):
     constraint = None
-    python_type = str  # default assumption: string
+    python_type = None
     if package_schemas.atype in field_schema_dict:
         the_type = field_schema_dict[package_schemas.atype]
         if the_type == package_schemas.aninteger:
@@ -157,13 +159,13 @@ def _parse_field_type(field_schema_dict):
     return python_type, constraint
 
 
-def _make_anyof_constraint(field_schema_dict):
+def _make_anyof_constraint(field_schema_dict, field_data_type=None):
     constraint = None
     subschema_constraints = []
     if package_schemas.anyof in field_schema_dict:
         anyof_subschemas = field_schema_dict[package_schemas.anyof]
         for curr_anyof_subschema in anyof_subschemas:
-            curr_subschema_constraint = get_formula_constraint(curr_anyof_subschema)
+            curr_subschema_constraint = get_formula_constraint(curr_anyof_subschema, field_data_type)
             if curr_subschema_constraint is not None: subschema_constraints.append(curr_subschema_constraint)
         # next subschema
 
@@ -173,14 +175,35 @@ def _make_anyof_constraint(field_schema_dict):
     return constraint
 
 
-def get_formula_constraint(field_schema_dict):
+def get_formula_constraint(field_schema_dict, field_data_type=None):
     # TODO: ensure no unrecognized tags
 
     and_constraints = []
 
     # get the sub-constraints (anyof)
-    or_sub_constraints = _make_anyof_constraint(field_schema_dict)
+    curr_level_type = _get_field_data_type(field_schema_dict)
+    if curr_level_type is not None: field_data_type = curr_level_type
+    or_sub_constraints = _make_anyof_constraint(field_schema_dict, field_data_type)
     if or_sub_constraints is not None: and_constraints.append(or_sub_constraints)
+
+    # get the constraints from this level
+    level_constraints = get_single_level_formula_constraint(field_schema_dict, field_data_type)
+    if level_constraints is not None: and_constraints.append(level_constraints)
+
+    # make an 'and' clause for the constraints
+    and_constraint_clause = _make_logical_constraint(and_constraints, True)
+
+    # TODO: get the default [NB: not a constraint] (default)
+    return and_constraint_clause
+
+
+def get_single_level_formula_constraint(field_schema_dict, field_data_type=None):
+    # TODO: ensure no unrecognized tags
+
+    and_constraints = []
+
+    # TODO: this is copy/paste code; think of way to refactor?
+    if field_data_type is None: field_data_type = _get_field_data_type(field_schema_dict)
 
     # get the type constraint (type)
     type_constraint = _make_type_constraint(field_schema_dict)
@@ -195,11 +218,11 @@ def get_formula_constraint(field_schema_dict):
     if max_constraint is not None: and_constraints.append(max_constraint)
 
     # get the forbidden constraint (forbidden)
-    forbidden_constraint = _make_forbidden_constraint(field_schema_dict)
+    forbidden_constraint = _make_forbidden_constraint(field_schema_dict, field_data_type)
     if forbidden_constraint is not None: and_constraints.append(forbidden_constraint)
 
     # get the allowed constraint (allowed)
-    allowed_constraint = _make_allowed_constraint(field_schema_dict)
+    allowed_constraint = _make_allowed_constraint(field_schema_dict, field_data_type)
     if allowed_constraint is not None: and_constraints.append(allowed_constraint)
 
     # TODO: come back to empty constraint
@@ -210,3 +233,24 @@ def get_formula_constraint(field_schema_dict):
 
     # TODO: get the default [NB: not a constraint] (default)
     return and_constraint_clause
+
+
+def get_default_formula(field_schema_dict, field_data_type=None):
+    result = None
+    curr_level_type = _get_field_data_type(field_schema_dict)
+    if curr_level_type is not None: field_data_type = curr_level_type
+
+    if package_schemas.default in field_schema_dict:
+        default_val = field_schema_dict[package_schemas.default]
+        default_val = "'{0}'".format(default_val) if field_data_type is str else default_val
+        result = '=IF(A{0}="", "", "{1}")'.format("{curr_row_num}", default_val)
+    elif package_schemas.anyof in field_schema_dict:
+        for curr_subschema_dict in field_schema_dict[package_schemas.anyof]:
+            result = get_default_formula(curr_subschema_dict, field_data_type)
+            if result is not None:
+                break
+            # end if found default
+        # next subschema
+    # end if
+
+    return result

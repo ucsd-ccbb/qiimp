@@ -57,11 +57,11 @@ function addConditionalRequiredRule(field_index, condition_base_name, required_b
 
 // TODO: This is a temporary setting to prevent submission during debugging.
 // REMOVE FOR PRODUCTION CODE.
-$.validator.setDefaults({
-    submitHandler: function() {
-        alert("submitted!");
-    }
-});
+//$.validator.setDefaults({
+//    submitHandler: function() {
+//        alert("submitted!");
+//    }
+//});
 
 // For JQuery validation plugin, custom validator functions always have
 // first argument: the current value of the validated element. Second argument: the element to be validated

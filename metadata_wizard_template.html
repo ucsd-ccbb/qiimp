@@ -21,20 +21,20 @@
 
 
     <!-- jquery -->
-    <script src="third-party/jquery-3.2.1.min.js"></script>
+    <script src={{ static_url("third-party/jquery-3.2.1.min.js") }}></script>
 
     <!-- jquery validation plugin -->
-    <script src="third-party/jquery_validation/jquery.validate.min.js"></script>
+    <script src={{ static_url("third-party/jquery_validation/jquery.validate.min.js") }}></script>
 
     <!-- bootstrap js -->
     <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
 
-    <script src="metadataWizardHelpers.js"></script>
-    <script src="metadataWizardEventHandlers.js"></script>
-    <script src="metadataWizard.js"></script>
+    <script src={{ static_url("metadataWizardHelpers.js") }}></script>
+    <script src={{ static_url("metadataWizardEventHandlers.js") }}></script>
+    <script src={{ static_url("metadataWizard.js") }}></script>
 </head>
 <body>
-<form id ="metadata_form">
+<form id ="metadata_form" method="post" action="">
     <div>
         <div class="container" id="container">
             <div class="row">
