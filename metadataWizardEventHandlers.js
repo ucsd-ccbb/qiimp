@@ -23,7 +23,7 @@ function enableDisableTextDataType(selected_field_type, field_index){
 function displayFieldDetails(selected_field_type, field_index) {
     var fields_to_show_by_field_type = {
         "":[],
-        "text":[],
+        "str":[],
         "boolean": ["field_details_div","boolean_true_div", "boolean_false_div", "boolean_default_div"],
         "continuous": ["field_details_div","data_type_div", "minimum_div", "maximum_div", "units_div",
             "continuous_default_div"],
@@ -52,24 +52,35 @@ function displayFieldDetails(selected_field_type, field_index) {
         // update the element's display state (either way)
         if (!do_show)  {
             $(curr_setting_selector).addClass('hidden');
+            $(curr_setting_selector + ' :input').attr('disabled', true);
         } else {
             $(curr_setting_selector).removeClass('hidden');
+            // Note two-step approach: first enable everything.  Then, outside loop, go back and (re-)disable default
+            // selects that go with default choices that aren't actually chosen
+            $(curr_setting_selector + ' :input').removeAttr('disabled');
             $(curr_setting_selector).slideDown();
         }
     }
+
+    enableDisableDefaultSelectsOnFieldTypeChange(field_index);
 }
+
+function enableDisableDefaultSelectsOnFieldTypeChange(field_index){
+    // get the selected value for the default radio button set for this index
+    var default_radio_name = getIdentifierFromBaseNameAndFieldIndex(SpecialInputs.DEFAULT_OPTION, field_index);
+    var curr_val = $("input[name='"+ default_radio_name + "']:checked").val();
+    // disable/enable the default select boxes based on the current value
+    enableDisableDefaultSelects(field_index, curr_val);
+}
+
 
 // Enable/disable appropriate subordinate input elements when type of default setting is changed
-function enableDisableDefaultSelects(event) {
+function enableDisableDefaultSelectsOnDefaultChange(event) {
     var field_index = event.data.field_index;
     var curr_val = this.value;
-
-    // TODO: Determine whether to pull the below text values out into symbolic constants
-    enableOrDisableByValue(SpecialInputs.DEFAULT_MISSINGS, field_index, curr_val, "allowed_missing_default");
-    enableOrDisableByValue(SpecialInputs.DEFAULT_CATEGORICAL, field_index, curr_val, "categorical_default");
-    enableOrDisableByValue(SpecialInputs.DEFAULT_BOOLEAN, field_index, curr_val, "boolean_default");
-    enableOrDisableByValue(SpecialInputs.DEFAULT_CONTINUOUS, field_index, curr_val, "continuous_default");
+    enableDisableDefaultSelects(field_index, curr_val)
 }
+
 
 // Enable/disable select box options for allowed missing default when allowed missing checkbox(es) are changed
 function updateDefaultsWithMissings(event){

@@ -1,22 +1,28 @@
+from collections import defaultdict
 import os
+import re
 import string
 
 import tornado.ioloop
 import tornado.web
+import unicodedata
 import xlsxwriter
 import yaml
 
 import constraint_builder
+import package_schemas
+import validation_builder
 
-
-def write_workbook(yaml_string):
-    workbook = xlsxwriter.Workbook('demo.xlsx', {'strings_to_numbers':  False,
+def write_workbook(study_name, schema_dict):
+    file_base_name = slugify(study_name)
+    file_name = '{0}.xlsx'.format(file_base_name)
+    workbook = xlsxwriter.Workbook(file_name, {'strings_to_numbers':  False,
                                'strings_to_formulas': True,
                                'strings_to_urls':     True})
-    schema_dict = yaml.load(yaml_string)
     write_metadata_sheet(workbook, schema_dict)
-    write_schema_worksheet(workbook, yaml_string)
+    write_schema_worksheet(workbook, yaml.dump(schema_dict))
     workbook.close()
+    return file_name
 
 
 def write_schema_worksheet(workbook, yaml_string):
@@ -102,15 +108,69 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("metadata_wizard_template.html")
 
     def post(self):
-        # noun1 = self.get_argument('metadata_form')
-        details = ""
-        for f in self.request.arguments.values():
-            details += "<hr/>" + ", ".join(f)
-        self.write(details)
+        separator = "_"
+        study_name = None
+        dict_of_field_schemas_by_index = defaultdict(dict)
+        for curr_key, curr_value in self.request.arguments.items():
+            if not curr_key.endswith("template"):
+                if curr_key == "study_name":
+                    study_name = parse_form_value(curr_value)
+                else:
+                    # slice off the field index at the end
+                    split_val = curr_key.split(separator)
+                    index_str = split_val[-1]
+                    index_str = index_str.replace("[]", "")
+                    index = int(index_str)  # index will be last separated value in key name
+                    curr_schema = dict_of_field_schemas_by_index[index]
+                    base_key = curr_key.replace(separator + index_str, "")
 
-        #write_workbook(noun1)
+                    revised_values = parse_form_value(curr_value)
+                    if revised_values:  # "truish"--not empty string, whitespace, etc
+                        curr_schema[base_key] = revised_values
+                    # end if this key really has a value
+                # end if this key isn't for study_name
+            # end if this is a real key and not a template key
+        # next form field
+
+        dict_of_validation_schema_by_index = {}
+        for curr_key in dict_of_field_schemas_by_index:
+            curr_schema = dict_of_field_schemas_by_index[curr_key]
+            field_name, curr_validation_schema = validation_builder.get_validation_schema(curr_schema)
+            dict_of_validation_schema_by_index[field_name] = curr_validation_schema
+        # TODO: need to translate form inputs to cerberus validation structure
+        hs_vaginal_fixed_schema= package_schemas.ridiculously_large_temporary_function()
+        dict_of_validation_schema_by_index = hs_vaginal_fixed_schema
+        dict_of_validation_schema_by_index.update(hs_vaginal_fixed_schema)
+        file_name = write_workbook(study_name, dict_of_validation_schema_by_index)
+
         # TODO: figure out how to write back download link for newly-generated spreadsheet
-        #self.write(noun1)
+        self.render("metadata_download_template.html", template_file_name=file_name)
+
+
+def parse_form_value(curr_value):
+    revised_values = [x.decode('ascii') for x in curr_value]  # everything comes through as a list of binary string
+    if len(revised_values) == 1:
+        revised_values = revised_values[0]
+    elif len(revised_values) == 0:
+        revised_values = None
+
+    return revised_values
+
+
+# very slight modification of django code at https://github.com/django/django/blob/master/django/utils/text.py#L413
+def slugify(value, allow_unicode=False):
+    """
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces to hyphens.
+    Remove characters that aren't alphanumerics, underscores, or hyphens.
+    Convert to lowercase. Also strip leading and trailing whitespace.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value).strip().lower()
+    return re.sub(r'[-\s]+', '-', value)
 
 
 if __name__ == "__main__":

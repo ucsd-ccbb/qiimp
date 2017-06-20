@@ -23,6 +23,14 @@ function enableOrDisableByValue(base_name, field_index, curr_val, enable_value) 
     enableOrDisableBySelectorAndValue(element_id_selector, curr_val, enable_value);
 }
 
+function enableDisableDefaultSelects(field_index, curr_val){
+        // TODO: Determine whether to pull the below text values out into symbolic constants
+    enableOrDisableByValue(SpecialInputs.DEFAULT_MISSINGS, field_index, curr_val, "allowed_missing_default");
+    enableOrDisableByValue(SpecialInputs.DEFAULT_CATEGORICAL, field_index, curr_val, "categorical_default");
+    enableOrDisableByValue(SpecialInputs.DEFAULT_BOOLEAN, field_index, curr_val, "boolean_default");
+    enableOrDisableByValue(SpecialInputs.DEFAULT_CONTINUOUS, field_index, curr_val, "continuous_default");
+}
+
 function enableOrDisableBySelectorAndValue(element_selector, curr_val, enable_value){
     if (curr_val === enable_value) {
         $(element_selector).removeAttr("disabled");
@@ -72,7 +80,7 @@ function updateTypeValidation(base_name, field_index, data_type_value){
                number: true
             });
             break;
-        case "text":
+        case "str":
             // no known validation required for text; perhaps length?
             break;
         default:

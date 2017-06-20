@@ -290,7 +290,7 @@ def ridiculously_large_temporary_function():
         }
     )
 
-    return yaml.dump(human_vaginal_schema)
+    return human_vaginal_schema
 
 # host_associated_schema = {
 #     age: {},

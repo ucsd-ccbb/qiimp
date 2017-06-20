@@ -105,7 +105,7 @@
                                     <div class="initially_hidden hidden" id = "continuous_default_div_template">
                                         <input type="radio" name="default_value_template" id = "continuous_default_value_template" value="continuous_default">
                                         <label id="continuous_default_label_template" for="continuous_default_value_template">&nbsp;Continuous Default</label><br />
-                                        <input type="text" name="continuous_default_template" id="continuous_default_template" placeholder="e.g., 3" disabled>
+                                        <input type="text" name="continuous_default_template" id="continuous_default_template" placeholder="e.g., 3" disabled required>
                                     </div>
                                     <div class="initially_hidden hidden" id = "boolean_default_div_template">
                                         <input type="radio" name="default_value_template" id = "boolean_default_value_template" value="boolean_default">
@@ -122,23 +122,23 @@
                                 <div class="panel panel-default initially_hidden hidden floating" id="boolean_true_div_template">
                                     <div class="panel-heading">True Value</div>
                                     <div class="panel-body">
-                                        <input type ="text" name="true_value_template" id="true_value_template" placeholder="e.g., Yes" /><br />
+                                        <input type ="text" name="true_value_template" id="true_value_template" placeholder="e.g., Yes" disabled required/><br />
                                     </div>
                                 </div>
                                 <div class="panel panel-default initially_hidden hidden floating" id="boolean_false_div_template">
                                     <div class="panel-heading">False Value</div>
                                     <div class="panel-body">
-                                        <input type ="text" name="false_value_template" id="false_value_template" placeholder="e.g., No" /><br />
+                                        <input type ="text" name="false_value_template" id="false_value_template" placeholder="e.g., No" disabled required/><br />
                                     </div>
                                 </div>
                                 <div class = "panel panel-default initially_hidden hidden floating" id="data_type_div_template">
                                     <div class="panel-heading">Data Type</div>
                                     <div class="panel-body">
-                                        <select name="data_type_template" id="data_type_template" >
+                                        <select name="data_type_template" id="data_type_template" disabled required>
                                             <option value="">--e.g., Integer--</option>
                                             <option value="integer">Integer</option>
                                             <option value="float">Decimal</option>
-                                            <option value="text">Text</option>
+                                            <option value="str">Text</option>
                                             <option value="date" disabled>Date/Time (Not Yet Implemented)</option>
                                         </select><br />
                                     </div>
@@ -146,35 +146,35 @@
                                 <div class="panel panel-default initially_hidden hidden floating" id="categorical_div_template">
                                     <div class="panel-heading">Categorical Values (One Per Line)</div>
                                     <div class="panel-body">
-                                        <textarea rows="5`" cols="25" name="categorical_values_template" id="categorical_values_template" placeholder="e.g., Low&#10;Medium&#10;High"></textarea>
+                                        <textarea rows="5`" cols="25" name="categorical_values_template" id="categorical_values_template" placeholder="e.g., Low&#10;Medium&#10;High" disabled required></textarea>
                                     </div>
                                 </div>
                                 <div class = "panel panel-default initially_hidden hidden floating" id="minimum_div_template">
                                     <div class="panel-heading">Minimum (Optional)</div>
                                     <div class="panel-body">
-                                        <select name="minimum_comparison" id="minimum_comparison_template">
+                                        <select name="minimum_comparison_template" id="minimum_comparison_template" disabled>
                                             <option value="">--e.g., Greater Than--</option>
                                             <option value="greater_than">Greater Than</option>
                                             <option value="greater_than_or_equal_to">Greater Than Or Equal To</option>
                                         </select><br />
-                                        <input type ="text" name="minimum_value" id="minimum_value_template" placeholder="e.g., 3" />
+                                        <input type ="text" name="minimum_value_template" id="minimum_value_template" placeholder="e.g., 3"  disabled/>
                                     </div>
                                 </div>
                                 <div class="panel panel-default initially_hidden hidden floating" id="maximum_div_template">
                                     <div class="panel-heading">Maximum (Optional)</div>
                                     <div class="panel-body">
-                                        <select name="maximum_comparison" id="maximum_comparison_template">
+                                        <select name="maximum_comparison_template" id="maximum_comparison_template" disabled>
                                             <option value="">--e.g., Less Than--</option>
                                             <option value="less_than">Less Than</option>
                                             <option value="less_than_or_equal_to">Less Than Or Equal To</option>
                                         </select><br />
-                                        <input type ="text" name="maximum_value" id="maximum_value_template" placeholder="e.g, 10" /><br />
+                                        <input type ="text" name="maximum_value_template" id="maximum_value_template" placeholder="e.g, 10"  disabled/><br />
                                     </div>
                                 </div>
                                 <div class="panel panel-default initially_hidden hidden floating" id="units_div_template">
                                     <div class="panel-heading">Units (Optional)</div>
                                     <div class="panel-body">
-                                        <input name="units" id="units_template" type="text" placeholder="e.g., years" />
+                                        <input name="units_template" id="units_template" type="text" placeholder="e.g., years"  disabled/>
                                     </div>
                                 </div>
                             </fieldset>

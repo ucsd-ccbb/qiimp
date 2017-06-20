@@ -134,7 +134,7 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
      function (field_index) { // set onchange handler for radio buttons specifying kind of default
          // TODO: should I also make these radio buttons required, or is that moot since one is pre-selected?
          var name_selector = "input:radio[name='" + SpecialInputs.DEFAULT_OPTION + SEPARATOR + field_index + "']";
-         $(name_selector).on("change", {field_index:field_index}, enableDisableDefaultSelects);
+         $(name_selector).on("change", {field_index:field_index}, enableDisableDefaultSelectsOnDefaultChange);
     },
     function (field_index) { //make data_type required and set onchange handler to update type validation of default
         addAlwaysRequiredRule(field_index, SpecialInputs.DATA_TYPE);
