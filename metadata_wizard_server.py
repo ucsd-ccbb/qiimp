@@ -1,8 +1,8 @@
 from collections import defaultdict
 import os
 
-import tornado.ioloop
-import tornado.web
+import tornado.ioloop  # Note: Pycharm thinks this import isn't used, but it is
+import tornado.web  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.websocket
 
 
@@ -81,7 +81,6 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("metadata_wizard_template.html")
 
     def post(self):
-        # TODO: function too long and mixed; refactor
         separator = "_"
         study_name = None
         dict_of_field_schemas_by_index = defaultdict(dict)
@@ -90,7 +89,7 @@ class MainHandler(tornado.web.RequestHandler):
                 if curr_key == "study_name":
                     study_name = parse_form_value(curr_value)
                 elif curr_key == "study_location_select":
-                    pass  # TODO: add handling for locale
+                    pass
                 else:
                     # slice off the field index at the end
                     split_val = curr_key.split(separator)
@@ -131,9 +130,6 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 if __name__ == "__main__":
-    # hs_vaginal_fixed_schema_yaml = package_schemas.ridiculously_large_temporary_function()
-    # write_workbook(hs_vaginal_fixed_schema_yaml)
-
     settings = {
         "static_path": os.path.dirname(__file__)
     }

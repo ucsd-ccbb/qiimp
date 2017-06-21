@@ -13,7 +13,6 @@ function enableDisableTextDataType(selected_field_type, field_index){
     var data_type_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DATA_TYPE, field_index);
 
     // if the field type is categorical, the data type may be text.  If field type is anything else, text is disabled.
-    // TODO: Decide whether to pull these texts out into symbolic constants
     var select_option_for_field_type_selector = data_type_id_selector + " option[value='text']";
     enableOrDisableBySelectorAndValue(select_option_for_field_type_selector, selected_field_type, "categorical");
         resetSelectedOptionIfDisabled(data_type_id_selector);

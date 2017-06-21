@@ -77,14 +77,6 @@ $.validator.addMethod("nameIsUnique", function(value, element) {
     return return_val;
 }, "Field name must be unique");
 
-// TODO: Ask Gail/Austin: must continuous default val conform to min, max, min_compare, or max_compare?
-// TODO: Ask Gail/Austin: what date and/or time options to support?
-// TODO: Ask Gail/Austin: length, other limits on field names (besides unique)?
-// TODO: Ask Gail/Austin: should there be a default option for free-form text field type?
-
-// TODO: ensure validation attaches to correct fields when there is more than one
-// TODO: attach to back end and see what I receive :)
-
 
 // Note that these are to be the bases (without template suffix or separator) of form element NAMES, not IDs
 var SpecialInputs = {
@@ -126,7 +118,6 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
         $(id_and_state_selector).on("change", {field_index:field_index}, updateDefaultsWithMissings);
     },
      function (field_index) { // set onchange handler for radio buttons specifying kind of default
-         // TODO: should I also make these radio buttons required, or is that moot since one is pre-selected?
          var name_selector = "input:radio[name='" + SpecialInputs.DEFAULT_OPTION + SEPARATOR + field_index + "']";
          $(name_selector).on("change", {field_index:field_index}, enableDisableDefaultSelectsOnDefaultChange);
     },
@@ -162,7 +153,6 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
 
 // Code to run as soon code as the document is ready to be manipulated
 $(document).ready(function () {
-    // TODO: can't leave the url hardcoded here
     ws = new WebSocket("ws://localhost:8898/websocket");
     ws.onmessage = function(evt) {
         var fields_message = "<br />The following fields will be added to your metadata template: " +  evt.data +

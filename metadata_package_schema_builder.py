@@ -27,7 +27,6 @@ class SampleTypes(Enum):
     stool = 'stool'
 
 
-# TODO: packages should have versions!
 class PerSamplePackage:
     scientific_name = "Scientific_name"
     taxon_id = "TAXON_ID"

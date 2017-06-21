@@ -24,7 +24,6 @@ function enableOrDisableByValue(base_name, field_index, curr_val, enable_value) 
 }
 
 function enableDisableDefaultSelects(field_index, curr_val){
-        // TODO: Determine whether to pull the below text values out into symbolic constants
     enableOrDisableByValue(SpecialInputs.DEFAULT_MISSINGS, field_index, curr_val, "allowed_missing_default");
     enableOrDisableByValue(SpecialInputs.DEFAULT_CATEGORICAL, field_index, curr_val, "categorical_default");
     enableOrDisableByValue(SpecialInputs.DEFAULT_BOOLEAN, field_index, curr_val, "boolean_default");

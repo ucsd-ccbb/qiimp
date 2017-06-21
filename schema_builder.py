@@ -127,7 +127,6 @@ def _generate_boolean_schema(curr_field_from_form):
 
 
 def _generate_categorical_schema(curr_field_from_form):
-        # TODO: clean up data type detection/conversion
         data_type = curr_field_from_form[InputNames.data_type.value]
         validation_data_type = data_type
         if data_type == "float": validation_data_type = "number"
@@ -153,8 +152,6 @@ def _generate_categorical_schema(curr_field_from_form):
 
 
 def _generate_continuous_schema(curr_field_from_form):
-    # TODO: refactor copy/paste code
-    # TODO: clean up data type detection/conversion
     data_type = curr_field_from_form[InputNames.data_type.value]
     validation_data_type = data_type
     if data_type == "float": validation_data_type = "number"
@@ -165,8 +162,6 @@ def _generate_continuous_schema(curr_field_from_form):
         metadata_package_schema_builder.ValidationKeys.type.value: validation_data_type,
         metadata_package_schema_builder.ValidationKeys.required.value: True
     }
-
-    # TODO: add type conversions!
 
     curr_schema = _set_comparison_keyval_if_any(curr_field_from_form,
                                                 InputNames.minimum_value.value,

@@ -26,7 +26,6 @@ def write_schema_worksheet(workbook, yaml_string):
     schema_worksheet.write_string("A1", yaml_string)
 
 
-# TODO: Create validation worksheet that tells them which entries in metadata sheet are wrong
 def write_validation_sheet(workbook):
     schema_worksheet = workbook.add_worksheet("validation")
     schema_worksheet.protect()
@@ -45,7 +44,6 @@ def write_metadata_sheet(workbook, schema_dict):
     name_row_index = 1
     data_row_index = name_row_index + 1
 
-    # TODO: decide what to do re order
     sorted_keys = sorted(schema_dict.keys())
     for field_name in sorted_keys:
         field_specs_dict = schema_dict[field_name]
@@ -91,14 +89,13 @@ def _add_default_if_any(workbook, worksheet, col_letter, field_specs_dict):
     default_formula = xlsx_validation_builder.get_default_formula(field_specs_dict)
     if default_formula is not None:
         hidden_unlocked = workbook.add_format({'locked': 0, 'hidden': 1})
-        for i in range(2,250):  # TODO: extend to whole column
+        for i in range(2,250):
             curr_cell = "{0}{1}".format(col_letter, i)
             completed_default_formula = default_formula.format(curr_row_num=i)
             # A should always be sample_name
             worksheet.write_formula(curr_cell, completed_default_formula, hidden_unlocked)
 
 
-# TODO: this should probably go into ccbb_pyutils
 # very slight modification of django code at https://github.com/django/django/blob/master/django/utils/text.py#L413
 def slugify(value, allow_unicode=False):
     """

@@ -25,7 +25,6 @@ def _make_allowed_only_constraint(field_name, field_schema_dict):
     result = None
     allowed_onlies = _roll_up_allowed_onlies(field_schema_dict)
 
-    # TODO: add back uniqueness check
     if allowed_onlies is not None and len(allowed_onlies) > 0:
         allowed_onlies_as_strs = [str(x) for x in allowed_onlies]
         result = {'validate': 'list', 'source': allowed_onlies,
@@ -177,8 +176,6 @@ def _make_anyof_constraint(field_schema_dict, field_data_type=None):
 
 
 def get_formula_constraint(field_schema_dict, field_data_type=None):
-    # TODO: ensure no unrecognized tags
-
     and_constraints = []
 
     # get the sub-constraints (anyof)
@@ -197,11 +194,8 @@ def get_formula_constraint(field_schema_dict, field_data_type=None):
 
 
 def get_single_level_formula_constraint(field_schema_dict, field_data_type=None):
-    # TODO: ensure no unrecognized tags
-
     and_constraints = []
 
-    # TODO: this is copy/paste code; think of way to refactor?
     if field_data_type is None: field_data_type = _get_field_data_type(field_schema_dict)
 
     # get the type constraint (type)
@@ -223,9 +217,6 @@ def get_single_level_formula_constraint(field_schema_dict, field_data_type=None)
     # get the allowed constraint (allowed)
     allowed_constraint = _make_allowed_constraint(field_schema_dict, field_data_type)
     if allowed_constraint is not None: and_constraints.append(allowed_constraint)
-
-    # TODO: come back to empty constraint
-    # get the empty constraint (empty) -- decide whether to use?
 
     # make an 'and' clause for the constraints
     and_constraint_clause = _make_logical_constraint(and_constraints, True)
