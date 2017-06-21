@@ -67,10 +67,20 @@ def _get_default_types_to_input_fields():
 
 def _get_comparison_type_to_validation_comparison_key():
     return {
-        ComparisonTypes.greater_than.value: metadata_package_schema_builder.ValidationKeys.max_exclusive.value,
-        ComparisonTypes.greater_than_or_equal_to.value: metadata_package_schema_builder.ValidationKeys.max_inclusive.value,
-        ComparisonTypes.less_than.value: metadata_package_schema_builder.ValidationKeys.min_exclusive.value,
-        ComparisonTypes.less_than_or_equal_to.value: metadata_package_schema_builder.ValidationKeys.min_exclusive.value
+        ComparisonTypes.greater_than.value: metadata_package_schema_builder.ValidationKeys.min_exclusive.value,
+        ComparisonTypes.greater_than_or_equal_to.value: metadata_package_schema_builder.ValidationKeys.min_inclusive.value,
+        ComparisonTypes.less_than.value: metadata_package_schema_builder.ValidationKeys.max_exclusive.value,
+        ComparisonTypes.less_than_or_equal_to.value: metadata_package_schema_builder.ValidationKeys.max_inclusive.value
+    }
+
+
+def _get_missing_form_val_to_ebi_null_val():
+    source_of_strings = metadata_package_schema_builder.PerSamplePackage()
+    return {
+        "not_applicable": source_of_strings.ebi_not_applicable,
+        "not_provided": source_of_strings.ebi_not_provided,
+        "not_recorded": source_of_strings.ebi_not_collected,
+        "restricted": source_of_strings.ebi_restricted
     }
 
 
@@ -79,7 +89,9 @@ def get_validation_schema(curr_field_from_form):
     validation_schema = _build_single_validation_schema_dict(curr_field_from_form)
 
     if InputNames.allowed_missing_vals.value in curr_field_from_form:
-        allowed_missing_vals = curr_field_from_form[InputNames.allowed_missing_vals.value]
+        ebi_val_by_form_val = _get_missing_form_val_to_ebi_null_val()
+        allowed_missing_vals_form_values = curr_field_from_form[InputNames.allowed_missing_vals.value]
+        allowed_missing_vals = [ebi_val_by_form_val[x] for x in allowed_missing_vals_form_values]
         curr_schema = {}
         missings_schema = {
             metadata_package_schema_builder.ValidationKeys.type.value: metadata_package_schema_builder.CerberusDataTypes.string.value,
@@ -179,7 +191,11 @@ def _set_default_keyval_if_any(curr_field_from_form, curr_schema):
     default_type_value = curr_field_from_form[InputNames.default_value.value]
     default_value_input_name = default_types_to_default_fields[default_type_value]
     if default_value_input_name is not None:
-        curr_schema[metadata_package_schema_builder.ValidationKeys.default.value] = curr_field_from_form[default_value_input_name]
+        ebi_nulls_by_form_value = _get_missing_form_val_to_ebi_null_val()
+        default_val = curr_field_from_form[default_value_input_name]
+        if default_val in ebi_nulls_by_form_value:
+            default_val = ebi_nulls_by_form_value[default_val]
+        curr_schema[metadata_package_schema_builder.ValidationKeys.default.value] = default_val
     return curr_schema
 
 

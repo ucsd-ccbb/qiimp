@@ -29,12 +29,13 @@ def get_package_class():
     return _package_class
 
 
-def parse_form_value(curr_value):
+def parse_form_value(curr_value, retain_list = False):
     revised_values = [x.decode('ascii') for x in curr_value]  # everything comes through as a list of binary string
-    if len(revised_values) == 1:
-        revised_values = revised_values[0]
-    elif len(revised_values) == 0:
-        revised_values = None
+    if not retain_list:
+        if len(revised_values) == 1:
+            revised_values = revised_values[0]
+        elif len(revised_values) == 0:
+            revised_values = None
 
     return revised_values
 
@@ -91,16 +92,19 @@ class MainHandler(tornado.web.RequestHandler):
                 elif curr_key == "study_location_select":
                     pass
                 else:
+                    retain_list = False
                     # slice off the field index at the end
                     split_val = curr_key.split(separator)
                     index_str = split_val[-1]
+                    if "[]" in index_str:
+                        retain_list = True
                     index_str = index_str.replace("[]", "")
                     try:
                         index = int(index_str)  # index will be last separated value in key name
                         curr_schema = dict_of_field_schemas_by_index[index]
                         base_key = curr_key.replace(separator + index_str, "")
 
-                        revised_values = parse_form_value(curr_value)
+                        revised_values = parse_form_value(curr_value, retain_list)
                         if revised_values:  # "truish"--not empty string, whitespace, etc
                             curr_schema[base_key] = revised_values
                     except ValueError:

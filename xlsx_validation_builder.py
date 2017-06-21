@@ -40,7 +40,7 @@ def _make_formula_constraint(field_name, field_schema_dict):
     formula_string = get_formula_constraint(field_schema_dict)
 
     if formula_string is not None:
-        formula_string = "="+formula_string
+        formula_string = "=("+formula_string +")"
         result = {
             'validate': 'custom', 'value': formula_string,
             'input_title': 'Enter {0}:'.format(field_name),
@@ -117,15 +117,15 @@ def _make_lte_max_constraint(field_schema_dict):
 
 
 def _make_gte_min_constraint(field_schema_dict):
-    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_inclusive.value, ">=", field_schema_dict)
+    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.min_inclusive.value, ">=", field_schema_dict)
 
 
 def _make_lt_max_constraint(field_schema_dict):
-    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_inclusive.value, "<", field_schema_dict)
+    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_exclusive.value, "<", field_schema_dict)
 
 
 def _make_gt_min_constraint(field_schema_dict):
-    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.min_inclusive.value, ">", field_schema_dict)
+    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.min_exclusive.value, ">", field_schema_dict)
 
 
 def _make_type_constraint(field_schema_dict):
@@ -141,17 +141,18 @@ def _get_field_data_type(field_schema_dict):
 def _parse_field_type(field_schema_dict):
     constraint = None
     python_type = None
+    anyof = metadata_package_schema_builder.ValidationKeys.anyof
     if metadata_package_schema_builder.ValidationKeys.type.value in field_schema_dict:
         the_type = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
         if the_type == metadata_package_schema_builder.CerberusDataTypes.integer.value:
-            constraint = "INT({cell})={cell}"
+            if anyof not in field_schema_dict: constraint = "INT({cell})={cell}"
             python_type = int
         elif the_type == metadata_package_schema_builder.CerberusDataTypes.number.value:
-            constraint = "ISNUMBER({cell})"
+            if anyof not in field_schema_dict: constraint = "ISNUMBER({cell})"
             python_type = float
         elif the_type == metadata_package_schema_builder.CerberusDataTypes.string.value:
             # I think that "free form text" INCLUDES things that are numbers ... they'd be forced to text in db, right?
-            constraint = None  # "ISTEXT({cell})"
+            if anyof not in field_schema_dict: constraint = "TRUE"  # "ISTEXT({cell})"
             python_type = str
         else:
             raise ValueError("Unrecognized data type: {0}".format(the_type))
@@ -202,13 +203,17 @@ def get_single_level_formula_constraint(field_schema_dict, field_data_type=None)
     type_constraint = _make_type_constraint(field_schema_dict)
     if type_constraint is not None: and_constraints.append(type_constraint)
 
-    # get the min constraint (min and ?min_comparison?)
+    # get the min constraint
     min_constraint = _make_gte_min_constraint(field_schema_dict)
     if min_constraint is not None: and_constraints.append(min_constraint)
+    min_exclusive_constraint = _make_gt_min_constraint(field_schema_dict)
+    if min_exclusive_constraint is not None: and_constraints.append(min_exclusive_constraint)
 
-    # get the max constraint (max and ?max_comparison?)
+    # get the max constraint
     max_constraint = _make_lte_max_constraint(field_schema_dict)
     if max_constraint is not None: and_constraints.append(max_constraint)
+    max_exclusive_constraint = _make_lt_max_constraint(field_schema_dict)
+    if max_exclusive_constraint is not None: and_constraints.append(max_exclusive_constraint)
 
     # get the forbidden constraint (forbidden)
     forbidden_constraint = _make_forbidden_constraint(field_schema_dict, field_data_type)
@@ -230,8 +235,8 @@ def get_default_formula(field_schema_dict, field_data_type=None):
 
     if metadata_package_schema_builder.ValidationKeys.default.value in field_schema_dict:
         default_val = field_schema_dict[metadata_package_schema_builder.ValidationKeys.default.value]
-        default_val = "'{0}'".format(default_val) if field_data_type is str else default_val
-        result = '=IF(A{0}="", "", "{1}")'.format("{curr_row_num}", default_val)
+        default_val = '"{0}"'.format(default_val) if field_data_type is str else default_val
+        result = '=IF(A{0}="", "", {1})'.format("{curr_row_num}", default_val)
     elif metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
         for curr_subschema_dict in field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]:
             result = get_default_formula(curr_subschema_dict, field_data_type)
