@@ -48,18 +48,10 @@ function displayFieldDetails(selected_field_type, field_index) {
                 break;
             }
         }
-
-        // update the element's display state (either way)
-        if (!do_show)  {
-            $(curr_setting_selector).addClass('hidden');
-            $(curr_setting_selector + ' :input').attr('disabled', true);
-        } else {
-            $(curr_setting_selector).removeClass('hidden');
-            // Note two-step approach: first enable everything.  Then, outside loop, go back and (re-)disable default
-            // selects that go with default choices that aren't actually chosen
-            $(curr_setting_selector + ' :input').removeAttr('disabled');
-            $(curr_setting_selector).slideDown();
-        }
+        // Note two-step approach when showing: first enable everything.
+        // Then, outside loop, go back and (re-)disable default
+        // selects that go with default choices that aren't actually chosen
+        showEnableOrHideDisable(curr_setting_selector, do_show);
     }
 
     enableDisableDefaultSelectsOnFieldTypeChange(field_index);

@@ -31,16 +31,99 @@
 
     <script src={{ static_url("metadataWizardHelpers.js") }}></script>
     <script src={{ static_url("metadataWizardEventHandlers.js") }}></script>
+    <script src={{ static_url("packageWizard.js") }}></script>
     <script src={{ static_url("metadataWizard.js") }}></script>
 </head>
 <body>
-<form id ="metadata_form" method="post" action="">
+<form id = "package_form">
+    <div class="container" id="package_div">
+        <div class="row" id="mode_div">
+            <div class="col-sm-12">
+                How would you like to select your metadata package?<br />
+                <input type="radio" name="metadata_mode" id = "metadata_mode_wizard" value="wizard" onchange="onModeChange(this)" required>
+                <label id="metadata_mode_wizard_label" for="metadata_mode_wizard">Use Wizard</label><br />
+                <input type="radio" name="metadata_mode" id = "metadata_mode_power" value="power" onchange="onModeChange(this)">
+                <label id="metadata_mode_power_label" for="metadata_mode_power">Select Manually</label>
+            </div>
+        </div>
+        <div class="row hidden" id="power_div">
+            <div class="col-sm-12">
+                <label id="package_select_label" for="package_select">Metadata Packages:</label>
+                <select name="package_select" id="package_select" disabled required>
+                    <option value="">--Select One--</option>
+                    <option value="human_vaginal">Human Vaginal</option>
+                    <option value="human_fecal">Human Feces</option>
+                    <option value="other">Generic</option>
+                </select>
+            </div>
+        </div>
+        <div id="wizard_div" class="hidden">
+            <div class="row" id="sample_type_div">
+                <div class="col-sm-12">
+                    <label id="sample_type_label" for="sample_type_select">Sample Type:</label>
+                    <select name="sample_type_select" id="sample_type_select" onchange="onSampleTypeChange(this)" disabled required>
+                        <option value="">--Select One--</option>
+                        <option value="stool">Stool</option>
+                        <option value="mucus">Mucus</option>
+                        <option value="seawater">Seawater</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div id="environmental_div" class="hidden"></div>
+            <div id="host_associated_div" class="hidden">
+                <div class="row" id="host_div">
+                    <div class="col-sm-12">
+                        <label id="host_select_label" for="host_select">Host Organism:</label>
+                        <select name="host_select" id="host_select" onchange="checkSampleTypePlusHostImplications(this)" disabled required>
+                            <option value="">--Select One--</option>
+                            <option value="human">Human</option>
+                            <option value="mouse">Mouse</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row" id="host_specific_sample_type_div" >
+                    <div class="col-sm-12">
+                        <label id="host_sample_site_select_label" for="host_sample_site_select">Host Sample Site:</label>
+                        <select name="host_sample_site_select" id="host_sample_site_select" disabled required>
+                            <option value="">--Select One--</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" id="select_package_button_div">
+            <div class="col-sm-12">
+                <input class="submit" type="submit" name="select_package_button" id="select_package_button"
+                       value="Select Package" onsubmit="return getPackage()" disabled>
+            </div>
+        </div>
+        <div class="row" id="package_details_div">
+            <br />
+            <br />
+        </div>
+    </div>
+</form>
+<form id ="metadata_form" method="post" action="" class="hidden">
     <div>
         <div class="container" id="container">
             <div class="row">
                 <div class="col-sm-12">
                     <label for="study_name">Study Name:</label>
-                    <input id="study_name" name = "study_name" type="text" placeholder="Study name" />
+                    <input id="study_name" name = "study_name" type="text" placeholder="Study name" required />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <label for="study_location_select">Study City/Locale:</label>
+                    <select name="study_location_select" id="study_location_select" required>
+                        <option value="">--Select One--</option>
+                        <option value="san_diego">San Diego, CA, USA</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <br />
+                    Enter custom fields for your experiment below:
                 </div>
             </div>
             <div class="row fieldTemplate">
@@ -58,7 +141,7 @@
                                 <div class="panel-body">
                                     <select name="field_type_template" id="field_type_template" >
                                         <option value="">--e.g., Categorical--</option>
-                                        <option value="text">Free-form text</option>
+                                        <option value="str">Free-form text</option>
                                         <option value="categorical">Categorical</option>
                                         <option value="boolean">Boolean</option>
                                         <option value="continuous">Continuous</option>

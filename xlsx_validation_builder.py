@@ -1,4 +1,4 @@
-import package_schemas
+import metadata_package_schema_builder
 
 cell_placeholder = "{cell}"
 
@@ -52,8 +52,8 @@ def _make_formula_constraint(field_name, field_schema_dict):
 
 def _roll_up_allowed_onlies(field_schema_dict):
     all_allowed_vals = []
-    if package_schemas.anyof in field_schema_dict:
-        anyof_subschemas = field_schema_dict[package_schemas.anyof]
+    if metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
+        anyof_subschemas = field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]
         for curr_anyof_subschema in anyof_subschemas:
             subschema_allowed_vals = _roll_up_allowed_onlies(curr_anyof_subschema)
             if subschema_allowed_vals is None:
@@ -64,8 +64,8 @@ def _roll_up_allowed_onlies(field_schema_dict):
         # next subschema
     # end if there are subschemas
 
-    if package_schemas.allowed in field_schema_dict:
-        curr_allowed_vals = field_schema_dict[package_schemas.allowed]
+    if metadata_package_schema_builder.ValidationKeys.allowed.value in field_schema_dict:
+        curr_allowed_vals = field_schema_dict[metadata_package_schema_builder.ValidationKeys.allowed.value]
         all_allowed_vals.extend(curr_allowed_vals)
     else:
         curr_formula_constraint = get_single_level_formula_constraint(field_schema_dict)
@@ -87,45 +87,46 @@ def _make_logical_constraint(constraints, is_and):
     return result
 
 
+def _make_list_constraint(schema_key, format_str, is_and, field_schema_dict, field_data_type):
+    constraint = None
+    if schema_key in field_schema_dict:
+        values_list = field_schema_dict[schema_key]
+        values_list = ['"{0}"'.format(x) if field_data_type is str else x for x in values_list]
+        constraints_list = [format_str.format(cell_placeholder, x) for x in values_list]
+        constraint = _make_logical_constraint(constraints_list, is_and)
+    return constraint
+
+
 def _make_allowed_constraint(field_schema_dict, field_data_type):
-    constraint = None
-    if package_schemas.allowed in field_schema_dict:
-        allowed_vals_list = field_schema_dict[package_schemas.allowed]
-        allowed_vals_list = ['"{0}"'.format(x) if field_data_type is str else x for x in allowed_vals_list]
-        # TODO: Decide whether to change this to exact(a,b) as a=b is apparently case-insensitive?
-        allowed_constraints = ["{0}={1}".format(cell_placeholder, x) for x in allowed_vals_list]
-        constraint = _make_logical_constraint(allowed_constraints, False)
-    return constraint
+    return _make_list_constraint(metadata_package_schema_builder.ValidationKeys.allowed.value, "exact({0},{1})", False, field_schema_dict, field_data_type)
 
 
-# TODO: get rid of copy/paste code
 def _make_forbidden_constraint(field_schema_dict, field_data_type):
-    constraint = None
-    if package_schemas.forbidden in field_schema_dict:
-        forbidden_list = field_schema_dict[package_schemas.forbidden]
-        forbidden_list = ['"{0}"'.format(x) if field_data_type is str else x for x in forbidden_list]
-        forbidden_constraints = ["{0}<>{1}".format(cell_placeholder, x) for x in forbidden_list]
-        constraint = _make_logical_constraint(forbidden_constraints, True)
+    return _make_list_constraint(metadata_package_schema_builder.ValidationKeys.forbidden.value, "{0}<>{1}", True, field_schema_dict, field_data_type)
 
+
+def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict):
+    constraint = None
+    if schema_key in field_schema_dict:
+        threshold_val = field_schema_dict[schema_key]
+        constraint = "{0}{1}{2}".format(cell_placeholder, comparison_str, threshold_val)
     return constraint
 
 
-def _make_max_constraint(field_schema_dict):
-    constraint = None
-    # TODO: add handling for comparison type once I figure out how it is expressed in Cerberus ...
-    if package_schemas.amax in field_schema_dict:
-        max_val = field_schema_dict[package_schemas.amax]
-        constraint = "{0}<{1}".format(cell_placeholder, max_val)
-    return constraint
+def _make_lte_max_constraint(field_schema_dict):
+    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_inclusive.value, "<=", field_schema_dict)
 
 
-def _make_min_constraint(field_schema_dict):
-    constraint = None
-    # TODO: add handling for comparison type once I figure out how it is expressed in Cerberus ...
-    if package_schemas.amin in field_schema_dict:
-        min_val = field_schema_dict[package_schemas.amin]
-        constraint = "{0}<{1}".format(min_val, cell_placeholder)
-    return constraint
+def _make_gte_min_constraint(field_schema_dict):
+    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_inclusive.value, ">=", field_schema_dict)
+
+
+def _make_lt_max_constraint(field_schema_dict):
+    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_inclusive.value, "<", field_schema_dict)
+
+
+def _make_gt_min_constraint(field_schema_dict):
+    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.min_inclusive.value, ">", field_schema_dict)
 
 
 def _make_type_constraint(field_schema_dict):
@@ -141,15 +142,15 @@ def _get_field_data_type(field_schema_dict):
 def _parse_field_type(field_schema_dict):
     constraint = None
     python_type = None
-    if package_schemas.atype in field_schema_dict:
-        the_type = field_schema_dict[package_schemas.atype]
-        if the_type == package_schemas.aninteger:
+    if metadata_package_schema_builder.ValidationKeys.type.value in field_schema_dict:
+        the_type = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
+        if the_type == metadata_package_schema_builder.CerberusDataTypes.integer.value:
             constraint = "INT({cell})={cell}"
             python_type = int
-        elif the_type == package_schemas.anumber:
+        elif the_type == metadata_package_schema_builder.CerberusDataTypes.number.value:
             constraint = "ISNUMBER({cell})"
             python_type = float
-        elif the_type == package_schemas.astring:
+        elif the_type == metadata_package_schema_builder.CerberusDataTypes.string.value:
             # I think that "free form text" INCLUDES things that are numbers ... they'd be forced to text in db, right?
             constraint = None  # "ISTEXT({cell})"
             python_type = str
@@ -162,8 +163,8 @@ def _parse_field_type(field_schema_dict):
 def _make_anyof_constraint(field_schema_dict, field_data_type=None):
     constraint = None
     subschema_constraints = []
-    if package_schemas.anyof in field_schema_dict:
-        anyof_subschemas = field_schema_dict[package_schemas.anyof]
+    if metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
+        anyof_subschemas = field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]
         for curr_anyof_subschema in anyof_subschemas:
             curr_subschema_constraint = get_formula_constraint(curr_anyof_subschema, field_data_type)
             if curr_subschema_constraint is not None: subschema_constraints.append(curr_subschema_constraint)
@@ -192,8 +193,6 @@ def get_formula_constraint(field_schema_dict, field_data_type=None):
 
     # make an 'and' clause for the constraints
     and_constraint_clause = _make_logical_constraint(and_constraints, True)
-
-    # TODO: get the default [NB: not a constraint] (default)
     return and_constraint_clause
 
 
@@ -210,11 +209,11 @@ def get_single_level_formula_constraint(field_schema_dict, field_data_type=None)
     if type_constraint is not None: and_constraints.append(type_constraint)
 
     # get the min constraint (min and ?min_comparison?)
-    min_constraint = _make_min_constraint(field_schema_dict)
+    min_constraint = _make_gte_min_constraint(field_schema_dict)
     if min_constraint is not None: and_constraints.append(min_constraint)
 
     # get the max constraint (max and ?max_comparison?)
-    max_constraint = _make_max_constraint(field_schema_dict)
+    max_constraint = _make_lte_max_constraint(field_schema_dict)
     if max_constraint is not None: and_constraints.append(max_constraint)
 
     # get the forbidden constraint (forbidden)
@@ -230,8 +229,6 @@ def get_single_level_formula_constraint(field_schema_dict, field_data_type=None)
 
     # make an 'and' clause for the constraints
     and_constraint_clause = _make_logical_constraint(and_constraints, True)
-
-    # TODO: get the default [NB: not a constraint] (default)
     return and_constraint_clause
 
 
@@ -240,12 +237,12 @@ def get_default_formula(field_schema_dict, field_data_type=None):
     curr_level_type = _get_field_data_type(field_schema_dict)
     if curr_level_type is not None: field_data_type = curr_level_type
 
-    if package_schemas.default in field_schema_dict:
-        default_val = field_schema_dict[package_schemas.default]
+    if metadata_package_schema_builder.ValidationKeys.default.value in field_schema_dict:
+        default_val = field_schema_dict[metadata_package_schema_builder.ValidationKeys.default.value]
         default_val = "'{0}'".format(default_val) if field_data_type is str else default_val
         result = '=IF(A{0}="", "", "{1}")'.format("{curr_row_num}", default_val)
-    elif package_schemas.anyof in field_schema_dict:
-        for curr_subschema_dict in field_schema_dict[package_schemas.anyof]:
+    elif metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
+        for curr_subschema_dict in field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]:
             result = get_default_formula(curr_subschema_dict, field_data_type)
             if result is not None:
                 break

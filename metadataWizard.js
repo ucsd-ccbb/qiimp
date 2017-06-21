@@ -55,20 +55,12 @@ function addConditionalRequiredRule(field_index, condition_base_name, required_b
     });
 }
 
-// TODO: This is a temporary setting to prevent submission during debugging.
-// REMOVE FOR PRODUCTION CODE.
-//$.validator.setDefaults({
-//    submitHandler: function() {
-//        alert("submitted!");
-//    }
-//});
-
 // For JQuery validation plugin, custom validator functions always have
 // first argument: the current value of the validated element. Second argument: the element to be validated
 $.validator.addMethod("nameIsUnique", function(value, element) {
     var return_val = true; // default: assume unique
     var num_fields = getCurrNumFields();
-    var found_field_names = {};
+    var found_field_names = $.extend({}, package_fields);
     for (i = 0; i < num_fields; i++) {
         var curr_field_name_id_selector = getIdSelectorFromBaseNameAndFieldIndex("field_name", i);
         var curr_field_name_value = $(curr_field_name_id_selector).val();
@@ -113,6 +105,8 @@ var SpecialInputs = {
     DEFAULT_BOOLEAN: "boolean_default_select",
     DEFAULT_CONTINUOUS: "continuous_default"
 };
+
+var package_fields = {};
 
 var TEMPLATE_SUFFIX = "template";
 var SEPARATOR = "_";
@@ -168,14 +162,31 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
 
 // Code to run as soon code as the document is ready to be manipulated
 $(document).ready(function () {
-    // set up validator
-    $("#metadata_form").validate({
-        rules: {
-                study_name: {
-                    required: true
-                }
-            }
-        });
+    // TODO: can't leave the url hardcoded here
+    ws = new WebSocket("ws://localhost:8898/websocket");
+    ws.onmessage = function(evt) {
+        var fields_message = "<br />The following fields will be added to your metadata template: " +  evt.data +
+            ".<br /><strong>Note that none of these names will be available for custom fields.</strong><br /><br />";
+        $(getIdSelectorFromId("package_details_div")).html(fields_message);
+
+        var fields_list = evt.data.split(", ");
+        var temp_package_fields = {};
+        for (var i = 0, len = fields_list.length; i < len; i++) {
+            temp_package_fields[fields_list[i]] = true;
+        }
+        package_fields = $.extend({}, temp_package_fields);
+        $(getIdSelectorFromId("metadata_form")).removeClass('hidden');
+    };
+
+    ws.onopen = function () {};
+    ws.onclose = function () {};
+
+    // set up validators
+    $("#package_form").validate({
+        submitHandler: getPackage
+    });
+
+    $("#metadata_form").validate();
 
     // Get the html from template and add a set of elements for the first field
     var new_html = $('<div/>', {
