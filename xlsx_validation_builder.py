@@ -141,7 +141,7 @@ def _get_field_data_type(field_schema_dict):
 def _parse_field_type(field_schema_dict):
     constraint = None
     python_type = None
-    anyof = metadata_package_schema_builder.ValidationKeys.anyof
+    anyof = metadata_package_schema_builder.ValidationKeys.anyof.value
     if metadata_package_schema_builder.ValidationKeys.type.value in field_schema_dict:
         the_type = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
         if the_type == metadata_package_schema_builder.CerberusDataTypes.integer.value:

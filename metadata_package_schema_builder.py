@@ -23,7 +23,7 @@ class CerberusDataTypes(Enum):
 
 
 class SampleTypes(Enum):
-    mucus = 'mucus',
+    mucus = 'mucus'
     stool = 'stool'
 
 
