@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Metadata Wizard</title>
+    <!-- bootstrap stylesheet -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+
+    <style type="text/css">
+        .fieldTemplate {
+            display:none;
+        }
+        .floating {
+        }
+        .field {
+            padding: 2px;
+            border-top: 1px solid black;
+        }
+    </style>
+
+
+    <!-- jquery -->
+    <script src={{ static_url("third-party/jquery-3.2.1.min.js") }}></script>
+
+    <!-- jquery validation plugin -->
+    <script src={{ static_url("third-party/jquery_validation/jquery.validate.min.js") }}></script>
+
+    <!-- bootstrap js -->
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
+
+    <script src={{ static_url("metadataWizardHelpers.js") }}></script>
+    <script src={{ static_url("metadataWizardEventHandlers.js") }}></script>
+    <script src={{ static_url("packageWizard.js") }}></script>
+    <script src={{ static_url("metadataWizard.js") }}></script>
+</head>
+<body>
+<form id = "package_form">
+    <div class="container" id="package_div">
+        <div class="row" id="mode_div">
+            <div class="col-sm-12">
+                How would you like to select your metadata package?<br />
+                <input type="radio" name="metadata_mode" id = "metadata_mode_wizard" value="wizard" onchange="onModeChange(this)" required>
+                <label id="metadata_mode_wizard_label" for="metadata_mode_wizard">Use Wizard</label><br />
+                <input type="radio" name="metadata_mode" id = "metadata_mode_power" value="power" onchange="onModeChange(this)">
+                <label id="metadata_mode_power_label" for="metadata_mode_power">Select Manually</label>
+            </div>
+        </div>
+        <div class="row hidden" id="power_div">
+            <div class="col-sm-12">
+                <label id="package_select_label" for="package_select">Metadata Packages:</label>
+                <select name="package_select" id="package_select" disabled required>
+                    <option value="">--Select One--</option>
+                    <option value="human_vaginal">Human Vaginal</option>
+                    <option value="human_fecal">Human Feces</option>
+                    <option value="other">Generic</option>
+                </select>
+            </div>
+        </div>
+        <div id="wizard_div" class="hidden">
+            <div class="row" id="sample_type_div">
+                <div class="col-sm-12">
+                    <label id="sample_type_label" for="sample_type_select">Sample Type:</label>
+                    <select name="sample_type_select" id="sample_type_select" onchange="onSampleTypeChange(this)" disabled required>
+                        <option value="">--Select One--</option>
+                        <option value="stool">Stool</option>
+                        <option value="mucus">Mucus</option>
+                        <option value="seawater">Seawater</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div id="environmental_div" class="hidden"></div>
+            <div id="host_associated_div" class="hidden">
+                <div class="row" id="host_div">
+                    <div class="col-sm-12">
+                        <label id="host_select_label" for="host_select">Host Organism:</label>
+                        <select name="host_select" id="host_select" onchange="checkSampleTypePlusHostImplications(this)" disabled required>
+                            <option value="">--Select One--</option>
+                            <option value="human">Human</option>
+                            <option value="mouse">Mouse</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row" id="host_specific_sample_type_div" >
+                    <div class="col-sm-12">
+                        <label id="host_sample_site_select_label" for="host_sample_site_select">Host Sample Site:</label>
+                        <select name="host_sample_site_select" id="host_sample_site_select" disabled required>
+                            <option value="">--Select One--</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" id="select_package_button_div">
+            <div class="col-sm-12">
+                <input class="submit" type="submit" name="select_package_button" id="select_package_button"
+                       value="Select Package" onsubmit="return getPackage()" disabled>
+            </div>
+        </div>
+        <div class="row" id="package_details_div">
+            <br />
+            <br />
+        </div>
+    </div>
+</form>
+<form id ="metadata_form" method="post" action="" class="hidden">
+    <div>
+        <div class="container" id="container">
+            <div class="row">
+                <div class="col-sm-12">
+                    <label for="study_name">Study Name:</label>
+                    <input id="study_name" name = "study_name" type="text" placeholder="Study name" required />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <label for="study_location_select">Study City/Locale:</label>
+                    <select name="study_location_select" id="study_location_select" required>
+                        <option value="">--Select One--</option>
+                        <option value="san_diego">San Diego, CA, USA</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <br />
+                    Enter custom fields for your experiment below:
+                </div>
+            </div>
+            <div class="row fieldTemplate">
+                <div class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">Field Name</div>
+                                <div class="panel-body">
+                                    <input placeholder="e.g., age" type="text" name="field_name_template" id="field_name_template" />
+                                </div>
+                            </div>
+                            <div class="panel panel-default">
+                                <div class="panel-heading">Field Type</div>
+                                <div class="panel-body">
+                                    <select name="field_type_template" id="field_type_template" >
+                                        <option value="">--e.g., Categorical--</option>
+                                        <option value="str">Free-form text</option>
+                                        <option value="categorical">Categorical</option>
+                                        <option value="boolean">Boolean</option>
+                                        <option value="continuous">Continuous</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="panel panel-default" id="allowed_missing_vals_div_template">
+                                <div class="panel-heading">Allowed Missing Values (Optional)</div>
+                                <div class="panel-body">
+                                    <fieldset name="allowed_missing_vals_fieldset_template" id="allowed_missing_vals_fieldset_template">
+                                        <input type="checkbox" name="allowed_missing_vals_template[]" id="allowed_missing_vals_na_template" value="not_applicable"/>Not Applicable<br />
+                                        <input type="checkbox" name="allowed_missing_vals_template[]" id="allowed_missing-vals_not_provided_template" value="not_provided"/>Missing: Not Provided<br />
+                                        <input type="checkbox" name="allowed_missing_vals_template[]" id="allowed_missing_vals_not_collected_template" value="not_recorded"/>Missing: Not Collected<br/>
+                                        <input type="checkbox" name="allowed_missing_vals_template[]" id="allowed_missing_vals_restricted_template" value="restricted"/>Missing: Restricted Access
+                                    </fieldset>
+                                </div>
+                            </div>
+                            <div class="panel panel-default" id="default_div_template">
+                                <div class="panel-heading">Default Value</div>
+                                <div class="panel-body">
+                                    <input type="radio" name="default_value_template" id = "no_default_template" value="no_default" checked="checked">
+                                    <label for="no_default_template">&nbsp;No Default</label><br />
+
+                                    <div id="allowed_missing_default_div_template">
+                                        <input type="radio" name="default_value_template" id = "allowed_missing_default_template" value="allowed_missing_default">
+                                        <label for="allowed_missing_default_template">&nbsp;Allowed Missing Default</label><br />
+                                        <select name="allowed_missing_default_select_template" id="allowed_missing_default_select_template" disabled required>
+                                            <option value="">--Select One--</option>
+                                            <option value="not_applicable" disabled>Not Applicable</option>
+                                            <option value="not_provided" disabled>Missing: Not Provided</option>
+                                            <option value="not_recorded" disabled>Missing: Not Collected</option>
+                                            <option value="restricted" disabled>Missing: Restricted Access</option>
+                                        </select>
+                                    </div>
+                                    <div class="initially_hidden hidden" id="categorical_default_div_template">
+                                        <input type="radio" name="default_value_template" id = "categorical_default_template" value="categorical_default">
+                                        <label id="categorical_default_label_template" for="categorical_default_template">&nbsp;Categorical Default</label><br />
+                                        <select name="categorical_default_select_template" id="categorical_default_select_template" disabled required>
+                                            <option value="">--Select One--</option>
+                                        </select>
+                                    </div>
+                                    <div class="initially_hidden hidden" id = "continuous_default_div_template">
+                                        <input type="radio" name="default_value_template" id = "continuous_default_value_template" value="continuous_default">
+                                        <label id="continuous_default_label_template" for="continuous_default_value_template">&nbsp;Continuous Default</label><br />
+                                        <input type="text" name="continuous_default_template" id="continuous_default_template" placeholder="e.g., 3" disabled required>
+                                    </div>
+                                    <div class="initially_hidden hidden" id = "boolean_default_div_template">
+                                        <input type="radio" name="default_value_template" id = "boolean_default_value_template" value="boolean_default">
+                                        <label id="boolean_default_label_template" for="boolean_default_value_template">&nbsp;Boolean Default</label>
+                                        <select name="boolean_default_select_template" id="boolean_default_select_template" disabled required>
+                                            <option value="">--Select One--</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <fieldset class="initially_hidden hidden" id="field_details_div_template">
+                                <div class="panel panel-default initially_hidden hidden floating" id="boolean_true_div_template">
+                                    <div class="panel-heading">True Value</div>
+                                    <div class="panel-body">
+                                        <input type ="text" name="true_value_template" id="true_value_template" placeholder="e.g., Yes" disabled required/><br />
+                                    </div>
+                                </div>
+                                <div class="panel panel-default initially_hidden hidden floating" id="boolean_false_div_template">
+                                    <div class="panel-heading">False Value</div>
+                                    <div class="panel-body">
+                                        <input type ="text" name="false_value_template" id="false_value_template" placeholder="e.g., No" disabled required/><br />
+                                    </div>
+                                </div>
+                                <div class = "panel panel-default initially_hidden hidden floating" id="data_type_div_template">
+                                    <div class="panel-heading">Data Type</div>
+                                    <div class="panel-body">
+                                        <select name="data_type_template" id="data_type_template" disabled required>
+                                            <option value="">--e.g., Integer--</option>
+                                            <option value="integer">Integer</option>
+                                            <option value="float">Decimal</option>
+                                            <option value="str">Text</option>
+                                            <option value="date" disabled>Date/Time (Not Yet Implemented)</option>
+                                        </select><br />
+                                    </div>
+                                </div>
+                                <div class="panel panel-default initially_hidden hidden floating" id="categorical_div_template">
+                                    <div class="panel-heading">Categorical Values (One Per Line)</div>
+                                    <div class="panel-body">
+                                        <textarea rows="5`" cols="25" name="categorical_values_template" id="categorical_values_template" placeholder="e.g., Low&#10;Medium&#10;High" disabled required></textarea>
+                                    </div>
+                                </div>
+                                <div class = "panel panel-default initially_hidden hidden floating" id="minimum_div_template">
+                                    <div class="panel-heading">Minimum (Optional)</div>
+                                    <div class="panel-body">
+                                        <select name="minimum_comparison_template" id="minimum_comparison_template" disabled>
+                                            <option value="">--e.g., Greater Than--</option>
+                                            <option value="greater_than">Greater Than</option>
+                                            <option value="greater_than_or_equal_to">Greater Than Or Equal To</option>
+                                        </select><br />
+                                        <input type ="text" name="minimum_value_template" id="minimum_value_template" placeholder="e.g., 3"  disabled/>
+                                    </div>
+                                </div>
+                                <div class="panel panel-default initially_hidden hidden floating" id="maximum_div_template">
+                                    <div class="panel-heading">Maximum (Optional)</div>
+                                    <div class="panel-body">
+                                        <select name="maximum_comparison_template" id="maximum_comparison_template" disabled>
+                                            <option value="">--e.g., Less Than--</option>
+                                            <option value="less_than">Less Than</option>
+                                            <option value="less_than_or_equal_to">Less Than Or Equal To</option>
+                                        </select><br />
+                                        <input type ="text" name="maximum_value_template" id="maximum_value_template" placeholder="e.g, 10"  disabled/><br />
+                                    </div>
+                                </div>
+                                <div class="panel panel-default initially_hidden hidden floating" id="units_div_template">
+                                    <div class="panel-heading">Units (Optional)</div>
+                                    <div class="panel-body">
+                                        <input name="units_template" id="units_template" type="text" placeholder="e.g., years"  disabled/>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <input class="submit" type="submit" value="Submit">&nbsp;<input type="button" value="Add Field" id="addField">
+            </div>
+        </div>
+    </div>
+</form>
+</body>
+</html>
