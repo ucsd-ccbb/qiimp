@@ -42,10 +42,11 @@ class PerSamplePackage:
     env_material = 'ENV_MATERIAL'
     env_package = "ENV_package"
 
-    ebi_not_applicable = "Not applicable"
-    ebi_not_collected = "Missing: Not collected"
-    ebi_not_provided = "Missing: Not provided"
-    ebi_restricted = "Missing: Restricted access"
+    # values from https://www.ebi.ac.uk/ena/about/missing-values-reporting
+    ebi_not_applicable = "not applicable"
+    ebi_not_collected = "missing: not collected"
+    ebi_not_provided = "missing: not provided"
+    ebi_restricted = "missing: restricted access"
 
     ebi_nulls = [ebi_not_applicable, ebi_not_collected, ebi_not_provided, ebi_restricted]
 
