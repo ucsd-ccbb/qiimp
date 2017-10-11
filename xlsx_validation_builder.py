@@ -3,58 +3,12 @@ import metadata_package_schema_builder
 cell_placeholder = "{cell}"
 
 
-def get_validation_dict(field_name, field_schema_dict):
-    result = None
-    validation_generators = [
-        _make_allowed_only_constraint,
-        _make_formula_constraint
-    ]
-
-    for curr_generator in validation_generators:
-        curr_validation_dict = curr_generator(field_name, field_schema_dict)
-        if curr_validation_dict is not None:
-            result = curr_validation_dict
-            break
-        # end if validation generated
-    # next validation generator
-
-    return result
-
-
-def _make_allowed_only_constraint(field_name, field_schema_dict):
-    result = None
-    allowed_onlies = _roll_up_allowed_onlies(field_schema_dict)
-
-    if allowed_onlies is not None and len(allowed_onlies) > 0:
-        allowed_onlies_as_strs = [str(x) for x in allowed_onlies]
-        result = {'validate': 'list', 'source': allowed_onlies,
-                  'input_title': 'Enter {0}:'.format(field_name),
-                  'input_message': '{0} must be one of these allowed values: {1}'.format(
-                      field_name, ", ".join(allowed_onlies_as_strs))
-                  }
-    return result
-
-
-def _make_formula_constraint(field_name, field_schema_dict):
-    result = None
-    formula_string = get_formula_constraint(field_schema_dict)
-
-    if formula_string is not None:
-        formula_string = "=("+formula_string +")"
-        result = {
-            'validate': 'custom', 'value': formula_string,
-            'input_title': 'Enter {0}:'.format(field_name),
-            'input_message': 'placeholder'
-        }
-    return result
-
-
-def _roll_up_allowed_onlies(field_schema_dict):
+def roll_up_allowed_onlies(field_schema_dict):
     all_allowed_vals = []
     if metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
         anyof_subschemas = field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]
         for curr_anyof_subschema in anyof_subschemas:
-            subschema_allowed_vals = _roll_up_allowed_onlies(curr_anyof_subschema)
+            subschema_allowed_vals = roll_up_allowed_onlies(curr_anyof_subschema)
             if subschema_allowed_vals is None:
                 return None
             else:
@@ -67,11 +21,52 @@ def _roll_up_allowed_onlies(field_schema_dict):
         curr_allowed_vals = field_schema_dict[metadata_package_schema_builder.ValidationKeys.allowed.value]
         all_allowed_vals.extend(curr_allowed_vals)
     else:
-        curr_formula_constraint = get_single_level_formula_constraint(field_schema_dict)
+        curr_formula_constraint = _get_single_level_formula_constraint(field_schema_dict)
         if curr_formula_constraint is not None:
             return None
 
     return all_allowed_vals
+
+
+def get_formula_constraint(field_schema_dict, field_data_type=None):
+    and_constraints = []
+
+    # get the sub-constraints (anyof)
+    curr_level_type = _get_field_data_type(field_schema_dict)
+    if curr_level_type is not None: field_data_type = curr_level_type
+    or_sub_constraints = _make_anyof_constraint(field_schema_dict, field_data_type)
+    if or_sub_constraints is not None: and_constraints.append(or_sub_constraints)
+
+    # get the constraints from this level
+    level_constraints = _get_single_level_formula_constraint(field_schema_dict, field_data_type)
+    if level_constraints is not None: and_constraints.append(level_constraints)
+
+    # make an 'and' clause for the constraints
+    and_constraint_clause = _make_logical_constraint(and_constraints, True)
+    return and_constraint_clause
+
+
+def get_default_formula(field_schema_dict, trigger_col_range_str, field_data_type=None):
+    result = None
+    curr_level_type = _get_field_data_type(field_schema_dict)
+    if curr_level_type is not None: field_data_type = curr_level_type
+
+    # default is only filled in if user has put something into a trigger column, to avoid confusing them by having
+    # entries in rows that they haven't even thought about yet.
+    if metadata_package_schema_builder.ValidationKeys.default.value in field_schema_dict:
+        default_val = field_schema_dict[metadata_package_schema_builder.ValidationKeys.default.value]
+        default_val = '"{0}"'.format(default_val) if field_data_type is str else default_val
+        result = '=IF({0}="", "", {1})'.format(trigger_col_range_str, default_val)
+    elif metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
+        for curr_subschema_dict in field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]:
+            result = get_default_formula(curr_subschema_dict, trigger_col_range_str, field_data_type)
+            if result is not None:
+                break
+            # end if found default
+        # next subschema
+    # end if
+
+    return result
 
 
 def _make_logical_constraint(constraints, is_and):
@@ -80,9 +75,18 @@ def _make_logical_constraint(constraints, is_and):
     elif len(constraints) == 1:
         result = constraints[0]
     else:
-        logical_str = "AND" if is_and else "OR"
-        joined_constraints = ",".join(constraints)
-        result = "{0}({1})".format(logical_str, joined_constraints)
+        # NB: used to use actual logical functions in Excel (below), but they do NOT play nicely with array formulas, so
+        # switched over to numeric versions of them as described at
+        # http://dailydoseofexcel.com/archives/2004/12/04/logical-operations-in-array-formulas/
+        # logical_str = "AND" if is_and else "OR"
+        # joined_constraints = ",".join(constraints)
+        # result = "{0}({1})".format(logical_str, joined_constraints)
+
+        if is_and:
+            result = "(" + ")*(".join(constraints) + ")"
+        else:
+            result = "((" + ")+(".join(constraints) + ")>0)"
+
     return result
 
 
@@ -145,17 +149,34 @@ def _parse_field_type(field_schema_dict):
     if metadata_package_schema_builder.ValidationKeys.type.value in field_schema_dict:
         the_type = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
         if the_type == metadata_package_schema_builder.CerberusDataTypes.integer.value:
-            if anyof not in field_schema_dict: constraint = "INT({cell})={cell}"
+            # Note that INT(cell) throws a value error (rather than returning anything) if a non-castable string is
+            # entered, which is why the iserror call is necessary.  INT also throws an error if there is no value in the
+            # cell, so the handling for blanks at the end of this function is important
+            # if anyof not in field_schema_dict: constraint = 'IF(ISERROR(INT({cell})),FALSE,INT({cell})={cell})'
+            if anyof not in field_schema_dict: constraint = 'IF(ISERROR(INT({cell})),0,INT({cell})={cell})'
             python_type = int
         elif the_type == metadata_package_schema_builder.CerberusDataTypes.number.value:
-            if anyof not in field_schema_dict: constraint = "ISNUMBER({cell})"
+            # have to use VALUE() here because Excel feels the "real" content of a cell that has a formula is the
+            # formula, not whatever the formula evaluates to.  HOWEVER, VALUE() of an empty cell evaluates to ZERO,
+            # which doesn't make sense for our usage, so again the handling for blanks at the end of this function is
+            # important
+            # if anyof not in field_schema_dict: constraint = "ISNUMBER(VALUE({cell}))"
+            if anyof not in field_schema_dict: constraint = "INT(ISNUMBER(VALUE({cell})))"
             python_type = float
         elif the_type == metadata_package_schema_builder.CerberusDataTypes.string.value:
             # I think that "free form text" INCLUDES things that are numbers ... they'd be forced to text in db, right?
-            if anyof not in field_schema_dict: constraint = "TRUE"  # "ISTEXT({cell})"
+            if anyof not in field_schema_dict: constraint = 1  # "TRUE"  # "ISTEXT({cell})"
             python_type = str
         else:
             raise ValueError("Unrecognized data type: {0}".format(the_type))
+
+        # Note the check for blank cell value first (can't use ISBLANK because that returns false if there is a
+        # formula in the cell even if that formula doesn't yield an actual value).
+        if metadata_package_schema_builder.ValidationKeys.required.value in field_schema_dict:
+            blank_is_valid = 0  # "FALSE"
+        else:
+            blank_is_valid = 1  # "TRUE"
+        constraint = 'IF({cell}="",' + "{0},{1})".format(blank_is_valid, constraint)
 
     return python_type, constraint
 
@@ -176,25 +197,7 @@ def _make_anyof_constraint(field_schema_dict, field_data_type=None):
     return constraint
 
 
-def get_formula_constraint(field_schema_dict, field_data_type=None):
-    and_constraints = []
-
-    # get the sub-constraints (anyof)
-    curr_level_type = _get_field_data_type(field_schema_dict)
-    if curr_level_type is not None: field_data_type = curr_level_type
-    or_sub_constraints = _make_anyof_constraint(field_schema_dict, field_data_type)
-    if or_sub_constraints is not None: and_constraints.append(or_sub_constraints)
-
-    # get the constraints from this level
-    level_constraints = get_single_level_formula_constraint(field_schema_dict, field_data_type)
-    if level_constraints is not None: and_constraints.append(level_constraints)
-
-    # make an 'and' clause for the constraints
-    and_constraint_clause = _make_logical_constraint(and_constraints, True)
-    return and_constraint_clause
-
-
-def get_single_level_formula_constraint(field_schema_dict, field_data_type=None):
+def _get_single_level_formula_constraint(field_schema_dict, field_data_type=None):
     and_constraints = []
 
     if field_data_type is None: field_data_type = _get_field_data_type(field_schema_dict)
@@ -226,24 +229,3 @@ def get_single_level_formula_constraint(field_schema_dict, field_data_type=None)
     # make an 'and' clause for the constraints
     and_constraint_clause = _make_logical_constraint(and_constraints, True)
     return and_constraint_clause
-
-
-def get_default_formula(field_schema_dict, field_data_type=None):
-    result = None
-    curr_level_type = _get_field_data_type(field_schema_dict)
-    if curr_level_type is not None: field_data_type = curr_level_type
-
-    if metadata_package_schema_builder.ValidationKeys.default.value in field_schema_dict:
-        default_val = field_schema_dict[metadata_package_schema_builder.ValidationKeys.default.value]
-        default_val = '"{0}"'.format(default_val) if field_data_type is str else default_val
-        result = '=IF(A{0}="", "", {1})'.format("{curr_row_num}", default_val)
-    elif metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
-        for curr_subschema_dict in field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]:
-            result = get_default_formula(curr_subschema_dict, field_data_type)
-            if result is not None:
-                break
-            # end if found default
-        # next subschema
-    # end if
-
-    return result

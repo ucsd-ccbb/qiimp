@@ -1,5 +1,12 @@
 from enum import Enum
 
+# NOTE: The xlsx_validation_builder.py module's handling of allowed values requires that the
+# data type of a schema NOT be defined outside of an anyof, EVEN IF the type of all of the anyof options are the same.
+
+# Also note, from the Cerberus documentation: "String fields with empty values will still be validated [i.e., treated
+# as valid], even when required is set to True. If you don’t want to accept empty values, see the empty rule [i.e.,
+# add an "empty": False rule to the schema]." (http://docs.python-cerberus.org/en/stable/validation-rules.html#required)
+
 
 class ValidationKeys(Enum):
     type = "type"
@@ -65,18 +72,21 @@ class PerSamplePackage:
     generic_ebi_nulls_schema = {
         ValidationKeys.type.value: CerberusDataTypes.string.value,
         ValidationKeys.allowed.value: ebi_nulls,
+        ValidationKeys.empty.value: False,
         ValidationKeys.required.value: True
     }
 
     generic_non_na_ebi_nulls_schema = {
         ValidationKeys.type.value: CerberusDataTypes.string.value,
         ValidationKeys.allowed.value: [ebi_not_provided, ebi_not_collected, ebi_restricted],
+        ValidationKeys.empty.value: False,
         ValidationKeys.required.value: True
     }
 
     generic_not_provided_null_schema = {
         ValidationKeys.type.value: CerberusDataTypes.string.value,
         ValidationKeys.allowed.value: [ebi_not_provided],
+        ValidationKeys.empty.value: False,
         ValidationKeys.required.value: True
     }
 
@@ -89,8 +99,6 @@ class PerSamplePackage:
     }
 
     required_nonempty_string_or_not_provided_schema = {
-        ValidationKeys.empty.value: False,
-        ValidationKeys.required.value: True,
         ValidationKeys.anyof.value: [
             {
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
@@ -113,21 +121,25 @@ class PerSamplePackage:
             'TITLE': {
             # note that title is required for each sample, but should be identical across all samples in study
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True  # is this correct?
             },
             'ANONYMIZED_NAME': {
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True  # is it correct that this should be here even if it is empty?
             },
             self.scientific_name: self.generic_required_string_schema,  # EXPECT to be overwritten by more specific one later
             self.taxon_id: self.generic_required_nonneg_int_schema,  # EXPECT to be overwritten by more specific one later
             "DESCRIPTION": {  # not adding a default here.  Need Qiita preprocesess to handle all-empty columns
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
             "sample_type": {  # this is NOT the complete list, just a placeholder.  Where does complete list come from?
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.allowed.value: [SampleTypes.stool.value, SampleTypes.mucus.value],
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
             "geo_loc_name": {
@@ -192,12 +204,14 @@ class HumanPackage(PerSamplePackage):
             ValidationKeys.type.value: CerberusDataTypes.string.value,
             ValidationKeys.allowed.value: [self.urban_biome],
             ValidationKeys.default.value: self.urban_biome,
+            ValidationKeys.empty.value: False,
             ValidationKeys.required.value: True
         },
         self.env_feature: {
             ValidationKeys.type.value: CerberusDataTypes.string.value,
             ValidationKeys.allowed.value: [self.human_associated_habitat],
             ValidationKeys.default.value: self.human_associated_habitat,
+            ValidationKeys.empty.value: False,
             ValidationKeys.required.value: True
         },
         self.age: self.required_nonneg_num_or_not_provided_schema,
@@ -212,27 +226,35 @@ class HumanPackage(PerSamplePackage):
             ValidationKeys.type.value: CerberusDataTypes.string.value,
             ValidationKeys.allowed.value: [self.human_scientific_name],
             ValidationKeys.default.value: self.human_scientific_name,
+            ValidationKeys.empty.value: False,
             ValidationKeys.required.value: True
         },
         self.host_common_name: {
             ValidationKeys.type.value: CerberusDataTypes.string.value,
             ValidationKeys.allowed.value: [self.human_common_name],
             ValidationKeys.default.value: self.human_common_name,
+            ValidationKeys.empty.value: False,
             ValidationKeys.required.value: True
         },
         self.life_stage: {
-            ValidationKeys.type.value: CerberusDataTypes.string.value,
             ValidationKeys.required.value: True,
             ValidationKeys.anyof.value: [
-                {ValidationKeys.allowed.value: ['adult', 'juvenile', 'infant']},
+                {
+                    ValidationKeys.type.value: CerberusDataTypes.string.value,
+                    ValidationKeys.allowed.value: ['adult', 'juvenile', 'infant'],
+                    ValidationKeys.empty.value: False
+                },
                 self.generic_non_na_ebi_nulls_schema
             ]
         },
         self.sex: {
-            ValidationKeys.type.value: CerberusDataTypes.string.value,
             ValidationKeys.required.value: True,
             ValidationKeys.anyof.value: [
-                {ValidationKeys.allowed.value: ['female', 'male']},
+                {
+                    ValidationKeys.type.value: CerberusDataTypes.string.value,
+                    ValidationKeys.allowed.value: ['female', 'male'],
+                    ValidationKeys.empty.value: False
+                },
                 self.generic_non_na_ebi_nulls_schema
             ]
         },
@@ -269,6 +291,7 @@ class HumanVaginaPackage(HumanPackage):
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.allowed.value: [self.human_vag_metagenome_sci_name],
                 ValidationKeys.default.value: self.human_vag_metagenome_sci_name,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
             self.taxon_id: {
@@ -281,30 +304,35 @@ class HumanVaginaPackage(HumanPackage):
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.allowed.value: [SampleTypes.mucus.value],
                 ValidationKeys.default.value: SampleTypes.mucus.value,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
             self.env_package: {
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.allowed.value: [self.hs_vag_env_pkg],
                 ValidationKeys.default.value: self.hs_vag_env_pkg,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
             self.body_habitat: {
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.allowed.value: [self.uberon_repro_sys],
                 ValidationKeys.default.value: self.uberon_repro_sys,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
             self.body_site: {
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.allowed.value: [self.uberon_vagina],
                 ValidationKeys.default.value: self.uberon_vagina,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
             self.body_product: {
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.allowed.value: [self.uberon_mucus],
                 ValidationKeys.default.value: self.uberon_mucus,
+                ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             }
         })
