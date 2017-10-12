@@ -34,13 +34,32 @@ class SampleTypes(Enum):
     stool = 'stool'
 
 
-class PerSamplePackage:
-    scientific_name = "Scientific_name"
-    taxon_id = "TAXON_ID"
-    env_biome = 'ENV_BIOME'
-    env_feature = 'ENV_FEATURE'
-    env_material = 'ENV_MATERIAL'
-    env_package = "ENV_package"
+class UnitTypes(Enum):
+    kilograms = "kg"
+    grams = "g"
+
+
+class Location(object):
+    geo_loc_name = None
+    elevation = None
+    latitude = None
+    longitude = None
+
+
+class SanDiego(Location):
+    geo_loc_name = "USA:CA:San Diego"
+    elevation = 193
+    latitude = 32.842
+    longitude = -117.258
+
+
+class PerSamplePackage(object):
+    scientific_name = "scientific_name"
+    taxon_id = "taxon_id"
+    env_biome = 'env_biome'
+    env_feature = 'env_feature'
+    env_material = 'env_material'
+    env_package = "env_package"
 
     # values from https://www.ebi.ac.uk/ena/about/missing-values-reporting
     ebi_not_applicable = "not applicable"
@@ -112,6 +131,8 @@ class PerSamplePackage:
     }
 
     def __init__(self):
+        self._default_location = SanDiego()
+
         self.schema = {
             'sample_name': {  # note that sample name should be unique within a study
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
@@ -119,20 +140,20 @@ class PerSamplePackage:
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
-            'TITLE': {
+            'title': {
             # note that title is required for each sample, but should be identical across all samples in study
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True  # is this correct?
             },
-            'ANONYMIZED_NAME': {
+            'anonymized_name': {
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True  # is it correct that this should be here even if it is empty?
             },
             self.scientific_name: self.generic_required_string_schema,  # EXPECT to be overwritten by more specific one later
             self.taxon_id: self.generic_required_nonneg_int_schema,  # EXPECT to be overwritten by more specific one later
-            "DESCRIPTION": {  # not adding a default here.  Need Qiita preprocesess to handle all-empty columns
+            "description": {  # not adding a default here.  Need Qiita preprocesess to handle all-empty columns
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
@@ -147,28 +168,32 @@ class PerSamplePackage:
                 ValidationKeys.type.value: CerberusDataTypes.string.value,
                 # I think this will need a regex to determine if format is valid; may also need additional validation to
                 # ensure the validly-formatted string is actually a real place?
+                ValidationKeys.default.value: self._default_location.geo_loc_name,
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
-            "ELEVATION": {
+            "elevation": {
                 ValidationKeys.type.value: CerberusDataTypes.number.value,
                 # Could this be negative--say, at Dead Sea?  Is there a range constraint we should apply?
+                ValidationKeys.default.value: self._default_location.elevation,
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
             self.env_biome: self.generic_required_string_schema,  # EXPECT to be overwritten by more specific one later
             self.env_feature: self.generic_required_string_schema,  # EXPECT to be overwritten by more specific one later
-            "LATITUDE": {
-                ValidationKeys.type.value: CerberusDataTypes.string.value,
+            "latitude": {
+                ValidationKeys.type.value: CerberusDataTypes.number.value,
                 # I think this will need a regex to determine if format is valid; may also need additional validation to
                 # ensure the validly-formatted string is actually ... a possible place?
+                ValidationKeys.default.value: self._default_location.latitude,
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             },
-            "LONGITUDE": {
-                ValidationKeys.type.value: CerberusDataTypes.string.value,
+            "longitude": {
+                ValidationKeys.type.value: CerberusDataTypes.number.value,
                 # I think this will need a regex to determine if format is valid; may also need additional validation to
                 # ensure the validly-formatted string is actually ... a possible place?
+                ValidationKeys.default.value: self._default_location.longitude,
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True
             }
@@ -187,7 +212,7 @@ class HumanPackage(PerSamplePackage):
     height_units = 'height_units'
     weight = 'weight'
     weight_units = 'weight_units'
-    bmi = 'BMI'
+    bmi = 'bmi'
     body_habitat = "body_habitat"
     body_site = "body_site"
     body_product = "body_product"
@@ -262,7 +287,13 @@ class HumanPackage(PerSamplePackage):
         self.height: self.required_nonneg_num_or_not_provided_schema,
         self.height_units: self.required_nonempty_string_or_not_provided_schema,
         self.weight: self.required_nonneg_num_or_not_provided_schema,
-        self.weight_units: self.required_nonempty_string_or_not_provided_schema,
+        self.weight_units: {
+            ValidationKeys.type.value: CerberusDataTypes.string.value,
+            ValidationKeys.allowed.value: [ValidationKeys.UnitTypes.kilograms.value],
+            ValidationKeys.default.value: ValidationKeys.UnitTypes.kilograms.value,
+            ValidationKeys.empty.value: False,
+            ValidationKeys.required.value: True
+        },
         self.bmi: {
             ValidationKeys.required.value: True,
             ValidationKeys.anyof.value: [
