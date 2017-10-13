@@ -176,7 +176,25 @@ $(document).ready(function () {
         submitHandler: getPackage
     });
 
-    $("#metadata_form").validate();
+    $("#metadata_form").validate({
+	        rules: {
+	            "study_name": {
+	                required: true,
+	                pattern: /^[a-zA-Z0-9 ]*$/,
+                    minlength: 2,
+	                maxlength: 400
+
+	            }
+	        },
+	        messages: {
+	            "study_name": {
+	                required: "This field is required.",
+	                pattern: "Only letters, numbers, and spaces are permitted.",
+	                maxlength: "This field must be 400 characters or fewer."
+	            }
+	        }
+	    }
+    );
 
     // Get the html from template and add a set of elements for the first field
     var new_html = $('<div/>', {
