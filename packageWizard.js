@@ -1,3 +1,4 @@
+// TODO: Refactor to pull from back-end
 var HOST_ASSOCIATED_SAMPLE_TYPES = [
     "stool",
     "mucus"
@@ -42,6 +43,7 @@ function onSampleTypeChange(element){
 }
 
 function checkSampleTypePlusHostImplications(element){
+    // TODO: Refactor to pull from back-end
     var host_sites_by_host_and_sample_type = {
         "mucus+human": new HostSites("mucus", "human", [["human_vaginal","Human Vagina"], ["human_nasal","Human Nose"]], true, true, ""),
         "stool+human": new HostSites("stool", "human", [["human_fecal","Human Feces"]], false, false, "human_fecal"),
@@ -97,13 +99,20 @@ function HostSites(sample_type, host, sites_list, has_placeholder, has_other, se
 
 function getPackage(){
     var package_key = null;
+    // get the "power user" value--the precise, organism-specific package to use
     var package_select_id_selector = getIdSelectorFromId("package_select");
+
+    // get the precise, organism-specific package to use specified through the wizard
     var host_sample_site_select_id_selector = getIdSelectorFromId("host_sample_site_select");
+
     if (!$(package_select_id_selector).is(':disabled')) {
+        // if the power user value is not disabled, use it
         package_key = $(package_select_id_selector).val();
     } else if (!$(host_sample_site_select_id_selector).is(':disabled')) {
+        // if the precise, organism-specific package to use specified through the wizard is not disabled, use it
         package_key = $(host_sample_site_select_id_selector).val();
     } else {
+        // get the host type and the sample type and paste them together to get the package name to look for
         var host = $(getIdSelectorFromId("host_select")).val();
         var sample_type = $(getIdSelectorFromId("sample_type_select")).val();
         package_key = host + "_" + sample_type;

@@ -11,7 +11,8 @@ import xlsx_dynamic_grid_builder
 
 
 def write_workbook(study_name, schema_dict):
-    num_samples = 250  # TODO: add real code to get in from interface
+    # TODO: either expand code to use num_samples and add real code to get in from interface, or take out unused hook
+    num_samples = 0
     num_columns = len(schema_dict.keys())
 
     # create workbook
@@ -59,62 +60,61 @@ def slugify(value, allow_unicode=False):
 
 # TODO: Remove--only for POC testing
 if __name__ == "__main__":
-    hs_vaginal_fixed_schema_yaml = """ANONYMIZED_NAME: {required: true, type: string}
-BMI:
+    hs_vaginal_fixed_schema_yaml = """anonymized_name: {required: true, type: string}
+bmi:
   anyof:
   - &id001 {empty: false, min: 0, required: true, type: number}
-  - allowed: [Not applicable, 'Missing: Not collected', 'Missing: Not provided', 'Missing:
-        Restricted access']
+  - allowed: [not applicable, 'missing: not collected', 'missing: not provided', 'missing: restricted access']
     required: true
     type: string
   required: true
-DESCRIPTION: {required: true, type: string}
-ELEVATION: {empty: false, required: true, type: number}
-ENV_BIOME:
+description: {required: true, type: string}
+elevation: {empty: false, required: true, type: number}
+env_biome:
   allowed: [urban biome]
   default: urban biome
   required: true
   type: string
-ENV_FEATURE:
+env_feature:
   allowed: [human-associated habitat]
   default: human-associated habitat
   required: true
   type: string
-ENV_MATERIAL:
+env_material:
   allowed: [mucus]
   default: mucus
   required: true
   type: string
-ENV_package:
+env_package:
   allowed: [human-vaginal]
   default: human-vaginal
   required: true
   type: string
-LATITUDE: {empty: false, required: true, type: string}
-LONGITUDE: {empty: false, required: true, type: string}
-Scientific_name:
+latitude: {empty: false, required: true, type: string}
+longitude: {empty: false, required: true, type: string}
+scientific_name:
   allowed: [human vaginal metagenome]
   default: human vaginal metagenome
   required: true
   type: string
-TAXON_ID:
+taxon_id:
   allowed: [1632839]
   default: 1632839
   required: true
   type: integer
-TITLE: {required: true, type: string}
+title: {required: true, type: string}
 age: &id003
   anyof:
   - *id001
   - &id002
-    allowed: ['Missing: Not provided']
+    allowed: ['missing: not provided']
     required: true
     type: string
   required: true
 age_units: &id004
   anyof:
   - empty: false
-    forbidden: [Not applicable, 'Missing: Not collected', 'Missing: Restricted access']
+    forbidden: [not applicable, 'missing: not collected', 'missing: restricted access']
     required: true
     type: string
   - *id002
@@ -137,8 +137,8 @@ body_site:
   type: string
 disease state:
   anyof:
-  - allowed: [Not applicable, 'Missing: Not provided']
-    default: 'Missing: Not provided'
+  - allowed: [not applicable, 'missing: not provided']
+    default: 'missing: not provided'
     empty: false
     required: true
     type: string
@@ -148,7 +148,7 @@ disease state:
     type: string
 dosage:
   anyof:
-  - allowed: [Not applicable, 'Missing: Not collected']
+  - allowed: [not applicable, 'missing: not collected']
     default: '0.5'
     empty: false
     required: true
@@ -183,8 +183,7 @@ life_stage:
     required: true
     type: string  
   - &id005
-    allowed: ['Missing: Not provided', 'Missing: Not collected', 'Missing: Restricted
-        access']
+    allowed: ['missing: not provided', 'missing: not collected', 'missing: restricted access']
     required: true
     type: string
 sample_name: {empty: false, regex: '^[a-zA-Z0-9\.]+$', required: true, type: string}

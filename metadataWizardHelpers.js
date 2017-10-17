@@ -5,9 +5,24 @@ function addUniqueNameRule(field_index){
     });
 }
 
+function addNameIsNotReservedRule(field_index){
+    var name_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, field_index);
+    $(name_id_selector).rules("add", {
+       nameIsNotReserved: true
+    });
+}
+
 function addOnChangeEvent(field_index, base_name, onChangeFunc){
+    addEventHandler("change", field_index, base_name, onChangeFunc);
+}
+
+function addOnClickEvent(field_index, base_name, onChangeFunc){
+    addEventHandler("click", field_index, base_name, onChangeFunc);
+}
+
+function addEventHandler(event_name, field_index, base_name, onEventFunc){
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index);
-    $(id_selector).on("change", {field_index:field_index}, onChangeFunc)
+    $(id_selector).on( event_name, {field_index:field_index}, onEventFunc)
 }
 
 function doesElementHaveValue(base_name, field_index) {
@@ -21,13 +36,6 @@ function doesElementHaveValue(base_name, field_index) {
 function enableOrDisableByValue(base_name, field_index, curr_val, enable_value) {
     var element_id_selector = getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index);
     enableOrDisableBySelectorAndValue(element_id_selector, curr_val, enable_value);
-}
-
-function enableDisableDefaultSelects(field_index, curr_val){
-    enableOrDisableByValue(SpecialInputs.DEFAULT_MISSINGS, field_index, curr_val, "allowed_missing_default");
-    enableOrDisableByValue(SpecialInputs.DEFAULT_CATEGORICAL, field_index, curr_val, "categorical_default");
-    enableOrDisableByValue(SpecialInputs.DEFAULT_BOOLEAN, field_index, curr_val, "boolean_default");
-    enableOrDisableByValue(SpecialInputs.DEFAULT_CONTINUOUS, field_index, curr_val, "continuous_default");
 }
 
 function enableOrDisableBySelectorAndValue(element_selector, curr_val, enable_value){
@@ -94,33 +102,8 @@ function updateSelectWithNewCategories(select_id_selector, values_list, selected
     $(select_id_selector).html(new_options.join(''));
 }
 
-function updateTypeValidation(base_name, field_index, data_type_value){
-    // get the relevant input field and remove any existing validation rules related to data type (only)
-    var input_id_selector = getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index);
-    $(input_id_selector).rules( "remove", "digits number" );
-
-    // add back any required data type validation rule
-    switch (data_type_value) {
-        case "integer":
-            $(input_id_selector).rules("add", {
-               digits: true
-            });
-            break;
-        case "float":
-            $(input_id_selector).rules("add", {
-               number: true
-            });
-            break;
-        case "str":
-            // no known validation required for text; perhaps length?
-            break;
-        default:
-            alert("Unexpected data type value: '" + data_type_value + "'")
-    }
-}
-
 function getTemplateFromBaseIdentifier(base_name){
-    return base_name + SEPARATOR + TEMPLATE_SUFFIX;
+    return base_name + TEMPLATE_SUFFIX;
 }
 
 function getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index) {
@@ -138,7 +121,7 @@ function getIdSelectorFromId(id_str) {
 }
 
 function getNewIdentifierFromTemplateAndIndex(full_template_name, field_index) {
-    return full_template_name.replace(TEMPLATE_SUFFIX, field_index.toString());
+    return full_template_name.replace(TEMPLATE_SUFFIX, SEPARATOR + field_index.toString());
 }
 
 function getCurrNumFields() {

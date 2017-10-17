@@ -7,11 +7,11 @@ def get_worksheet_password():
     # return "kpcofGs"  # Kingdom phylum class order family Genus species
 
 
-def create_worksheet(workbook, sheet_name, protect_options=None):
+def create_worksheet(workbook, sheet_name, protect_options=None, num_cols_to_freeze=1):
     worksheet = workbook.add_worksheet(sheet_name)
     # if protect_options is None, default options (allow only selection) will be used
     worksheet.protect(get_worksheet_password(), protect_options)
-    worksheet.freeze_panes(1, 0)
+    worksheet.freeze_panes(1, num_cols_to_freeze)
     return worksheet
 
 
@@ -45,19 +45,19 @@ def get_col_letters(curr_col_index):
     return result
 
 
-def format_range(first_col_index, first_row_index, second_col_index=None, second_row_index=None, sheet_name=None,
+def format_range(first_col_index, first_row_index, last_col_index=None, last_row_index=None, sheet_name=None,
                  first_col_fixed=False, first_row_fixed=False, last_col_fixed=None, last_row_fixed=False):
     first_col_letter = get_col_letters(first_col_index)
-    second_col_letter = first_col_letter if second_col_index is None else get_col_letters(second_col_index)
-    second_row_index = second_row_index if second_row_index is not None else first_row_index
+    second_col_letter = first_col_letter if last_col_index is None else get_col_letters(last_col_index)
+    last_row_index = last_row_index if last_row_index is not None else first_row_index
     formatted_sheet_name = "{0}!".format(sheet_name) if sheet_name is not None else ""
-    if second_col_index is None and last_col_fixed is None:
+    if last_col_index is None and last_col_fixed is None:
         last_col_fixed = first_col_fixed
 
     first_half_of_range = "{0}{1}{2}{3}".format(get_fix_symbol(first_col_fixed), first_col_letter,
                                                 get_fix_symbol(first_row_fixed), first_row_index)
     second_half_of_range = "{0}{1}{2}{3}".format(get_fix_symbol(last_col_fixed), second_col_letter,
-                                                 get_fix_symbol(last_row_fixed), second_row_index)
+                                                 get_fix_symbol(last_row_fixed), last_row_index)
 
     if second_half_of_range == first_half_of_range:
         second_half_of_range = ""
@@ -74,6 +74,30 @@ def copy_formula_throughout_range(worksheet, partial_formula_str, first_col_inde
                                   first_col_fixed=False, first_row_fixed=False,
                                   last_col_fixed=None, last_row_fixed=False,
                                   cell_format=None, is_array_formula=False):
+
+    cell_enumerator = loop_through_range(first_col_index, first_row_index, last_col_index=last_col_index,
+                                         last_row_index=last_row_index, sheet_name=sheet_name,
+                                         col_fixed=first_col_fixed, row_fixed=first_row_fixed)
+
+    for curr_col_letter, curr_row_index, curr_cell in cell_enumerator:
+        completed_formula = partial_formula_str.format(cell=curr_cell, curr_col_letter=curr_col_letter,
+                                                       curr_row_index=curr_row_index, first_row_index=first_row_index,
+                                                       last_row_index=last_row_index)
+
+        if not is_array_formula:
+            worksheet.write_formula(curr_cell, completed_formula, cell_format)
+        else:
+            worksheet.write_array_formula(curr_cell, completed_formula, cell_format)
+
+    full_range = format_range(first_col_index, first_row_index, last_col_index=last_col_index,
+                              last_row_index=last_row_index, first_col_fixed=first_col_fixed,
+                              first_row_fixed=first_row_fixed, last_col_fixed=last_col_fixed,
+                              last_row_fixed=last_row_fixed)
+    return full_range
+
+
+def loop_through_range(first_col_index, first_row_index, last_col_index=None, last_row_index=None, sheet_name=None,
+                       col_fixed=False, row_fixed=False):
     last_col_index = first_col_index if last_col_index is None else last_col_index
     last_row_index = first_row_index if last_row_index is None else last_row_index
 
@@ -83,24 +107,23 @@ def copy_formula_throughout_range(worksheet, partial_formula_str, first_col_inde
         # at inner level, move down rows
         for curr_row_index in range(first_row_index, last_row_index + 1):  # +1 bc range is exclusive of last number!
             curr_cell = format_range(curr_col_index, curr_row_index, sheet_name=sheet_name,
-                                     first_col_fixed=first_col_fixed, first_row_fixed=first_row_fixed)
+                                     first_col_fixed=col_fixed, first_row_fixed=row_fixed)
+            yield curr_col_letter, curr_row_index, curr_cell
 
-            completed_formula = partial_formula_str.format(cell=curr_cell,
-                                                           curr_col_letter=curr_col_letter,
-                                                           curr_row_index=curr_row_index,
-                                                           first_row_index=first_row_index,
-                                                           last_row_index=last_row_index)
 
-            if not is_array_formula:
-                worksheet.write_formula(curr_cell, completed_formula, cell_format)
-            else:
-                worksheet.write_array_formula(curr_cell, completed_formula, cell_format)
+def sort_keys(schema_dict):
+    # sort into alphabetical order
+    sorted_keys = sorted(schema_dict.keys())
 
-    full_range = format_range(first_col_index, first_row_index, second_col_index=last_col_index,
-                              second_row_index=last_row_index, first_col_fixed=first_col_fixed,
-                              first_row_fixed=first_row_fixed, last_col_fixed=last_col_fixed,
-                              last_row_fixed=last_row_fixed)
-    return full_range
+    # remove the sample_name from its existing place in the list (if any) and then add it back at the FIRST position
+    try:
+        sorted_keys.remove(MetadataWorksheet.SAMPLE_NAME_HEADER)
+    except ValueError:
+        pass
+
+    # zero means add this back as the very first item in the key array
+    sorted_keys.insert(0, MetadataWorksheet.SAMPLE_NAME_HEADER)
+    return sorted_keys
 
 
 # end region
@@ -109,12 +132,16 @@ def copy_formula_throughout_range(worksheet, partial_formula_str, first_col_inde
 class MetadataWorksheet(object):
     # I think the column range available for worksheets is 'A:XFD'
 
+    # TODO: Find a way to link this to the schema value?
+    SAMPLE_NAME_HEADER = "sample_name"
+
     def __init__(self, workbook, num_attributes, num_samples, make_sheet=True):
         # TODO: this is a placeholder value because larger values are slower; figure out max usable value.
         self.last_allowable_row_for_sample_index = 1000  # 1048576  # I think; just got this by looking at a worksheet
 
         self.workbook = workbook
         self.metadata_sheet_name = "metadata"
+        # _num_samples not currently used; here as a hook for some of Austin's future requests
         self._num_samples = num_samples
         self._num_field_columns = num_attributes
 
@@ -145,8 +172,15 @@ class MetadataWorksheet(object):
         self.first_data_col_index = self.sample_id_col_index + 1
         self.last_data_col_index = self.first_data_col_index + self._num_field_columns - 1
 
+        # NB: This code asserts that the name column we want to look at is the FIRST data column (that is, separate from
+        # the hidden, auto-filled sample_id column) in the metadata grid.  This is because the name
+        # column being the first data column is in fact a REQUIREMENT from the customer; however, if that changed
+        # sometime down the road, *this* is where that change should be reflected.
+        self.name_col_index = self.first_data_col_index
+
         if make_sheet: self.worksheet = create_worksheet(self.workbook, self.metadata_sheet_name,
-                                                         self._permissive_protect_options)
+                                                         self._permissive_protect_options,
+                                                         num_cols_to_freeze=self.name_col_index+1)
 
 
 # region functions for working with worksheet objects
@@ -167,7 +201,7 @@ def format_single_col_range(val_sheet, col_index, sheet_name=None, first_col_fix
     :type val_sheet: ValidationWorksheet
     """
     return format_range(col_index, val_sheet.first_data_row_index,
-                        second_row_index=val_sheet.last_data_row_index,
+                        last_row_index=val_sheet.last_data_row_index,
                         sheet_name=sheet_name,
                         first_col_fixed=first_col_fixed, first_row_fixed=first_row_fixed,
                         last_col_fixed=last_col_fixed, last_row_fixed=last_row_fixed)
@@ -181,7 +215,7 @@ def format_single_data_grid_row_range(val_sheet, row_index, sheet_name=None,
     :type val_sheet: ValidationWorksheet or MetadataWorksheet
     """
     return format_range(val_sheet.first_data_col_index, row_index,
-                        second_col_index=val_sheet.last_data_col_index,
+                        last_col_index=val_sheet.last_data_col_index,
                         sheet_name=sheet_name,
                         first_col_fixed=first_col_fixed, first_row_fixed=first_row_fixed,
                         last_col_fixed=last_col_fixed, last_row_fixed=last_row_fixed)
@@ -195,7 +229,7 @@ def format_single_static_grid_row_range(val_sheet, row_index, sheet_name=None,
     :type val_sheet: ValidationWorksheet
     """
     return format_range(val_sheet.first_static_grid_col_index, row_index,
-                        second_col_index=val_sheet.last_static_grid_col_index,
+                        last_col_index=val_sheet.last_static_grid_col_index,
                         sheet_name=sheet_name,
                         first_col_fixed=first_col_fixed, first_row_fixed=first_row_fixed,
                         last_col_fixed=last_col_fixed, last_row_fixed=last_row_fixed)

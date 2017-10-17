@@ -1,9 +1,17 @@
+// These global variables are filled using info from the back-end at load time
+var g_reserved_word_url = "";
+var g_reserved_words = [];
+var TEMPLATE_SUFFIX = "";
+var SEPARATOR = "";
+var SpecialInputs = {};
+var fields_to_show_by_field_type = {};
+
+
 // Dynamically generate HTML specifying input elements for a new field
 function generateFieldHtml() {
     var field_index = getCurrNumFields();
     var $html = $('.fieldTemplate').clone();
-    var template_suffix = "_template";
-    var template_id_objects = $("[id$=" + template_suffix + "]");
+    var template_id_objects = $("[id$=" + TEMPLATE_SUFFIX + "]");
 
     for (var i = 0, len = template_id_objects.length; i < len; i++) {
         // change the element clone's template id to field-specific id
@@ -62,7 +70,7 @@ $.validator.addMethod("nameIsUnique", function(value, element) {
     var num_fields = getCurrNumFields();
     var found_field_names = $.extend({}, package_fields);
     for (i = 0; i < num_fields; i++) {
-        var curr_field_name_id_selector = getIdSelectorFromBaseNameAndFieldIndex("field_name", i);
+        var curr_field_name_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, i);
         var curr_field_name_value = $(curr_field_name_id_selector).val();
         if (curr_field_name_value !== "") {
             if( found_field_names[curr_field_name_value] ){
@@ -77,36 +85,29 @@ $.validator.addMethod("nameIsUnique", function(value, element) {
     return return_val;
 }, "Field name must be unique");
 
+// For JQuery validation plugin, custom validator functions always have
+// first argument: the current value of the validated element. Second argument: the element to be validated
+$.validator.addMethod("nameIsNotReserved", function(value, element) {
+    // if the value in the name element appears in the list of reserved words, then it is invalid
+    return (g_reserved_words.indexOf(value) <= -1);
+}, "Field name must not be a reserved word.");
 
-// Note that these are to be the bases (without template suffix or separator) of form element NAMES, not IDs
-var SpecialInputs = {
-    FIELD_NAME: "field_name",
-    FIELD_TYPE: "field_type",
-    ALLOWED_MISSINGS: "allowed_missing_vals_fieldset",
-    DATA_TYPE: "data_type",
-    TRUE_VALUE: "true_value",
-    FALSE_VALUE: "false_value",
-    MINIMUM: "minimum_value",
-    MIN_COMPARE: "minimum_comparison",
-    MAXIMUM: "maximum_value",
-    MAX_COMPARE: "maximum_comparison",
-    CATEGORY_VALS: "categorical_values",
-    DEFAULT_MISSINGS: "allowed_missing_default_select",
-    DEFAULT_OPTION: "default_value",
-    DEFAULT_CATEGORICAL: "categorical_default_select",
-    DEFAULT_BOOLEAN: "boolean_default_select",
-    DEFAULT_CONTINUOUS: "continuous_default"
-};
+function addLowerCaseLettersAndUnderscoreRule(field_index, required_base_name) {
+    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
+    $(id_selector).rules("add", {
+        pattern: /^[a-z0-9_]*$/,
+        messages: {pattern: "Only lower-case letters, numbers, and underscores are permitted."}
+    });
+}
 
 var package_fields = {};
-
-var TEMPLATE_SUFFIX = "template";
-var SEPARATOR = "_";
 
 var NEW_ELEMENT_SET_UP_FUNCTIONS = [
     function(field_index) { //make field name required and also unique
         addAlwaysRequiredRule(field_index, SpecialInputs.FIELD_NAME);
         addUniqueNameRule(field_index);
+        addNameIsNotReservedRule(field_index);
+        addLowerCaseLettersAndUnderscoreRule(field_index, SpecialInputs.FIELD_NAME);
     },
     function(field_index) {  // set onchange handler on field type and make required
         addAlwaysRequiredRule(field_index, SpecialInputs.FIELD_TYPE);
@@ -148,11 +149,34 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
     },
     function (field_index){ //make minimum required if minimum comparison is filled in
          addConditionalRequiredRule(field_index, SpecialInputs.MAX_COMPARE, SpecialInputs.MAXIMUM);
+    },
+    function (field_index){ //add onclick event handler to remove button for field
+        addEventHandler("click", field_index, SpecialInputs.REMOVE_FIELD, removeField)
     }
 ];
 
 // Code to run as soon code as the document is ready to be manipulated
 $(document).ready(function () {
+    $.ajax({
+        method: "GET",
+        url: g_reserved_word_url,
+        async: false,
+        data: "text",
+        success: function(text) {
+            var raw_reserved_words = jsyaml.load( text );
+            for (var i=0, len = raw_reserved_words.length; i < len; i++) {
+                var curr_word = raw_reserved_words[i];
+                if (curr_word === null) {
+                    curr_word = "null";
+                } else {
+                    curr_word = curr_word.toString();
+                }
+                g_reserved_words.push(curr_word.toLowerCase())
+            }
+        }
+    });
+
+
     ws = new WebSocket("ws://localhost:8898/websocket");
     ws.onmessage = function(evt) {
         var fields_message = "<br />The following fields will be added to your metadata template: " +  evt.data +

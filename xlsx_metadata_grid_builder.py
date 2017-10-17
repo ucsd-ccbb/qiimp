@@ -13,7 +13,7 @@ def write_metadata_grid(data_worksheet, schema_dict):
     unlocked = data_worksheet.workbook.add_format()
     unlocked.set_locked(False)
 
-    sorted_keys = sorted(schema_dict.keys())
+    sorted_keys = xlsx_basics.sort_keys(schema_dict)
     for field_index, field_name in enumerate(sorted_keys):
         field_specs_dict = schema_dict[field_name]
         curr_col_index = field_index + 1  # add one bc sample id is in first col
@@ -23,7 +23,7 @@ def write_metadata_grid(data_worksheet, schema_dict):
 
         starting_cell_name = xlsx_basics.format_range(curr_col_index, data_worksheet.first_data_row_index)
         whole_col_range = xlsx_basics.format_range(curr_col_index, data_worksheet.first_data_row_index,
-                                                   second_row_index=data_worksheet.last_allowable_row_for_sample_index)
+                                                   last_row_index=data_worksheet.last_allowable_row_for_sample_index)
 
         validation_dict = _get_validation_dict(field_name, field_specs_dict)
         value_key = "value"
@@ -33,7 +33,7 @@ def write_metadata_grid(data_worksheet, schema_dict):
                 formatted_validation_formula = unformatted_validation_formula.format(cell=starting_cell_name)
                 validation_dict[value_key] = formatted_validation_formula
 
-                data_worksheet.worksheet.data_validation(whole_col_range, validation_dict)
+            data_worksheet.worksheet.data_validation(whole_col_range, validation_dict)
 
         _add_default_if_any(data_worksheet, field_specs_dict, curr_col_index)
 
@@ -118,12 +118,13 @@ def _add_default_if_any(data_worksheet, field_specs_dict, col_index):
     # that if the first visible metadata column in turn depends on the sample_id column, then we have a circular
     # reference.  Filling defaults only when the first visible metadata column is filled is not ideal, but should still
     # serve the need since the first visible column is a sensible place for people to start filling things in and
-    # b) Austin says that anonymized_name, which will be always be required for every sample, is supposed to be the
+    # b) Austin says that sample_name, which will be always be required for every sample, is supposed to be the
     # first column always.
+    trigger_col_letter = xlsx_basics.get_col_letters(data_worksheet.first_data_col_index)
 
-    trigger_col_range_str = xlsx_basics.format_range(data_worksheet.first_data_col_index,
-                                                     data_worksheet.first_data_row_index,
-                                                     second_row_index=data_worksheet.last_allowable_row_for_sample_index)
-    default_formula = xlsx_validation_builder.get_default_formula(field_specs_dict, trigger_col_range_str)
-    if default_formula is not None:
-        xlsx_basics.format_and_write_array_formula(data_worksheet, col_index, default_formula, write_col=True)
+    partial_default_formula = xlsx_validation_builder.get_default_formula(field_specs_dict, trigger_col_letter)
+    if partial_default_formula is not None:
+        xlsx_basics.copy_formula_throughout_range(data_worksheet.worksheet, partial_default_formula, col_index,
+                                                  data_worksheet.first_data_row_index,
+                                                  last_row_index=data_worksheet.last_allowable_row_for_sample_index,
+                                                  cell_format=None)

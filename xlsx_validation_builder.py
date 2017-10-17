@@ -46,7 +46,7 @@ def get_formula_constraint(field_schema_dict, field_data_type=None):
     return and_constraint_clause
 
 
-def get_default_formula(field_schema_dict, trigger_col_range_str, field_data_type=None):
+def get_default_formula(field_schema_dict, trigger_col_letter, field_data_type=None):
     result = None
     curr_level_type = _get_field_data_type(field_schema_dict)
     if curr_level_type is not None: field_data_type = curr_level_type
@@ -56,10 +56,11 @@ def get_default_formula(field_schema_dict, trigger_col_range_str, field_data_typ
     if metadata_package_schema_builder.ValidationKeys.default.value in field_schema_dict:
         default_val = field_schema_dict[metadata_package_schema_builder.ValidationKeys.default.value]
         default_val = '"{0}"'.format(default_val) if field_data_type is str else default_val
-        result = '=IF({0}="", "", {1})'.format(trigger_col_range_str, default_val)
+        result = '=IF({trigger_col_letter}{{curr_row_index}}="", "", {default_val})'.format(
+            trigger_col_letter=trigger_col_letter, default_val=default_val)
     elif metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
         for curr_subschema_dict in field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]:
-            result = get_default_formula(curr_subschema_dict, trigger_col_range_str, field_data_type)
+            result = get_default_formula(curr_subschema_dict, trigger_col_letter, field_data_type)
             if result is not None:
                 break
             # end if found default
@@ -148,14 +149,14 @@ def _parse_field_type(field_schema_dict):
     anyof = metadata_package_schema_builder.ValidationKeys.anyof.value
     if metadata_package_schema_builder.ValidationKeys.type.value in field_schema_dict:
         the_type = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
-        if the_type == metadata_package_schema_builder.CerberusDataTypes.integer.value:
+        if the_type == metadata_package_schema_builder.CerberusDataTypes.Integer.value:
             # Note that INT(cell) throws a value error (rather than returning anything) if a non-castable string is
             # entered, which is why the iserror call is necessary.  INT also throws an error if there is no value in the
             # cell, so the handling for blanks at the end of this function is important
             # if anyof not in field_schema_dict: constraint = 'IF(ISERROR(INT({cell})),FALSE,INT({cell})={cell})'
             if anyof not in field_schema_dict: constraint = 'IF(ISERROR(INT({cell})),0,INT({cell})={cell})'
             python_type = int
-        elif the_type == metadata_package_schema_builder.CerberusDataTypes.number.value:
+        elif the_type == metadata_package_schema_builder.CerberusDataTypes.Decimal.value:
             # have to use VALUE() here because Excel feels the "real" content of a cell that has a formula is the
             # formula, not whatever the formula evaluates to.  HOWEVER, VALUE() of an empty cell evaluates to ZERO,
             # which doesn't make sense for our usage, so again the handling for blanks at the end of this function is
@@ -163,7 +164,7 @@ def _parse_field_type(field_schema_dict):
             # if anyof not in field_schema_dict: constraint = "ISNUMBER(VALUE({cell}))"
             if anyof not in field_schema_dict: constraint = "INT(ISNUMBER(VALUE({cell})))"
             python_type = float
-        elif the_type == metadata_package_schema_builder.CerberusDataTypes.string.value:
+        elif the_type == metadata_package_schema_builder.CerberusDataTypes.Text.value:
             # I think that "free form text" INCLUDES things that are numbers ... they'd be forced to text in db, right?
             if anyof not in field_schema_dict: constraint = 1  # "TRUE"  # "ISTEXT({cell})"
             python_type = str

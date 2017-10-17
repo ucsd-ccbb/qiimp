@@ -14,9 +14,9 @@ import metadata_package_schema_builder
 import schema_builder
 import xlsx_builder
 
+# TODO: Refactor to dynamically pull from files
+# TODO: Refactor to share definition of "other" key between back and front ends
 _packages_by_keys = {
-    "human_vaginal": metadata_package_schema_builder.HumanVaginaPackage,
-    "human": metadata_package_schema_builder.HumanPackage,
     "other": metadata_package_schema_builder.PerSamplePackage
 }
 
@@ -33,7 +33,7 @@ def get_package_class():
     return _package_class
 
 
-def parse_form_value(curr_value, retain_list = False):
+def parse_form_value(curr_value, retain_list=False):
     revised_values = [x.decode('ascii') for x in curr_value]  # everything comes through as a list of binary string
     if not retain_list:
         if len(revised_values) == 1:
@@ -44,7 +44,7 @@ def parse_form_value(curr_value, retain_list = False):
     return revised_values
 
 
-class Hello(tornado.websocket.WebSocketHandler):
+class PackageHandler(tornado.websocket.WebSocketHandler):
     def data_received(self, chunk):
         pass
 
@@ -53,18 +53,29 @@ class Hello(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         global _packages_by_keys
+
+        # default package, if all else fails, is "other"
         package_key = "other"
+
         if message in _packages_by_keys:
+            # if there is an exact match to the package the user is trying to find in the package_keys, use that!
             package_key = message
         else:
+            # if there is no exact match to the package the user is looking for, split it on its separator; assume it
+            # will have at least one piece.
             message_split = message.split("_")
             message_start = message_split[0]
             if message_start in _packages_by_keys:
+                # if the first piece of the package name is in the package_keys, use that
                 package_key = message_start
             else:
-                if len(message_split)==2:
+                # NB: Right now assuming the package can only have two parts--host organism and sample type.
+                # This is generated in packageWizard.js getPackage() .
+                if len(message_split) == 2:
                     message_end = message_split[1]
                     if message_end in _packages_by_keys:
+                        # if the package name has two pieces, and the second piece is in the package_keys even though
+                        # the first piece isn't, use the second piece
                         package_key = message_end
                     # end if
                 # end if
@@ -87,19 +98,24 @@ class MainHandler(tornado.web.RequestHandler):
 
     def post(self):
         try:
-            separator = "_"
             study_name = None
             dict_of_field_schemas_by_index = defaultdict(dict)
             for curr_key, curr_value in self.request.arguments.items():
-                if not curr_key.endswith("template"):
-                    if curr_key == "study_name":
+                # per issue #53, all user-provided fields must be lower-cased
+                curr_key = curr_key.lower()
+
+                # ignore the "*_template" keys
+                if not curr_key.endswith(schema_builder.TEMPLATE_SUFFIX):
+                    if curr_key == schema_builder.InputNames.study_name.value:
                         study_name = parse_form_value(curr_value)
                     elif curr_key == "study_location_select":
+                        # TODO: Add handling for study_location_select
                         pass
                     else:
                         retain_list = False
-                        # slice off the field index at the end
-                        split_val = curr_key.split(separator)
+                        # slice off the field index at the end.
+                        # NB: it is OK if the field indices do not start at zero and/or are not contiguous
+                        split_val = curr_key.split(schema_builder.SEPARATOR)
                         index_str = split_val[-1]
                         if "[]" in index_str:
                             retain_list = True
@@ -107,13 +123,13 @@ class MainHandler(tornado.web.RequestHandler):
                         try:
                             index = int(index_str)  # index will be last separated value in key name
                             curr_schema = dict_of_field_schemas_by_index[index]
-                            base_key = curr_key.replace(separator + index_str, "")
+                            base_key = curr_key.replace(schema_builder.SEPARATOR + index_str, "")
 
                             revised_values = parse_form_value(curr_value, retain_list)
                             if revised_values:  # "truish"--not empty string, whitespace, etc
                                 curr_schema[base_key] = revised_values
                         except ValueError:
-                            pass  # ignore fields not used here
+                            pass  # ignore fields that don't end with a field index number
                         # end if this key really has a value
                     # end if this key isn't for study_name
                 # end if this is a real key and not a template key
@@ -164,8 +180,7 @@ if __name__ == "__main__":
     }
     application = tornado.web.Application([
         (r"/", MainHandler),
-        (r"/(apple-touch-icon\.png)", tornado.web.StaticFileHandler, dict(path=settings['static_path'])) ,
-        (r"/websocket", Hello)
+        (r"/websocket", PackageHandler)
     ], **settings)
 
     application.listen(8898)

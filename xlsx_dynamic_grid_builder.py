@@ -7,77 +7,9 @@ def write_dynamic_validation_grid(val_sheet, index_and_range_str_tuple_by_header
 
     :type val_sheet: xlsx_static_grid_builder.ValidationWorksheet
     """
-    # fill out the dynamic grid
 
-    # =IF(
-    #       B7=" ",
-    #       " ",
-    #       HYPERLINK(
-    #           CONCATENATE(
-    #               "#metadata!",
-    #               ADDRESS(
-    #                   INDEX(
-    #                      $AL$2:$AL$11,
-    #                      MATCH(
-    #                        ROWS($AJ$2: AJ7),
-    #                        $AJ$2:$AJ$11,
-    #                        0
-    #                      ),
-    #                      0
-    #                   ),
-    #                   $AQ$14
-    #               )
-    #           ),
-    #           INDEX(
-    #               $AO$2:$AO$11,
-    #               MATCH(
-    #                   ROWS($AJ$2: AJ7),
-    #                   $AJ$2:$AJ$11,
-    #                   0
-    #               ),
-    #               0
-    #           )
-    #       )
-    # )
+    _write_dynamic_name_link_col(val_sheet, index_and_range_str_tuple_by_header_dict)
 
-    # Add the standard url link format.
-    url_format = val_sheet.workbook.add_format({
-        'font_color': 'blue',
-        'underline': 1
-    })
-
-    # TODO: write the anonymized name column--this is just placeholder code
-    xlsx_basics.write_header(val_sheet, val_sheet.ANONYMIZED_NAME_HEADER, 0)
-    for curr_row_index in range(val_sheet.first_data_row_index, val_sheet.last_data_row_index + 1):
-        row_rank_num = _format_dynamic_rank_formula_str(val_sheet, curr_row_index,
-                                                        index_and_range_str_tuple_by_header_dict,
-                                                        for_row=True)
-        anonymized_name_metadata_col_single_cell_range_str = xlsx_basics.format_range(
-            # TODO: Need to replace w col index of real anonymized name validation column in static grid!
-            # am currently ASSUMING that it is the first column; can I be sure of that?
-            val_sheet.first_static_grid_col_index,
-            index_and_range_str_tuple_by_header_dict[val_sheet.COL_IN_METADATA_HEADER][0],
-            first_row_fixed=True, first_col_fixed=True, last_col_fixed=True, last_row_fixed=True)
-
-        row_in_metadata_fixed_range_str = index_and_range_str_tuple_by_header_dict[val_sheet.ROW_IN_METADATA_HEADER][1]
-        metadata_row_index_str = "INDEX({row_in_metadata_fixed_range_str},{row_rank_num},0)".format(
-            row_in_metadata_fixed_range_str=row_in_metadata_fixed_range_str, row_rank_num=row_rank_num)
-
-        concat_str = "CONCATENATE(\"#metadata!\",ADDRESS({metadata_row_index_str}," \
-                     "{anonymized_name_metadata_col_single_cell_range_str}))".format(metadata_row_index_str=metadata_row_index_str,
-                                                                                     anonymized_name_metadata_col_single_cell_range_str=anonymized_name_metadata_col_single_cell_range_str)
-
-        conditional_name_fixed_range_str = index_and_range_str_tuple_by_header_dict[val_sheet.ANONYMIZED_NAME_HEADER][1]
-        conditional_name_index_str = "INDEX({conditional_name_fixed_range_str},{row_num},0)".format(conditional_name_fixed_range_str=conditional_name_fixed_range_str,
-                                                                   row_num=row_rank_num)
-        # TODO: refactor hardcoded zero
-        curr_cell = xlsx_basics.format_range(0, curr_row_index)
-        first_grid_cell= xlsx_basics.format_range(val_sheet.first_data_col_index, curr_row_index)
-        full_formula = "=IF({first_grid_cell}=\" \",\" \",HYPERLINK({concat_str},{conditional_name_index_str}))".format(
-            first_grid_cell=first_grid_cell, concat_str=concat_str, conditional_name_index_str=conditional_name_index_str)
-        val_sheet.worksheet.write_formula(curr_cell, full_formula, url_format)
-
-    # write the colored hyperlink columns
     # apparently can't add alignment to a conditional format :(
     centered_format = xlsx_basics.make_format(val_sheet.workbook, {'align': 'center'})
 
@@ -85,26 +17,18 @@ def write_dynamic_validation_grid(val_sheet, index_and_range_str_tuple_by_header
     for curr_col_index in range(val_sheet.first_data_col_index, val_sheet.last_data_col_index + 1):
         val_sheet.worksheet.set_column(curr_col_index, curr_col_index, None, centered_format)
 
-        col_rank_num = _format_dynamic_rank_formula_str(val_sheet,
-                                                        val_sheet.first_static_grid_col_index + curr_col_index - 1,
-                                                        index_and_range_str_tuple_by_header_dict, for_row=False)
+        curr_static_grid_col_index = val_sheet.first_static_grid_col_index + curr_col_index - 1
+        col_rank = _format_dynamic_rank_formula_str(val_sheet, curr_static_grid_col_index,
+                                                    index_and_range_str_tuple_by_header_dict, for_row=False)
 
         col_already_valid_condition = _format_range_already_valid_formula_str(
-            val_sheet, col_rank_num, index_and_range_str_tuple_by_header_dict, for_row=False)
+            val_sheet, col_rank, index_and_range_str_tuple_by_header_dict, for_row=False)
 
-        first_data_cell_in_col_range_str = xlsx_basics.format_range(curr_col_index, val_sheet.first_data_row_index)
-        static_grid_header_row_fixed_range_str = xlsx_basics.format_single_static_grid_row_range(val_sheet, val_sheet.name_row_index,
-                                                                                                 first_col_fixed=True, first_row_fixed=True,
-                                                                                                 last_col_fixed=True, last_row_fixed=True)
-
-        header_formula = "=IF({first_data_cell_in_col_range_str}=\" \", \" \", INDEX({static_grid_header_row_fixed_range_str}, 1, {col_rank_num}))".format(
-            first_data_cell_in_col_range_str=first_data_cell_in_col_range_str, static_grid_header_row_fixed_range_str=static_grid_header_row_fixed_range_str, col_rank_num=col_rank_num
-        )
-        xlsx_basics.write_header(val_sheet, header_formula, curr_col_index)
+        _write_dynamic_header_cell(val_sheet, curr_col_index, col_rank)
 
         # at inner level, move down rows
         for curr_row_index in range(val_sheet.first_data_row_index, val_sheet.last_data_row_index + 1):
-            cell_formula = _generate_dynamic_grid_cell_formula_str(val_sheet, col_rank_num, col_already_valid_condition,
+            cell_formula = _generate_dynamic_grid_cell_formula_str(val_sheet, col_rank, col_already_valid_condition,
                                                                    curr_row_index,
                                                                    index_and_range_str_tuple_by_header_dict)
             curr_cell = xlsx_basics.format_range(curr_col_index, curr_row_index)
@@ -125,9 +49,11 @@ def _write_dynamic_grid_conditional_formatting(val_sheet):
     # Green fill with (same) green text
     green_format = xlsx_basics.make_format(val_sheet.workbook, {'bg_color': '#C6EFCE', 'font_color': '#C6EFCE'})
 
-    # TODO: hmm, maybe need to extend this to entire columns, in case user adds more samples?
+    # NB: grid goes as far as last allowable row for samples, not just to number of expected samples, in case user
+    # adds some extra ones :)
     dynamic_grid_range = xlsx_basics.format_range(val_sheet.first_data_col_index, val_sheet.first_data_row_index,
-                                                  val_sheet.last_data_col_index, val_sheet.last_data_row_index)
+                                                  val_sheet.last_data_col_index,
+                                                  val_sheet.last_allowable_row_for_sample_index)
 
     val_sheet.worksheet.conditional_format(dynamic_grid_range, {'type': 'cell',
                                                                 'criteria': '==',
@@ -138,6 +64,72 @@ def _write_dynamic_grid_conditional_formatting(val_sheet):
                                                                 'criteria': '==',
                                                                 'value': "\"Fix\"",
                                                                 'format': red_format})
+
+
+def _write_dynamic_name_link_col(val_sheet, index_and_range_str_tuple_by_header_dict):
+    """
+
+    :type val_sheet: xlsx_static_grid_builder.ValidationWorksheet
+    """
+
+    # e.g., =IF(B2=" "," ",HYPERLINK(CONCATENATE("#metadata!", ADDRESS(INDEX($AL$2:$AL$11,MATCH(ROWS($AJ$2:AJ2),
+    # $AJ$2:$AJ$11,0),0),$AQ$14)),INDEX($AO$2:$AO$11,MATCH(ROWS($AJ$2:AJ2),$AJ$2:$AJ$11,0),0)))
+
+    # Create the standard blue, underlined url link format.
+    url_format = xlsx_basics.make_format(val_sheet.workbook, {'font_color': 'blue','underline': 1})
+
+    xlsx_basics.write_header(val_sheet, val_sheet.SAMPLE_NAME_HEADER, val_sheet.name_link_col_index)
+
+    # NB: grid goes as far as last allowable row for samples, not just to number of expected samples, in case user
+    # adds some extra ones :)
+    for curr_row_index in range(val_sheet.first_data_row_index, val_sheet.last_allowable_row_for_sample_index + 1):
+        row_rank_num = _format_dynamic_rank_formula_str(val_sheet, curr_row_index,
+                                                        index_and_range_str_tuple_by_header_dict, for_row=True)
+
+        row_in_metadata_fixed_range_str = index_and_range_str_tuple_by_header_dict[val_sheet.ROW_IN_METADATA_HEADER][1]
+        metadata_row_index_str = "INDEX({row_in_metadata_fixed_range_str},{row_rank_num},0)".format(
+            row_in_metadata_fixed_range_str=row_in_metadata_fixed_range_str, row_rank_num=row_rank_num)
+
+        link_address = "CONCATENATE(\"#metadata!\",ADDRESS({metadata_row_index},{metadata_name_col_index}))".format(
+            metadata_row_index=metadata_row_index_str, metadata_name_col_index=val_sheet.name_col_index)
+
+        helper_name_fixed_range_str = index_and_range_str_tuple_by_header_dict[val_sheet.SAMPLE_NAME_HEADER][1]
+        # this index formula will get the value of the name for this sample from the helper col next to the static grid
+        helper_name_val = "INDEX({conditional_name_fixed_range_str},{row_num},0)".format(
+            conditional_name_fixed_range_str=helper_name_fixed_range_str, row_num=row_rank_num)
+
+        # this looks up the value in the is_absent helper column for this sample (either True or False)
+        is_absent = xlsx_basics.format_range(
+            index_and_range_str_tuple_by_header_dict[val_sheet.IS_ABSENT_HEADER][0], curr_row_index)
+
+        curr_cell = xlsx_basics.format_range(val_sheet.name_link_col_index, curr_row_index)
+
+        # If this sample is absent entirely, write a space into the dynamic name cell.  Otherwise, write a link to the
+        # name column for this sample in the metadata sheet
+        full_formula = "=IF({is_absent},\" \",HYPERLINK({link_address},{helper_name_val}))".format(
+            is_absent=is_absent, link_address=link_address, helper_name_val=helper_name_val)
+        val_sheet.worksheet.write_formula(curr_cell, full_formula, url_format)
+
+
+def _write_dynamic_header_cell(val_sheet, curr_col_index, col_rank):
+    # e.g., =IF(B2=" ", " ", INDEX($AS$1:$BY$1, 1, MATCH(COLUMNS($AS$1005:AS1005),$AS$1005:$BY$1005,0)))
+
+    first_data_cell_in_col = xlsx_basics.format_range(curr_col_index, val_sheet.first_data_row_index)
+    static_grid_header_row = xlsx_basics.format_single_static_grid_row_range(val_sheet, val_sheet.name_row_index,
+                                                                             first_col_fixed=True,
+                                                                             first_row_fixed=True,
+                                                                             last_col_fixed=True,
+                                                                             last_row_fixed=True)
+
+    # if ALL samples are valid in this column, then all the data cells for this column will have a space
+    # in them.  Conversely, if ANY sample is invalid in this column, the data cells will either be *empty* (have
+    # not even a space) if a particular sample is valid in that column or will have the word "Fix".  I check just
+    # the FIRST data cell in this column to see if it holds a space; if it does, the whole column is valid and
+    # should be hidden, so the "header" will also just be a space.
+    header_formula = "=IF({first_data_cell_in_col}=\" \", \" \", INDEX({static_grid_header_row}, 1, {col_rank}))" \
+        .format(first_data_cell_in_col=first_data_cell_in_col, static_grid_header_row=static_grid_header_row,
+                col_rank=col_rank)
+    xlsx_basics.write_header(val_sheet, header_formula, curr_col_index)
 
 
 def _generate_dynamic_grid_cell_formula_str(val_sheet, col_rank_num, col_already_valid_condition, curr_row_index,
@@ -192,9 +184,6 @@ def _format_dynamic_rank_formula_str(val_sheet, curr_range_index, index_and_rang
     # (e.g., if we're in validation column 6, we should be showing the metadata column with col_rank 6).
     # MATCH(COLUMNS($AQ$16:AQ16),$AQ$16:$BW$16,0)
 
-    # TODO: I think the second AJ occurrence in ROWS should be fixed, so wrote code this way, but it ISN'T this
-    # way in manual worksheet; double-check code functionality!
-
     rank_header = val_sheet.ROW_RANK_HEADER if for_row else val_sheet.COL_RANK_HEADER
     rank_index_and_range_tuple = index_and_range_str_tuple_by_header_dict[rank_header]
     rank_range_index = rank_index_and_range_tuple[0]
@@ -214,8 +203,8 @@ def _format_dynamic_rank_formula_str(val_sheet, curr_range_index, index_and_rang
         last_row_index = rank_range_index
 
     rank_to_curr_point_range = xlsx_basics.format_range(first_col_index, first_row_index,
-                                                        second_col_index=last_col_index,
-                                                        second_row_index=last_row_index, first_col_fixed=True,
+                                                        last_col_index=last_col_index,
+                                                        last_row_index=last_row_index, first_col_fixed=True,
                                                         first_row_fixed=True)
 
     rank_num = "MATCH({excel_func_name}({rank_to_curr_point_range}),{rank_fixed_range_str},0)".format(
@@ -270,8 +259,8 @@ def _format_static_grid_cell_reference_formula_str(val_sheet, row_rank_num, col_
     # INDEX($AQ$2:$BW$11,MATCH(ROWS($AJ$2:AJ2),$AJ$2:$AJ$11,0),MATCH(COLUMNS($AQ$16:AQ16),$AQ$16:$BW$16,0))
     static_grid_fixed_range_str = xlsx_basics.format_range(val_sheet.first_static_grid_col_index,
                                                            val_sheet.first_data_row_index,
-                                                           second_col_index=val_sheet.last_static_grid_col_index,
-                                                           second_row_index=val_sheet.last_data_row_index,
+                                                           last_col_index=val_sheet.last_static_grid_col_index,
+                                                           last_row_index=val_sheet.last_data_row_index,
                                                            first_col_fixed=True, first_row_fixed=True,
                                                            last_col_fixed=True, last_row_fixed=True)
 

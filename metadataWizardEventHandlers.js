@@ -20,14 +20,6 @@ function enableDisableTextDataType(selected_field_type, field_index){
 
 // Show/hide appropriate interface elements when field type is changed
 function displayFieldDetails(selected_field_type, field_index) {
-    var fields_to_show_by_field_type = {
-        "":[],
-        "str":[],
-        "boolean": ["field_details_div","boolean_true_div", "boolean_false_div", "boolean_default_div"],
-        "continuous": ["field_details_div","data_type_div", "minimum_div", "maximum_div", "units_div",
-            "continuous_default_div"],
-        "categorical": ["field_details_div","data_type_div", "categorical_div", "units_div", "categorical_default_div"]
-    };
     var elements_to_show = fields_to_show_by_field_type[selected_field_type];
 
     // find all elements for the current field that were initially hidden
@@ -130,4 +122,13 @@ function updateTypeValidations(event){
     updateTypeValidation(SpecialInputs.MINIMUM, field_index, data_type_value);
     updateTypeValidation(SpecialInputs.MAXIMUM, field_index, data_type_value);
     updateTypeValidation(SpecialInputs.DEFAULT_CONTINUOUS, field_index, data_type_value);
+}
+
+function removeField(event){
+    var field_index = event.data.field_index;
+    //TODO: add code to get confirmation if any fields are filled
+    //get row div for this field
+    var button_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.REMOVE_FIELD, field_index);
+    var field_div_element = $(button_id_selector).closest('.row.field');
+    field_div_element.remove();
 }
