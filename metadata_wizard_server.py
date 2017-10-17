@@ -1,4 +1,6 @@
+import argparse
 from collections import defaultdict
+import configparser
 import os
 import sys
 import traceback
@@ -21,19 +23,41 @@ _packages_by_keys = {
 }
 
 _package_class = None
+_full_websocket_url = None
 
 
-def set_package_class(new_class):
+def _parse_cmd_line_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--deployed", help="run with non-local settings from config", action="store_true")
+
+    args = parser.parse_args()
+    return args.deployed
+
+
+def _get_config_values(is_deployed):
+    local_dir = os.path.dirname(__file__)
+    section_name = "DEPLOYED" if is_deployed else "LOCAL"
+
+    config_parser = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+    config_parser.read_file(open(os.path.join(local_dir, 'config.txt')))
+
+    listen_port = os.path.expanduser(config_parser.get(section_name, "listen_port"))
+    websocket_url = os.path.expanduser(config_parser.get(section_name, "websocket_url"))
+
+    return websocket_url, listen_port
+
+
+def _set_package_class(new_class):
     global _package_class
     _package_class = new_class
 
 
-def get_package_class():
+def _get_package_class():
     global _package_class
     return _package_class
 
 
-def parse_form_value(curr_value, retain_list=False):
+def _parse_form_value(curr_value, retain_list=False):
     revised_values = [x.decode('ascii') for x in curr_value]  # everything comes through as a list of binary string
     if not retain_list:
         if len(revised_values) == 1:
@@ -85,7 +109,7 @@ class PackageHandler(tornado.websocket.WebSocketHandler):
         selected_package = _packages_by_keys[package_key]
         package_class = selected_package()
         return_delimited_str = ", ".join(sorted(package_class.schema.keys()))
-        set_package_class(package_key)
+        _set_package_class(package_key)
         self.write_message(return_delimited_str)
 
     def on_close(self):
@@ -94,7 +118,8 @@ class PackageHandler(tornado.websocket.WebSocketHandler):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("metadata_wizard_template.html")
+        global _full_websocket_url
+        self.render("metadata_wizard_template.html", websocket_url=_full_websocket_url)
 
     def post(self):
         try:
@@ -107,7 +132,7 @@ class MainHandler(tornado.web.RequestHandler):
                 # ignore the "*_template" keys
                 if not curr_key.endswith(schema_builder.TEMPLATE_SUFFIX):
                     if curr_key == schema_builder.InputNames.study_name.value:
-                        study_name = parse_form_value(curr_value)
+                        study_name = _parse_form_value(curr_value)
                     elif curr_key == "study_location_select":
                         # TODO: Add handling for study_location_select
                         pass
@@ -125,7 +150,7 @@ class MainHandler(tornado.web.RequestHandler):
                             curr_schema = dict_of_field_schemas_by_index[index]
                             base_key = curr_key.replace(schema_builder.SEPARATOR + index_str, "")
 
-                            revised_values = parse_form_value(curr_value, retain_list)
+                            revised_values = _parse_form_value(curr_value, retain_list)
                             if revised_values:  # "truish"--not empty string, whitespace, etc
                                 curr_schema[base_key] = revised_values
                         except ValueError:
@@ -141,7 +166,7 @@ class MainHandler(tornado.web.RequestHandler):
                 field_name, curr_validation_schema = schema_builder.get_validation_schema(curr_schema)
                 dict_of_validation_schema_by_index[field_name] = curr_validation_schema
 
-            package_key = get_package_class()
+            package_key = _get_package_class()
             selected_package = _packages_by_keys[package_key]
             package_class = selected_package()
             dict_of_validation_schema_by_index.update(package_class.schema)
@@ -175,14 +200,20 @@ class MainHandler(tornado.web.RequestHandler):
 
 
 if __name__ == "__main__":
+    is_deployed = _parse_cmd_line_args()
+
+    static_path = os.path.dirname(__file__)
+    websocket_url, listen_port = _get_config_values(is_deployed)
+    _full_websocket_url = "ws://{0}:{1}/websocket".format(websocket_url, listen_port)
+
     settings = {
-        "static_path": os.path.dirname(__file__)
+        "static_path": static_path
     }
     application = tornado.web.Application([
         (r"/", MainHandler),
         (r"/websocket", PackageHandler)
     ], **settings)
 
-    application.listen(8898)
+    application.listen(listen_port)
     tornado.ioloop.IOLoop.instance().start()
 

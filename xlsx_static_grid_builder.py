@@ -1,3 +1,4 @@
+import metadata_package_schema_builder
 import xlsx_basics
 import xlsx_validation_builder
 
@@ -6,7 +7,7 @@ class ValidationWorksheet(xlsx_basics.MetadataWorksheet):
     def __init__(self, workbook, num_attributes, num_samples):
         super().__init__(workbook, num_attributes, num_samples, make_sheet=False)
 
-        self.SAMPLE_NAME_HEADER = "sample_name"
+        self.SAMPLE_NAME_HEADER = metadata_package_schema_builder.SAMPLE_NAME_HEADER
         self.IS_ABSENT_HEADER = "is_absent"
         self.IS_VALID_ROW_HEADER = "is_valid_row"
         self.ROW_IN_METADATA_HEADER = "row_in_metadata"

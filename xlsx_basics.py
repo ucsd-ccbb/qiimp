@@ -1,4 +1,5 @@
 import string
+import metadata_package_schema_builder
 
 
 # region general functions for working with worksheets and formulas
@@ -117,12 +118,12 @@ def sort_keys(schema_dict):
 
     # remove the sample_name from its existing place in the list (if any) and then add it back at the FIRST position
     try:
-        sorted_keys.remove(MetadataWorksheet.SAMPLE_NAME_HEADER)
+        sorted_keys.remove(metadata_package_schema_builder.SAMPLE_NAME_HEADER)
     except ValueError:
         pass
 
     # zero means add this back as the very first item in the key array
-    sorted_keys.insert(0, MetadataWorksheet.SAMPLE_NAME_HEADER)
+    sorted_keys.insert(0, metadata_package_schema_builder.SAMPLE_NAME_HEADER)
     return sorted_keys
 
 
@@ -131,9 +132,6 @@ def sort_keys(schema_dict):
 
 class MetadataWorksheet(object):
     # I think the column range available for worksheets is 'A:XFD'
-
-    # TODO: Find a way to link this to the schema value?
-    SAMPLE_NAME_HEADER = "sample_name"
 
     def __init__(self, workbook, num_attributes, num_samples, make_sheet=True):
         # TODO: this is a placeholder value because larger values are slower; figure out max usable value.

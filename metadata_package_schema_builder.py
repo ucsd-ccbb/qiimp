@@ -7,6 +7,8 @@ from enum import Enum
 # as valid], even when required is set to True. If you don’t want to accept empty values, see the empty rule [i.e.,
 # add an "empty": False rule to the schema]." (http://docs.python-cerberus.org/en/stable/validation-rules.html#required)
 
+SAMPLE_NAME_HEADER = "sample_name"
+
 
 class ValidationKeys(Enum):
     type = "type"
@@ -62,5 +64,15 @@ class SanDiego(Location):
 
 
 class PerSamplePackage(object):
+    # "Only lower-case letters, numbers, and underscores are permitted."
+    SAMPLE_NAME_REGEX = "^[a-z0-9_]*$"
+
     def __init__(self):
-        self.schema = {}
+        self.schema = {
+            SAMPLE_NAME_HEADER: {  # note that sample name should be unique within a study
+                ValidationKeys.type.value: CerberusDataTypes.Text.value,
+                ValidationKeys.regex.value: self.SAMPLE_NAME_REGEX,
+                ValidationKeys.empty.value: False,
+                ValidationKeys.required.value: True
+            }
+        }

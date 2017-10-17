@@ -5,6 +5,8 @@ var TEMPLATE_SUFFIX = "";
 var SEPARATOR = "";
 var SpecialInputs = {};
 var fields_to_show_by_field_type = {};
+var websocket_url = "";
+var sample_name_regex = null;
 
 
 // Dynamically generate HTML specifying input elements for a new field
@@ -95,7 +97,7 @@ $.validator.addMethod("nameIsNotReserved", function(value, element) {
 function addLowerCaseLettersAndUnderscoreRule(field_index, required_base_name) {
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
     $(id_selector).rules("add", {
-        pattern: /^[a-z0-9_]*$/,
+        pattern: sample_name_regex,
         messages: {pattern: "Only lower-case letters, numbers, and underscores are permitted."}
     });
 }
@@ -177,7 +179,7 @@ $(document).ready(function () {
     });
 
 
-    ws = new WebSocket("ws://localhost:8898/websocket");
+    ws = new WebSocket(websocket_url);
     ws.onmessage = function(evt) {
         var fields_message = "<br />The following fields will be added to your metadata template: " +  evt.data +
             ".<br /><strong>Note that none of these names will be available for custom fields.</strong><br /><br />";

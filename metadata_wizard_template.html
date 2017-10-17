@@ -47,9 +47,11 @@
 
     <script type="text/javascript">
         g_reserved_word_url = "{{ static_url("reserved_words.yaml") }}";
+        websocket_url = "{{ websocket_url }}";
 
         SEPARATOR = "{{schema_builder.SEPARATOR}}";
         TEMPLATE_SUFFIX = "{{schema_builder.TEMPLATE_SUFFIX}}";
+        sample_name_regex = /{{ metadata_package_schema_builder.PerSamplePackage.SAMPLE_NAME_REGEX }}/
 
         // Note that these are to be the bases (without template suffix or separator) of form element NAMES, not IDs
         SpecialInputs = {
