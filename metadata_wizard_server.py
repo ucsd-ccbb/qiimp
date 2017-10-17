@@ -41,10 +41,11 @@ def _get_config_values(is_deployed):
     config_parser = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
     config_parser.read_file(open(os.path.join(local_dir, 'config.txt')))
 
+    static_path = os.path.expanduser(config_parser.get(section_name, "static_path"))
     listen_port = os.path.expanduser(config_parser.get(section_name, "listen_port"))
     websocket_url = os.path.expanduser(config_parser.get(section_name, "websocket_url"))
 
-    return websocket_url, listen_port
+    return static_path, websocket_url, listen_port
 
 
 def _set_package_class(new_class):
@@ -202,8 +203,8 @@ class MainHandler(tornado.web.RequestHandler):
 if __name__ == "__main__":
     is_deployed = _parse_cmd_line_args()
 
-    static_path = os.path.dirname(__file__)
-    websocket_url, listen_port = _get_config_values(is_deployed)
+    static_path, websocket_url, listen_port = _get_config_values(is_deployed)
+    if static_path == "": static_path = os.path.dirname(__file__)
     _full_websocket_url = "ws://{0}:{1}/websocket".format(websocket_url, listen_port)
 
     settings = {

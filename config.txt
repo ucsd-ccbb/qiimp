@@ -1,7 +1,9 @@
 [DEPLOYED]
+static_path: /home/ec2-user/cmi_metadata_wizard
 websocket_url: 
 listen_port: 8183
 
 [LOCAL]
+static_path:
 websocket_url: localhost
 listen_port: 8898
