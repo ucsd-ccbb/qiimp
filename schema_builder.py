@@ -1,3 +1,4 @@
+import datetime
 from enum import Enum
 
 import metadata_package_schema_builder
@@ -17,6 +18,7 @@ class InputNames(Enum):
     continuous_default = "continuous_default"
     boolean_default_select = "boolean_default_select"
     text_default = "text_default"
+    datetime_default = "datetime_default"
     true_value = "true_value"
     false_value = "false_value"
     data_type = "data_type"
@@ -31,6 +33,7 @@ class InputNames(Enum):
 class FieldTypes(Enum):
     Boolean = "boolean"
     Text = metadata_package_schema_builder.CerberusDataTypes.Text.value
+    DateTime = metadata_package_schema_builder.CerberusDataTypes.DateTime.value
     Categorical = "categorical"
     Continuous = "continuous"
 
@@ -42,12 +45,14 @@ class DefaultTypes(Enum):
     categorical_default = "categorical_default"
     continuous_default = "continuous_default"
     text_default = "text_default"
+    datetime_default = "datetime_default"
 
 
 def _get_field_type_to_schema_generator():
     return {
         FieldTypes.Text.value: _generate_text_schema,
         FieldTypes.Boolean.value: _generate_boolean_schema,
+        FieldTypes.DateTime.value: _generate_datetime_schema,
         FieldTypes.Categorical.value: _generate_categorical_schema,
         FieldTypes.Continuous.value: _generate_continuous_schema
     }
@@ -60,8 +65,17 @@ def _get_default_types_to_input_fields():
         DefaultTypes.allowed_missing_default.value: InputNames.allowed_missing_default_select.value,
         DefaultTypes.categorical_default.value: InputNames.categorical_default_select.value,
         DefaultTypes.continuous_default.value: InputNames.continuous_default.value,
-        DefaultTypes.text_default.value: InputNames.text_default.value
+        DefaultTypes.text_default.value: InputNames.text_default.value,
+        DefaultTypes.datetime_default.value: InputNames.datetime_default.value
     }
+
+
+def _get_cast_func_by_data_type():
+    return {metadata_package_schema_builder.CerberusDataTypes.Text.value: str,
+            metadata_package_schema_builder.CerberusDataTypes.Decimal.value: float,
+            metadata_package_schema_builder.CerberusDataTypes.Integer.value: int,
+            metadata_package_schema_builder.CerberusDataTypes.DateTime.value: _cast_date_time
+            }
 
 
 def get_validation_schema(curr_field_from_form):
@@ -105,20 +119,8 @@ def _build_single_validation_schema_dict(curr_field_from_form):
     return result
 
 
-def _generate_basic_schema():
-    return {
-        metadata_package_schema_builder.ValidationKeys.empty.value: False,
-        metadata_package_schema_builder.ValidationKeys.required.value: True
-    }
-
-
 def _generate_text_schema(curr_field_from_form):
-    curr_schema = _generate_basic_schema()
-    curr_schema.update({
-        metadata_package_schema_builder.ValidationKeys.type.value:
-            metadata_package_schema_builder.CerberusDataTypes.Text.value
-    })
-    return curr_schema
+    return _generate_schema_by_data_type(metadata_package_schema_builder.CerberusDataTypes.Text.value)
 
 
 def _generate_boolean_schema(curr_field_from_form):
@@ -132,8 +134,15 @@ def _generate_boolean_schema(curr_field_from_form):
     return curr_schema
 
 
+def _generate_datetime_schema(curr_field_from_form):
+    return _generate_schema_by_data_type(metadata_package_schema_builder.CerberusDataTypes.DateTime.value)
+
+
 def _generate_categorical_schema(curr_field_from_form):
-    cast_func, curr_schema = _create_schema_for_data_type(curr_field_from_form)
+    data_type = curr_field_from_form[InputNames.data_type.value]
+    cast_funcs_by_type = _get_cast_func_by_data_type()
+    cast_func = cast_funcs_by_type[data_type]
+    curr_schema = _generate_schema_by_data_type(data_type)
 
     categorical_vals_str = curr_field_from_form[InputNames.categorical_values.value]
     split_categorical_vals = categorical_vals_str.split("\r\n")
@@ -148,7 +157,8 @@ def _generate_categorical_schema(curr_field_from_form):
 
 
 def _generate_continuous_schema(curr_field_from_form):
-    _, curr_schema = _create_schema_for_data_type(curr_field_from_form)
+    data_type = curr_field_from_form[InputNames.data_type.value]
+    curr_schema = _generate_schema_by_data_type(data_type)
 
     curr_schema = _set_comparison_keyval_if_any(curr_field_from_form,
                                                 InputNames.minimum_value.value,
@@ -161,20 +171,41 @@ def _generate_continuous_schema(curr_field_from_form):
     return curr_schema
 
 
-def _create_schema_for_data_type(curr_field_from_form):
-    func_by_type_str = {metadata_package_schema_builder.CerberusDataTypes.Text.value: str,
-                        metadata_package_schema_builder.CerberusDataTypes.Decimal.value: float,
-                        metadata_package_schema_builder.CerberusDataTypes.Integer.value: int}
+def _generate_basic_schema():
+    return {
+        metadata_package_schema_builder.ValidationKeys.empty.value: False,
+        metadata_package_schema_builder.ValidationKeys.required.value: True
+    }
 
-    data_type = curr_field_from_form[InputNames.data_type.value]
-    cast_func = func_by_type_str[data_type]
 
+def _generate_schema_by_data_type(data_type):
     curr_schema = _generate_basic_schema()
     curr_schema.update({
         metadata_package_schema_builder.ValidationKeys.type.value: data_type
     })
+    return curr_schema
 
-    return cast_func, curr_schema
+
+def _cast_date_time(datetime_string):
+    # by default, assume cast fails
+    is_valid = False
+    result = None
+
+    allowed_formats = ["%Y", "%Y-%m", "%Y-%m-%d", "%Y-%m-%d %H", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]
+    for curr_format in allowed_formats:
+        try:
+            result = datetime.datetime.strptime(datetime_string, curr_format)
+            is_valid = True
+            break
+        except ValueError:
+            pass  # if this format gave error, just try next one
+
+    # if none of the formats passed, NOW raise an error
+    if not is_valid:
+        raise ValueError("{0} cannot be converted to any of these datetime formats: {1}".format(
+            datetime_string, " or ".join(allowed_formats)))
+
+    return result
 
 
 def _set_default_keyval_if_any(curr_field_from_form, curr_schema):

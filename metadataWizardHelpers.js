@@ -1,3 +1,22 @@
+function addAlwaysRequiredRule(field_index, required_base_name) {
+    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
+    $(id_selector).rules("add", {
+       required: true
+    });
+}
+
+function addConditionalRequiredRule(field_index, condition_base_name, required_base_name) {
+    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(condition_base_name, field_index);
+
+    // For JQuery validation plugin, custom validator functions always have
+    // first argument: the current value of the validated element. Second argument: the element to be validated
+    $(id_selector).rules("add", {
+        required: function(value, element) {
+            return doesElementHaveValue(required_base_name, field_index);
+        }
+    });
+}
+
 function addUniqueNameRule(field_index){
     var name_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, field_index);
     $(name_id_selector).rules("add", {
@@ -11,6 +30,22 @@ function addNameIsNotReservedRule(field_index){
        nameIsNotReserved: true
     });
 }
+
+function addLowerCaseLettersAndUnderscoreRule(field_index, required_base_name) {
+    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
+    $(id_selector).rules("add", {
+        pattern: field_name_regex,
+        messages: {pattern: "Only lower-case letters, numbers, and underscores are permitted."}
+    });
+}
+
+function addDateTimeValidationRule(field_index, required_base_name){
+    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
+    $(id_selector).rules("add", {
+        isValidDateTime: true
+    });
+}
+
 
 function addOnChangeEvent(field_index, base_name, onChangeFunc){
     addEventHandler("change", field_index, base_name, onChangeFunc);

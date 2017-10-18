@@ -37,7 +37,11 @@
     <!-- bootstrap js -->
     <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
 
+    <!-- js-yaml -->
     <script src={{ static_url("third-party/js-yaml.min.js") }}></script>
+
+    <!-- moment (for date/time validation) -->
+    <script src={{ static_url("third-party/moment.min.js") }}></script>
 
     <script src={{ static_url("metadataWizardHelpers.js") }}></script>
     <script src={{ static_url("metadataWizardEventHandlers.js") }}></script>
@@ -51,7 +55,7 @@
 
         SEPARATOR = "{{schema_builder.SEPARATOR}}";
         TEMPLATE_SUFFIX = "{{schema_builder.TEMPLATE_SUFFIX}}";
-        sample_name_regex = /{{ metadata_package_schema_builder.PerSamplePackage.SAMPLE_NAME_REGEX }}/
+        field_name_regex = /{{ metadata_package_schema_builder.PerSamplePackage.FIELD_NAME_REGEX }}/
 
         // Note that these are to be the bases (without template suffix or separator) of form element NAMES, not IDs
         SpecialInputs = {
@@ -72,6 +76,7 @@
             DEFAULT_BOOLEAN: "{{schema_builder.InputNames.boolean_default_select.value}}",
             DEFAULT_CONTINUOUS: "{{schema_builder.InputNames.continuous_default.value}}",
             DEFAULT_TEXT: "{{schema_builder.InputNames.text_default.value}}",
+            DEFAULT_DATETIME: "{{schema_builder.InputNames.datetime_default.value}}",
             REMOVE_FIELD: "remove_field"
         };
 
@@ -80,6 +85,7 @@
             "{{schema_builder.FieldTypes.Text.value}}":["text_default_div"],
             "{{schema_builder.FieldTypes.Boolean.value}}": ["field_details_div","boolean_true_div", "boolean_false_div",
                 "boolean_default_div"],
+            "{{schema_builder.FieldTypes.DateTime.value}}":["datetime_default_div"],
             "{{schema_builder.FieldTypes.Continuous.value}}": ["field_details_div","data_type_div", "minimum_div",
                 "maximum_div", "units_div",
                 "continuous_default_div"],
@@ -90,7 +96,7 @@
         function updateTypeValidation(base_name, field_index, data_type_value){
             // get the relevant input field and remove any existing validation rules related to data type (only)
             var input_id_selector = getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index);
-            $(input_id_selector).rules( "remove", "digits number" );
+            $(input_id_selector).rules( "remove", "digits number isValidDateTime" );
 
             // add back any required data type validation rule
             switch (data_type_value) {
@@ -99,6 +105,9 @@
                     break;
                 case "{{metadata_package_schema_builder.CerberusDataTypes.Decimal.value}}":
                     $(input_id_selector).rules("add", {number: true});
+                    break;
+                case "{{metadata_package_schema_builder.CerberusDataTypes.DateTime.value}}":
+                    $(input_id_selector).rules("add", {isValidDateTime: true});
                     break;
                 case "{{metadata_package_schema_builder.CerberusDataTypes.Text.value}}":
                     // no known validation required for text; perhaps length?
@@ -119,6 +128,8 @@
                     "{{schema_builder.DefaultTypes.continuous_default.value}}");
             enableOrDisableByValue(SpecialInputs.DEFAULT_TEXT, field_index, curr_val,
                     "{{schema_builder.DefaultTypes.text_default.value}}");
+            enableOrDisableByValue(SpecialInputs.DEFAULT_DATETIME, field_index, curr_val,
+                    "{{schema_builder.DefaultTypes.datetime_default.value}}");
         };
     </script>
 </head>
@@ -358,6 +369,11 @@
                                         <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "text_default_value_template" value="{{schema_builder.DefaultTypes.text_default.name}}">
                                         <label id="text_default_label_template" for="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">&nbsp;Text Default</label><br />
                                         <textarea name="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 0.5 ml subcutaneously" disabled required></textarea>
+                                    </div>
+                                    <div class="initially_hidden hidden" id = "datetime_default_div_template">
+                                        <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "datetime_default_value_template" value="{{schema_builder.DefaultTypes.datetime_default.name}}">
+                                        <label id="datetime_default_label_template" for="{{schema_builder.InputNames.datetime_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">&nbsp;DateTime Default</label><br />
+                                        <input type ="text" name="{{schema_builder.InputNames.datetime_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.datetime_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 2011-12-13" disabled required/>
                                     </div>
                                 </div>
                             </div>

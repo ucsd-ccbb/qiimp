@@ -29,6 +29,7 @@ class CerberusDataTypes(Enum):
     Text = "string"
     Integer = "integer"
     Decimal = "number"
+    DateTime = "datetime"
 
 
 class EbiMissingValues(Enum):
@@ -65,7 +66,9 @@ class SanDiego(Location):
 
 class PerSamplePackage(object):
     # "Only lower-case letters, numbers, and underscores are permitted."
-    SAMPLE_NAME_REGEX = "^[a-z0-9_]*$"
+    FIELD_NAME_REGEX = "^[a-z0-9_]*$"
+
+    SAMPLE_NAME_REGEX = "^[a-zA-Z0-9\.]+$"  # alphanumeric and period only,
 
     def __init__(self):
         self.schema = {

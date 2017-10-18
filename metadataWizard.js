@@ -6,7 +6,7 @@ var SEPARATOR = "";
 var SpecialInputs = {};
 var fields_to_show_by_field_type = {};
 var websocket_url = "";
-var sample_name_regex = null;
+var field_name_regex = null;
 
 
 // Dynamically generate HTML specifying input elements for a new field
@@ -46,25 +46,6 @@ function decorateNewElements() {
     }
 }
 
-function addAlwaysRequiredRule(field_index, required_base_name) {
-    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
-    $(id_selector).rules("add", {
-       required: true
-    });
-}
-
-function addConditionalRequiredRule(field_index, condition_base_name, required_base_name) {
-    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(condition_base_name, field_index);
-
-    // For JQuery validation plugin, custom validator functions always have
-    // first argument: the current value of the validated element. Second argument: the element to be validated
-    $(id_selector).rules("add", {
-        required: function(value, element) {
-            return doesElementHaveValue(required_base_name, field_index);
-        }
-    });
-}
-
 // For JQuery validation plugin, custom validator functions always have
 // first argument: the current value of the validated element. Second argument: the element to be validated
 $.validator.addMethod("nameIsUnique", function(value, element) {
@@ -94,13 +75,29 @@ $.validator.addMethod("nameIsNotReserved", function(value, element) {
     return (g_reserved_words.indexOf(value) <= -1);
 }, "Field name must not be a reserved word.");
 
-function addLowerCaseLettersAndUnderscoreRule(field_index, required_base_name) {
-    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
-    $(id_selector).rules("add", {
-        pattern: sample_name_regex,
-        messages: {pattern: "Only lower-case letters, numbers, and underscores are permitted."}
-    });
-}
+var allowed_date_formats = ["YYYY-MM-DD hh:mm:ss", "YYYY-MM-DD hh:mm", "YYYY-MM-DD hh", "YYYY-MM-DD", "YYYY-MM",
+    "YYYY"];
+$.validator.addMethod("isValidDateTime", function(value, element){
+    // From Austin re collection_timestamp: "The only formats allowed are:
+    // yyyy-mm-dd hh:mm:ss or
+    // yyyy-mm-dd hh:mm or
+    // yyyy-mm-dd hh or
+    // yyyy-mm-dd or
+    // yyyy-mm or
+    // yyyy"
+
+    var return_val = false;  // default assumes validation failure
+    for (i = 0; i < allowed_date_formats.length; i++) {
+        var curr_format = allowed_date_formats[i];
+        var curr_val = moment(value, curr_format, true).isValid();
+        if (curr_val){
+            return_val = curr_val;
+            break;
+        }
+    }
+
+    return return_val;
+}, "DateTime must be a valid timestamp in one of these formats: " + allowed_date_formats.join(" or "));
 
 var package_fields = {};
 
@@ -151,6 +148,9 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
     },
     function (field_index){ //make minimum required if minimum comparison is filled in
          addConditionalRequiredRule(field_index, SpecialInputs.MAX_COMPARE, SpecialInputs.MAXIMUM);
+    },
+    function (field_index) { //make datetime default pass datetime validation
+        addDateTimeValidationRule(field_index, SpecialInputs.DEFAULT_DATETIME);
     },
     function (field_index){ //add onclick event handler to remove button for field
         addEventHandler("click", field_index, SpecialInputs.REMOVE_FIELD, removeField)

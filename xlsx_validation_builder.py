@@ -1,3 +1,5 @@
+import datetime
+
 import metadata_package_schema_builder
 
 cell_placeholder = "{cell}"
@@ -55,7 +57,9 @@ def get_default_formula(field_schema_dict, trigger_col_letter, field_data_type=N
     # entries in rows that they haven't even thought about yet.
     if metadata_package_schema_builder.ValidationKeys.default.value in field_schema_dict:
         default_val = field_schema_dict[metadata_package_schema_builder.ValidationKeys.default.value]
-        default_val = '"{0}"'.format(default_val) if field_data_type is str else default_val
+        if field_data_type is str or field_data_type is datetime.datetime:
+            default_val = '"{0}"'.format(default_val)
+
         result = '=IF({trigger_col_letter}{{curr_row_index}}="", "", {default_val})'.format(
             trigger_col_letter=trigger_col_letter, default_val=default_val)
     elif metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
@@ -168,6 +172,9 @@ def _parse_field_type(field_schema_dict):
             # I think that "free form text" INCLUDES things that are numbers ... they'd be forced to text in db, right?
             if anyof not in field_schema_dict: constraint = 1  # "TRUE"  # "ISTEXT({cell})"
             python_type = str
+        elif the_type == metadata_package_schema_builder.CerberusDataTypes.DateTime.value:
+            if anyof not in field_schema_dict: constraint = 'INT(NOT(ISERR(DATEVALUE(TEXT({cell}, "YYYY-MM-DD")))))'
+            python_type = datetime.datetime
         else:
             raise ValueError("Unrecognized data type: {0}".format(the_type))
 
