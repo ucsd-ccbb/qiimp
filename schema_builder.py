@@ -11,6 +11,7 @@ class InputNames(Enum):
     study_name = "study_name"
     field_name = "field_name"
     field_type = "field_type"
+    field_desc = "field_desc"
     allowed_missing_vals = "allowed_missing_vals[]"
     default_value = "default_value"
     allowed_missing_default_select = "allowed_missing_default_select"

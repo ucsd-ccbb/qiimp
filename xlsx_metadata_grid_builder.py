@@ -83,26 +83,40 @@ def _make_allowed_only_constraint(field_name, field_schema_dict):
 
     if allowed_onlies is not None and len(allowed_onlies) > 0:
         allowed_onlies_as_strs = [str(x) for x in allowed_onlies]
-        result = {'validate': 'list', 'source': allowed_onlies,
-                  'input_title': 'Enter {0}:'.format(field_name),
-                  'input_message': '{0} must be one of these allowed values: {1}'.format(
-                      field_name, ", ".join(allowed_onlies_as_strs))
-                  }
+        message = 'The value must be one of the following: {1}'.format(field_name, ", ".join(allowed_onlies_as_strs))
+        result = _make_base_validate_dict(field_name, message)
+        result.update({
+            'validate': 'list',
+            'source': allowed_onlies
+        })
+
     return result
 
 
 def _make_formula_constraint(field_name, field_schema_dict):
     result = None
     formula_string = xlsx_validation_builder.get_formula_constraint(field_schema_dict)
+    message = xlsx_validation_builder.get_field_constraint_description(field_schema_dict)
 
     if formula_string is not None:
         formula_string = "=("+formula_string + ")"
-        result = {
-            'validate': 'custom', 'value': formula_string,
-            'input_title': 'Enter {0}:'.format(field_name),
-            'input_message': 'placeholder'
-        }
+        result = _make_base_validate_dict(field_name, message)
+        result.update({
+            'validate': 'custom',
+            'value': formula_string
+        })
+
     return result
+
+
+def _make_base_validate_dict(field_name, message):
+    return {
+              # TODO: may be a prob here if the field_name is long enough ... I think Excel limits title to 32 char
+              'input_title': 'Enter {0}:'.format(field_name),
+              'input_message': message,
+              'error_message': 'The {0} value entered is not valid. '
+                               'Please refer to input prompt for field requirements'.format(field_name, message)
+              }
 
 
 def _add_default_if_any(data_worksheet, field_specs_dict, col_index):
