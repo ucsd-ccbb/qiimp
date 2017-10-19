@@ -35,7 +35,7 @@ function addLowerCaseLettersAndUnderscoreRule(field_index, required_base_name) {
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
     $(id_selector).rules("add", {
         pattern: field_name_regex,
-        messages: {pattern: "Only lower-case letters, numbers, and underscores are permitted."}
+        messages: {pattern: "Only lower-case letters, numbers, and underscores are permitted, and must not start with a number."}
     });
 }
 

@@ -65,8 +65,9 @@ class SanDiego(Location):
 
 
 class PerSamplePackage(object):
-    # "Only lower-case letters, numbers, and underscores are permitted."
-    FIELD_NAME_REGEX = "^[a-z0-9_]*$"
+    # All field names should be lowercase and contain only alphanumeric and underscores.
+    # No field name can start with a number
+    FIELD_NAME_REGEX = "^[a-z][a-z0-9_]*$"
 
     SAMPLE_NAME_REGEX = "^[a-zA-Z0-9\.]+$"  # alphanumeric and period only,
 
