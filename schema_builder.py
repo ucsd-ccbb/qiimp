@@ -2,6 +2,7 @@ import datetime
 from enum import Enum
 
 import metadata_package_schema_builder
+import regex_handler
 
 SEPARATOR = "_"
 TEMPLATE_SUFFIX = SEPARATOR + "template"
@@ -34,7 +35,6 @@ class InputNames(Enum):
 class FieldTypes(Enum):
     Boolean = "boolean"
     Text = metadata_package_schema_builder.CerberusDataTypes.Text.value
-    DateTime = metadata_package_schema_builder.CerberusDataTypes.DateTime.value
     Categorical = "categorical"
     Continuous = "continuous"
 
@@ -46,14 +46,12 @@ class DefaultTypes(Enum):
     categorical_default = "categorical_default"
     continuous_default = "continuous_default"
     text_default = "text_default"
-    datetime_default = "datetime_default"
 
 
 def _get_field_type_to_schema_generator():
     return {
         FieldTypes.Text.value: _generate_text_schema,
         FieldTypes.Boolean.value: _generate_boolean_schema,
-        FieldTypes.DateTime.value: _generate_datetime_schema,
         FieldTypes.Categorical.value: _generate_categorical_schema,
         FieldTypes.Continuous.value: _generate_continuous_schema
     }
@@ -67,7 +65,6 @@ def _get_default_types_to_input_fields():
         DefaultTypes.categorical_default.value: InputNames.categorical_default_select.value,
         DefaultTypes.continuous_default.value: InputNames.continuous_default.value,
         DefaultTypes.text_default.value: InputNames.text_default.value,
-        DefaultTypes.datetime_default.value: InputNames.datetime_default.value
     }
 
 
@@ -79,9 +76,9 @@ def _get_cast_func_by_data_type():
             }
 
 
-def get_validation_schema(curr_field_from_form):
+def get_validation_schema(curr_field_from_form, a_regex_handler):
     field_name = curr_field_from_form[InputNames.field_name.value]
-    validation_schema = _build_single_validation_schema_dict(curr_field_from_form)
+    validation_schema = _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler)
 
     if InputNames.allowed_missing_vals.value in curr_field_from_form:
         allowed_missing_vals_from_form = curr_field_from_form[InputNames.allowed_missing_vals.value]
@@ -91,7 +88,7 @@ def get_validation_schema(curr_field_from_form):
         allowed_missing_vals = [_convert_ebi_missing_name_to_ebi_missing_value(x) for x in
                                 allowed_missing_vals_from_form]
         curr_schema = {}
-        missings_schema = _generate_text_schema(None)
+        missings_schema = _generate_text_schema(None, a_regex_handler)
         missings_schema.update({
             metadata_package_schema_builder.ValidationKeys.allowed.value: allowed_missing_vals
         })
@@ -106,11 +103,11 @@ def get_validation_schema(curr_field_from_form):
     return field_name, curr_schema
 
 
-def _build_single_validation_schema_dict(curr_field_from_form):
+def _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler):
     generator_funcs_by_type = _get_field_type_to_schema_generator()
     field_type = curr_field_from_form[InputNames.field_type.value]
     schema_generator_func = generator_funcs_by_type[field_type]
-    result = schema_generator_func(curr_field_from_form)
+    result = schema_generator_func(curr_field_from_form, a_regex_handler)
 
     fixed_use_input_names = [e.value for e in InputNames]
     for curr_key, curr_value in curr_field_from_form.items():
@@ -120,30 +117,31 @@ def _build_single_validation_schema_dict(curr_field_from_form):
     return result
 
 
-def _generate_text_schema(curr_field_from_form):
-    return _generate_schema_by_data_type(metadata_package_schema_builder.CerberusDataTypes.Text.value)
+def _generate_text_schema(curr_field_from_form, a_regex_handler):
+    return _generate_schema_by_data_type(metadata_package_schema_builder.CerberusDataTypes.Text.value, a_regex_handler)
 
 
-def _generate_boolean_schema(curr_field_from_form):
+def _generate_boolean_schema(curr_field_from_form, a_regex_handler):
     bool_true = curr_field_from_form[InputNames.true_value.value]
     bool_false = curr_field_from_form[InputNames.false_value.value]
 
-    curr_schema = _generate_text_schema(curr_field_from_form)
+    curr_schema = _generate_text_schema(curr_field_from_form, a_regex_handler)
     curr_schema.update({
         metadata_package_schema_builder.ValidationKeys.allowed.value: [bool_true, bool_false]
     })
     return curr_schema
 
 
-def _generate_datetime_schema(curr_field_from_form):
-    return _generate_schema_by_data_type(metadata_package_schema_builder.CerberusDataTypes.DateTime.value)
+def _generate_datetime_schema(curr_field_from_form, a_regex_handler):
+    return _generate_schema_by_data_type(metadata_package_schema_builder.CerberusDataTypes.DateTime.value,
+                                         a_regex_handler)
 
 
-def _generate_categorical_schema(curr_field_from_form):
+def _generate_categorical_schema(curr_field_from_form, a_regex_handler):
     data_type = curr_field_from_form[InputNames.data_type.value]
     cast_funcs_by_type = _get_cast_func_by_data_type()
     cast_func = cast_funcs_by_type[data_type]
-    curr_schema = _generate_schema_by_data_type(data_type)
+    curr_schema = _generate_schema_by_data_type(data_type, a_regex_handler)
 
     categorical_vals_str = curr_field_from_form[InputNames.categorical_values.value]
     split_categorical_vals = categorical_vals_str.split("\r\n")
@@ -157,9 +155,9 @@ def _generate_categorical_schema(curr_field_from_form):
     return curr_schema
 
 
-def _generate_continuous_schema(curr_field_from_form):
+def _generate_continuous_schema(curr_field_from_form, a_regex_handler):
     data_type = curr_field_from_form[InputNames.data_type.value]
-    curr_schema = _generate_schema_by_data_type(data_type)
+    curr_schema = _generate_schema_by_data_type(data_type, a_regex_handler)
 
     curr_schema = _set_comparison_keyval_if_any(curr_field_from_form,
                                                 InputNames.minimum_value.value,
@@ -179,11 +177,22 @@ def _generate_basic_schema():
     }
 
 
-def _generate_schema_by_data_type(data_type):
+def _generate_schema_by_data_type(data_type, a_regex_handler):
+    """
+
+    :type a_regex_handler: regex_handler.RegexHandler
+    """
     curr_schema = _generate_basic_schema()
     curr_schema.update({
         metadata_package_schema_builder.ValidationKeys.type.value: data_type
     })
+
+    regex_for_data_type = a_regex_handler.get_regex_val_by_name(data_type)
+    if regex_for_data_type:
+        curr_schema.update({
+            metadata_package_schema_builder.ValidationKeys.regex.value: regex_for_data_type
+        })
+
     return curr_schema
 
 
