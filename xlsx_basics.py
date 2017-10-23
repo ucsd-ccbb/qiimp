@@ -1,5 +1,6 @@
 import string
 import metadata_package_schema_builder
+import regex_handler
 
 
 # region general functions for working with worksheets and formulas
@@ -133,15 +134,23 @@ def sort_keys(schema_dict):
 class MetadataWorksheet(object):
     # I think the column range available for worksheets is 'A:XFD'
 
-    def __init__(self, workbook, num_attributes, num_samples, make_sheet=True):
+    def __init__(self, workbook, num_attributes, num_samples, a_regex_handler, make_sheet=True):
         # TODO: this is a placeholder value because larger values are slower; figure out max usable value.
-        self.last_allowable_row_for_sample_index = 1000  # 1048576  # I think; just got this by looking at a worksheet
+        """
+
+        :type a_regex_handler: regex_handler.RegexHandler
+        """
+
+        # I've tested 250, 1000, 1500, 2000 and 10,000; at 10,000 rows of formulas, the workbook bogs down horribly.
+        # Haven't checked anything in between ...
+        self.last_allowable_row_for_sample_index = 2000
 
         self.workbook = workbook
         self.metadata_sheet_name = "metadata"
         # _num_samples not currently used; here as a hook for some of Austin's future requests
         self._num_samples = num_samples
         self._num_field_columns = num_attributes
+        self.regex_handler = a_regex_handler
 
         self.bold_format = make_format(workbook, {'bold': True})
         self.hidden_cell_setting = {'hidden': 1}
