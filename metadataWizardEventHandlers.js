@@ -13,7 +13,7 @@ function enableDisableTextDataType(selected_field_type, field_index){
     var data_type_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DATA_TYPE, field_index);
 
     // if the field type is categorical, the data type may be text.  If field type is anything else, text is disabled.
-    var select_option_for_field_type_selector = data_type_id_selector + " option[value='str']";
+    var select_option_for_field_type_selector = data_type_id_selector + " option[value='" + text_type_value + "']";
     enableOrDisableBySelectorAndValue(select_option_for_field_type_selector, selected_field_type, "categorical");
         resetSelectedOptionIfDisabled(data_type_id_selector);
 }
@@ -49,10 +49,16 @@ function displayFieldDetails(selected_field_type, field_index) {
 }
 
 function enableDisableDefaultSelectsOnFieldTypeChange(field_index){
-    // get the selected value for the default radio button set for this index
     var default_radio_name = getIdentifierFromBaseNameAndFieldIndex(SpecialInputs.DEFAULT_OPTION, field_index);
-    var curr_val = $("input[name='"+ default_radio_name + "']:checked").val();
-    // disable/enable the default select boxes based on the current value
+    var curr_checked_option_selector = "input[name='"+ default_radio_name + "']:checked";
+
+    // if the selected default option for the default radio button set for this index has been disabled by the field
+    // change, then reset the selected option to "no default" and show/hide default-option-specific fields as needed
+    if ($(curr_checked_option_selector).attr('disabled')) {
+        $("input[name='" + default_radio_name +"'][value='" + no_default_radio_value +"']").prop("checked",true);
+    }
+
+    var curr_val = $(curr_checked_option_selector).val();
     enableDisableDefaultSelects(field_index, curr_val);
 }
 
