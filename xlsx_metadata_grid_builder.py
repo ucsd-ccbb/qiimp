@@ -10,8 +10,8 @@ def write_metadata_grid(data_worksheet, schema_dict):
 
     _write_sample_id_col(data_worksheet)
 
-    unlocked = data_worksheet.workbook.add_format()
-    unlocked.set_locked(False)
+    # format everything in metadata sheet as text to prevent autoformatting!
+    unlocked_text = xlsx_basics.make_format(data_worksheet.workbook, {'num_format': '@'}, is_locked=False)
 
     sorted_keys = xlsx_basics.sort_keys(schema_dict)
     for field_index, field_name in enumerate(sorted_keys):
@@ -19,13 +19,13 @@ def write_metadata_grid(data_worksheet, schema_dict):
         curr_col_index = field_index + 1  # add one bc sample id is in first col
 
         xlsx_basics.write_header(data_worksheet, field_name, field_index + 1)
-        data_worksheet.worksheet.set_column(curr_col_index, curr_col_index, None, unlocked)
+        data_worksheet.worksheet.set_column(curr_col_index, curr_col_index, None, unlocked_text)
 
         starting_cell_name = xlsx_basics.format_range(curr_col_index, data_worksheet.first_data_row_index)
         whole_col_range = xlsx_basics.format_range(curr_col_index, data_worksheet.first_data_row_index,
                                                    last_row_index=data_worksheet.last_allowable_row_for_sample_index)
 
-        validation_dict = _get_validation_dict(field_name, field_specs_dict)
+        validation_dict = _get_validation_dict(field_name, field_specs_dict, data_worksheet.regex_handler)
         value_key = "value"
         if validation_dict is not None:
             if value_key in validation_dict:
@@ -59,7 +59,7 @@ def _write_sample_id_col(data_sheet):
         data_sheet.worksheet.write_formula(curr_cell, completed_formula)
 
 
-def _get_validation_dict(field_name, field_schema_dict):
+def _get_validation_dict(field_name, field_schema_dict, a_regex_handler):
     result = None
     validation_generators = [
         _make_allowed_only_constraint,
@@ -67,7 +67,7 @@ def _get_validation_dict(field_name, field_schema_dict):
     ]
 
     for curr_generator in validation_generators:
-        curr_validation_dict = curr_generator(field_name, field_schema_dict)
+        curr_validation_dict = curr_generator(field_name, field_schema_dict, a_regex_handler)
         if curr_validation_dict is not None:
             result = curr_validation_dict
             break
@@ -77,9 +77,9 @@ def _get_validation_dict(field_name, field_schema_dict):
     return result
 
 
-def _make_allowed_only_constraint(field_name, field_schema_dict):
+def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler):
     result = None
-    allowed_onlies = xlsx_validation_builder.roll_up_allowed_onlies(field_schema_dict)
+    allowed_onlies = xlsx_validation_builder.roll_up_allowed_onlies(field_schema_dict, a_regex_handler)
 
     if allowed_onlies is not None and len(allowed_onlies) > 0:
         allowed_onlies_as_strs = [str(x) for x in allowed_onlies]
@@ -93,10 +93,11 @@ def _make_allowed_only_constraint(field_name, field_schema_dict):
     return result
 
 
-def _make_formula_constraint(field_name, field_schema_dict):
+def _make_formula_constraint(field_name, field_schema_dict, a_regex_handler):
     result = None
-    formula_string = xlsx_validation_builder.get_formula_constraint(field_schema_dict)
-    message = xlsx_validation_builder.get_field_constraint_description(field_schema_dict)
+
+    formula_string = xlsx_validation_builder.get_formula_constraint(field_schema_dict, a_regex_handler)
+    message = xlsx_validation_builder.get_field_constraint_description(field_schema_dict, a_regex_handler)
 
     if formula_string is not None:
         formula_string = "=("+formula_string + ")"
@@ -110,12 +111,32 @@ def _make_formula_constraint(field_name, field_schema_dict):
 
 
 def _make_base_validate_dict(field_name, message):
+    input_title_prefix = 'Enter '
+    error_title_prefix = 'Invalid '
+
+    def munge_title(field_name, prefix):
+        title_len_limit = 32
+        usable_title_len = title_len_limit - len(prefix)
+        usable_name = "value" if len(field_name) > usable_title_len else field_name
+        return prefix + usable_name
+
+    def munge_msg(field_name, message, add_error_prefix):
+        msg_len_limit = 255
+        prefix = "The {0} value entered is not valid. ".format(field_name) if add_error_prefix else ""
+        result = prefix + message
+
+        if len(result) > msg_len_limit:
+            placeholder_msg = "[text truncated: please refer to field descriptions sheet for full requirements]."
+            usable_len = msg_len_limit - len(placeholder_msg)
+            result = result[:usable_len] + placeholder_msg
+
+        return result
+
     return {
-              # TODO: may be a prob here if the field_name is long enough ... I think Excel limits title to 32 char
-              'input_title': 'Enter {0}:'.format(field_name),
-              'input_message': message,
-              'error_message': 'The {0} value entered is not valid. '
-                               'Please refer to input prompt for field requirements'.format(field_name, message)
+              'input_title': munge_title(field_name, input_title_prefix),
+              'input_message': munge_msg(field_name, message, add_error_prefix=False),
+              'error_title': munge_title(field_name, error_title_prefix),
+              'error_message': munge_msg(field_name, message, add_error_prefix=True)
               }
 
 
