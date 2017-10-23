@@ -53,6 +53,8 @@
         g_reserved_word_url = "{{ static_url("reserved_words.yaml") }}";
         websocket_url = "{{ websocket_url }}";
 
+        text_type_value = "{{metadata_package_schema_builder.CerberusDataTypes.Text.value}}";
+        no_default_radio_value = "{{schema_builder.DefaultTypes.no_default.name}}";
         SEPARATOR = "{{schema_builder.SEPARATOR}}";
         TEMPLATE_SUFFIX = "{{schema_builder.TEMPLATE_SUFFIX}}";
         field_name_regex = /{{ metadata_package_schema_builder.PerSamplePackage.FIELD_NAME_REGEX }}/
@@ -85,7 +87,6 @@
             "{{schema_builder.FieldTypes.Text.value}}":["text_default_div"],
             "{{schema_builder.FieldTypes.Boolean.value}}": ["field_details_div","boolean_true_div", "boolean_false_div",
                 "boolean_default_div"],
-            "{{schema_builder.FieldTypes.DateTime.value}}":["datetime_default_div"],
             "{{schema_builder.FieldTypes.Continuous.value}}": ["field_details_div","data_type_div", "minimum_div",
                 "maximum_div", "units_div",
                 "continuous_default_div"],
@@ -128,8 +129,6 @@
                     "{{schema_builder.DefaultTypes.continuous_default.value}}");
             enableOrDisableByValue(SpecialInputs.DEFAULT_TEXT, field_index, curr_val,
                     "{{schema_builder.DefaultTypes.text_default.value}}");
-            enableOrDisableByValue(SpecialInputs.DEFAULT_DATETIME, field_index, curr_val,
-                    "{{schema_builder.DefaultTypes.datetime_default.value}}");
         };
     </script>
 </head>
@@ -364,11 +363,6 @@
                                         <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "text_default_value_template" value="{{schema_builder.DefaultTypes.text_default.name}}">
                                         <label id="text_default_label_template" for="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">&nbsp;Text Default</label><br />
                                         <textarea name="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 0.5 ml subcutaneously" disabled required></textarea>
-                                    </div>
-                                    <div class="initially_hidden hidden" id = "datetime_default_div_template">
-                                        <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "datetime_default_value_template" value="{{schema_builder.DefaultTypes.datetime_default.name}}">
-                                        <label id="datetime_default_label_template" for="{{schema_builder.InputNames.datetime_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">&nbsp;DateTime Default</label><br />
-                                        <input type ="text" name="{{schema_builder.InputNames.datetime_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.datetime_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 2011-12-13" disabled required/>
                                     </div>
                                 </div>
                             </div>
