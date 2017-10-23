@@ -7,6 +7,8 @@ var SpecialInputs = {};
 var fields_to_show_by_field_type = {};
 var websocket_url = "";
 var field_name_regex = null;
+var text_type_value = null;
+var no_default_radio_value = null;
 
 
 // Dynamically generate HTML specifying input elements for a new field
@@ -75,7 +77,7 @@ $.validator.addMethod("nameIsNotReserved", function(value, element) {
     return (g_reserved_words.indexOf(value) <= -1);
 }, "Field name must not be a reserved word.");
 
-var allowed_date_formats = ["YYYY-MM-DD hh:mm:ss", "YYYY-MM-DD hh:mm", "YYYY-MM-DD hh", "YYYY-MM-DD", "YYYY-MM",
+var allowed_date_formats = ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", "YYYY-MM-DD HH", "YYYY-MM-DD", "YYYY-MM",
     "YYYY"];
 $.validator.addMethod("isValidDateTime", function(value, element){
     // From Austin re collection_timestamp: "The only formats allowed are:
@@ -96,7 +98,7 @@ $.validator.addMethod("isValidDateTime", function(value, element){
         }
     }
 
-    return return_val;
+    return this.optional(element) || return_val;
 }, "DateTime must be a valid timestamp in one of these formats: " + allowed_date_formats.join(" or "));
 
 var package_fields = {};
