@@ -15,6 +15,7 @@ import tornado.websocket
 import metadata_package_schema_builder
 import schema_builder
 import xlsx_builder
+import regex_handler
 
 # TODO: Refactor to dynamically pull from files
 # TODO: Refactor to share definition of "other" key between back and front ends
@@ -24,6 +25,7 @@ _packages_by_keys = {
 
 _package_class = None
 _full_websocket_url = None
+_regex_handler = None
 
 
 def _parse_cmd_line_args():
@@ -109,6 +111,10 @@ class PackageHandler(tornado.websocket.WebSocketHandler):
 
         selected_package = _packages_by_keys[package_key]
         package_class = selected_package()
+
+        # TODO: get all the required keys, return them as here, but ALSO
+        # get all the not-required keys and their messages, return them separately; then change interface
+        # to display them as checkboxes.  If they are checked, include them in schema AS REQUIRED
         return_delimited_str = ", ".join(sorted(package_class.schema.keys()))
         _set_package_class(package_key)
         self.write_message(return_delimited_str)
@@ -123,6 +129,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("metadata_wizard_template.html", websocket_url=_full_websocket_url)
 
     def post(self):
+        global _regex_handler
         try:
             study_name = None
             dict_of_field_schemas_by_index = defaultdict(dict)
@@ -143,13 +150,14 @@ class MainHandler(tornado.web.RequestHandler):
                         # NB: it is OK if the field indices do not start at zero and/or are not contiguous
                         split_val = curr_key.split(schema_builder.SEPARATOR)
                         index_str = split_val[-1]
-                        if "[]" in index_str:
-                            retain_list = True
-                        index_str = index_str.replace("[]", "")
+
                         try:
                             index = int(index_str)  # index will be last separated value in key name
                             curr_schema = dict_of_field_schemas_by_index[index]
                             base_key = curr_key.replace(schema_builder.SEPARATOR + index_str, "")
+                            if "[]" in base_key:
+                                retain_list = True
+                            base_key = base_key.replace("[]", "")
 
                             revised_values = _parse_form_value(curr_value, retain_list)
                             if revised_values:  # "truish"--not empty string, whitespace, etc
@@ -164,14 +172,18 @@ class MainHandler(tornado.web.RequestHandler):
             dict_of_validation_schema_by_index = {}
             for curr_key in dict_of_field_schemas_by_index:
                 curr_schema = dict_of_field_schemas_by_index[curr_key]
-                field_name, curr_validation_schema = schema_builder.get_validation_schema(curr_schema)
+                field_name, curr_validation_schema = schema_builder.get_validation_schema(curr_schema, _regex_handler)
                 dict_of_validation_schema_by_index[field_name] = curr_validation_schema
 
             package_key = _get_package_class()
             selected_package = _packages_by_keys[package_key]
             package_class = selected_package()
+
+            # TODO: so, right now I just grab the whole schema.  Need to handle this differently: get everything
+            # required from this schema.  Then, get back selected optionals from interface (currently not done)
+            # and get those from schema--and change them to required.
             dict_of_validation_schema_by_index.update(package_class.schema)
-            file_name = xlsx_builder.write_workbook(study_name, dict_of_validation_schema_by_index)
+            file_name = xlsx_builder.write_workbook(study_name, dict_of_validation_schema_by_index, _regex_handler)
 
             self.render("metadata_download_template.html", template_file_name=file_name)
         except Exception as e:
@@ -202,10 +214,13 @@ class MainHandler(tornado.web.RequestHandler):
 
 if __name__ == "__main__":
     is_deployed = _parse_cmd_line_args()
+    local_dir = os.path.dirname(__file__)
 
     static_path, websocket_url, listen_port = _get_config_values(is_deployed)
-    if static_path == "": static_path = os.path.dirname(__file__)
+    if static_path == "": static_path = local_dir
     _full_websocket_url = "ws://{0}:{1}/websocket".format(websocket_url, listen_port)
+
+    _regex_handler = regex_handler.RegexHandler(os.path.join(local_dir, 'regex_definitions.yaml'))
 
     settings = {
         "static_path": static_path
