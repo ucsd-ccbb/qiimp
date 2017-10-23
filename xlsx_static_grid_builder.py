@@ -4,8 +4,8 @@ import xlsx_validation_builder
 
 
 class ValidationWorksheet(xlsx_basics.MetadataWorksheet):
-    def __init__(self, workbook, num_attributes, num_samples):
-        super().__init__(workbook, num_attributes, num_samples, make_sheet=False)
+    def __init__(self, workbook, num_attributes, num_samples, a_regex_handler):
+        super().__init__(workbook, num_attributes, num_samples, a_regex_handler, make_sheet=False)
 
         self.SAMPLE_NAME_HEADER = metadata_package_schema_builder.SAMPLE_NAME_HEADER
         self.IS_ABSENT_HEADER = "is_absent"
@@ -59,7 +59,8 @@ def _write_static_validation_grid(val_sheet, schema_dict):
 
         xlsx_basics.write_header(val_sheet, field_name, curr_grid_col_index)
 
-        unformatted_formula_str = xlsx_validation_builder.get_formula_constraint(field_specs_dict)
+        unformatted_formula_str = xlsx_validation_builder.get_formula_constraint(field_specs_dict,
+                                                                                 val_sheet.regex_handler)
         if unformatted_formula_str is not None:
             curr_metadata_col_index = val_sheet.first_data_col_index + field_index
             # metadata_cell_range_str = xlsx_basics.format_single_col_range(val_sheet, curr_metadata_col_index,
