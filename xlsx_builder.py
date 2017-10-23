@@ -1,4 +1,5 @@
 import re
+import os
 
 import unicodedata
 import xlsxwriter
@@ -6,11 +7,13 @@ import yaml
 
 import xlsx_basics
 import xlsx_metadata_grid_builder
+import xlsx_validation_builder
 import xlsx_static_grid_builder
 import xlsx_dynamic_grid_builder
+import regex_handler
 
 
-def write_workbook(study_name, schema_dict):
+def write_workbook(study_name, schema_dict, a_regex_handler):
     # TODO: either expand code to use num_samples and add real code to get in from interface, or take out unused hook
     num_samples = 0
     num_columns = len(schema_dict.keys())
@@ -23,15 +26,28 @@ def write_workbook(study_name, schema_dict):
                                                'strings_to_urls': True})
 
     # write metadata worksheet
-    metadata_worksheet = xlsx_basics.MetadataWorksheet(workbook, num_columns, num_samples)
+    metadata_worksheet = xlsx_basics.MetadataWorksheet(workbook, num_columns, num_samples, a_regex_handler)
     xlsx_metadata_grid_builder.write_metadata_grid(metadata_worksheet, schema_dict)
 
     # write validation worksheet
-    validation_worksheet = xlsx_static_grid_builder.ValidationWorksheet(workbook, num_columns, num_samples)
+    validation_worksheet = xlsx_static_grid_builder.ValidationWorksheet(workbook, num_columns, num_samples,
+                                                                        a_regex_handler)
     index_and_range_str_tuple_by_header_dict = xlsx_static_grid_builder.write_static_validation_grid_and_helpers(
         validation_worksheet, schema_dict)
     xlsx_dynamic_grid_builder.write_dynamic_validation_grid(
         validation_worksheet, index_and_range_str_tuple_by_header_dict)
+
+    # write descriptions worksheet
+    descriptions_worksheet = DescriptionWorksheet(workbook, num_columns, num_samples, a_regex_handler)
+    xlsx_basics.write_header(descriptions_worksheet, "field name", 0)
+    xlsx_basics.write_header(descriptions_worksheet, "field description", 1)
+    sorted_keys = xlsx_basics.sort_keys(schema_dict)
+    for field_index, field_name in enumerate(sorted_keys):
+        row_num = field_index + 1 + 1  # plus 1 to move past name row, and plus 1 again because row nums are 1-based
+        field_specs_dict = schema_dict[field_name]
+        message = xlsx_validation_builder.get_field_constraint_description(field_specs_dict, a_regex_handler)
+        descriptions_worksheet.worksheet.write("A{0}".format(row_num), field_name, metadata_worksheet.bold_format)
+        descriptions_worksheet.worksheet.write("B{0}".format(row_num), message)
 
     # write schema worksheet
     schema_worksheet = xlsx_basics.create_worksheet(workbook, "metadata_schema")
@@ -40,6 +56,14 @@ def write_workbook(study_name, schema_dict):
     # close workbook
     workbook.close()
     return file_name
+
+
+class DescriptionWorksheet(xlsx_basics.MetadataWorksheet):
+    def __init__(self, workbook, num_attributes, num_samples, a_regex_handler):
+        super().__init__(workbook, num_attributes, num_samples, a_regex_handler, make_sheet=False)
+
+        self.worksheet = xlsx_basics.create_worksheet(self.workbook, "field descriptions",
+                                                      self._permissive_protect_options)
 
 
 # very slight modification of django code at https://github.com/django/django/blob/master/django/utils/text.py#L413
@@ -64,7 +88,7 @@ if __name__ == "__main__":
 bmi:
   anyof:
   - &id001 {empty: false, min: 0, required: true, type: number}
-  - allowed: [not applicable, 'missing: not collected', 'missing: not provided', 'missing: restricted access']
+  - allowed: ['not applicable', 'missing: not collected', 'missing: not provided', 'missing: restricted access']
     required: true
     type: string
   required: true
@@ -114,7 +138,7 @@ age: &id003
 age_units: &id004
   anyof:
   - empty: false
-    forbidden: [not applicable, 'missing: not collected', 'missing: restricted access']
+    forbidden: ['not applicable', 'missing: not collected', 'missing: restricted access']
     required: true
     type: string
   - *id002
@@ -135,9 +159,20 @@ body_site:
   default: UBERON:vagina
   required: true
   type: string
+collection_timestamp:
+  anyof:
+  - allowed: ['missing: not provided']
+    default: 'missing: not provided'
+    empty: false
+    required: true
+    type: string
+  - regex: '^([0-9]{1,4})(?:-([0-9]{1,2})(?:-([0-9]{1,2})(?: ([0-9]{1,2})(?::([0-9]{1,2})(?::([0-9]{1,2}))?)?)?)?)?$'
+    empty: false
+    required: true
+    type: string
 disease state:
   anyof:
-  - allowed: [not applicable, 'missing: not provided']
+  - allowed: ['not applicable', 'missing: not provided']
     default: 'missing: not provided'
     empty: false
     required: true
@@ -148,7 +183,7 @@ disease state:
     type: string
 dosage:
   anyof:
-  - allowed: [not applicable, 'missing: not collected']
+  - allowed: ['not applicable', 'missing: not collected']
     default: '0.5'
     empty: false
     required: true
@@ -177,6 +212,13 @@ is a patient:
   empty: false
   required: true
   type: string
+latitude:
+  anyof:
+  - allowed: ['not applicable', 'missing: not collected']
+    empty: false
+    required: true
+    type: string
+  - {min: -90, max: 90, required: true, type: number}
 life_stage:
   anyof:
   - allowed: [adult, juvenile, infant]
@@ -186,6 +228,13 @@ life_stage:
     allowed: ['missing: not provided', 'missing: not collected', 'missing: restricted access']
     required: true
     type: string
+latitude:
+  anyof:
+  - allowed: ['not applicable', 'missing: not collected']
+    empty: false
+    required: true
+    type: string
+  - {min: -90, max: 90, required: true, type: number}
 sample_name: {empty: false, regex: '^[a-zA-Z0-9\.]+$', required: true, type: string}
 sample_type:
   allowed: [stool, mucus]
@@ -200,4 +249,5 @@ sex:
 weight: *id003
 weight_units: *id004
 """
-    write_workbook("validation_wksht_test", yaml.load(hs_vaginal_fixed_schema_yaml))
+    a_regex_handler = regex_handler.RegexHandler(os.path.join(os.path.dirname(__file__), 'regex_definitions.yaml'))
+    write_workbook("validation_wksht_test", yaml.load(hs_vaginal_fixed_schema_yaml), a_regex_handler)
