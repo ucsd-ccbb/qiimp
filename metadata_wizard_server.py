@@ -27,6 +27,11 @@ _package_class = None
 _full_websocket_url = None
 _regex_handler = None
 
+_allowed_min_browser_versions = {
+    'chrome': 49,
+    'firefox': 48,
+}
+
 
 def _parse_cmd_line_args():
     parser = argparse.ArgumentParser()
@@ -126,7 +131,8 @@ class PackageHandler(tornado.websocket.WebSocketHandler):
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         global _full_websocket_url
-        self.render("metadata_wizard_template.html", websocket_url=_full_websocket_url)
+        self.render("metadata_wizard_template.html", websocket_url=_full_websocket_url,
+                    allowed_min_browser_versions=_allowed_min_browser_versions)
 
     def post(self):
         global _regex_handler
