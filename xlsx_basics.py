@@ -135,7 +135,6 @@ class MetadataWorksheet(object):
     # I think the column range available for worksheets is 'A:XFD'
 
     def __init__(self, workbook, num_attributes, num_samples, a_regex_handler, make_sheet=True):
-        # TODO: this is a placeholder value because larger values are slower; figure out max usable value.
         """
 
         :type a_regex_handler: regex_handler.RegexHandler
