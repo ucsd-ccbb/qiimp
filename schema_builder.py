@@ -179,7 +179,7 @@ def _generate_schema_by_data_type(curr_field_from_form, a_regex_handler, overrid
     :type a_regex_handler: regex_handler.RegexHandler
     """
 
-    data_type = overriding_datatype if overriding_datatype else curr_field_from_form[InputNames.data_type]
+    data_type = overriding_datatype if overriding_datatype else curr_field_from_form[InputNames.data_type.value]
     phi_val = InputNames.is_phi.value in curr_field_from_form
 
     curr_schema = {
