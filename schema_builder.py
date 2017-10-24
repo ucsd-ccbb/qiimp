@@ -30,6 +30,7 @@ class InputNames(Enum):
     maximum_comparison = "maximum_comparison"
     maximum_value = "maximum_value"
     units = "units"
+    is_phi = "is_phi"
 
 
 class FieldTypes(Enum):
@@ -118,7 +119,9 @@ def _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler):
 
 
 def _generate_text_schema(curr_field_from_form, a_regex_handler):
-    return _generate_schema_by_data_type(metadata_package_schema_builder.CerberusDataTypes.Text.value, a_regex_handler)
+    return _generate_schema_by_data_type(
+        curr_field_from_form, a_regex_handler,
+        overriding_datatype=metadata_package_schema_builder.CerberusDataTypes.Text.value)
 
 
 def _generate_boolean_schema(curr_field_from_form, a_regex_handler):
@@ -133,15 +136,16 @@ def _generate_boolean_schema(curr_field_from_form, a_regex_handler):
 
 
 def _generate_datetime_schema(curr_field_from_form, a_regex_handler):
-    return _generate_schema_by_data_type(metadata_package_schema_builder.CerberusDataTypes.DateTime.value,
-                                         a_regex_handler)
+    return _generate_schema_by_data_type(
+        curr_field_from_form, a_regex_handler,
+        overriding_datatype=metadata_package_schema_builder.CerberusDataTypes.DateTime.value)
 
 
 def _generate_categorical_schema(curr_field_from_form, a_regex_handler):
     data_type = curr_field_from_form[InputNames.data_type.value]
     cast_funcs_by_type = _get_cast_func_by_data_type()
     cast_func = cast_funcs_by_type[data_type]
-    curr_schema = _generate_schema_by_data_type(data_type, a_regex_handler)
+    curr_schema = _generate_schema_by_data_type(curr_field_from_form, a_regex_handler)
 
     categorical_vals_str = curr_field_from_form[InputNames.categorical_values.value]
     split_categorical_vals = categorical_vals_str.split("\r\n")
@@ -156,8 +160,7 @@ def _generate_categorical_schema(curr_field_from_form, a_regex_handler):
 
 
 def _generate_continuous_schema(curr_field_from_form, a_regex_handler):
-    data_type = curr_field_from_form[InputNames.data_type.value]
-    curr_schema = _generate_schema_by_data_type(data_type, a_regex_handler)
+    curr_schema = _generate_schema_by_data_type(curr_field_from_form, a_regex_handler)
 
     curr_schema = _set_comparison_keyval_if_any(curr_field_from_form,
                                                 InputNames.minimum_value.value,
@@ -170,22 +173,21 @@ def _generate_continuous_schema(curr_field_from_form, a_regex_handler):
     return curr_schema
 
 
-def _generate_basic_schema():
-    return {
-        metadata_package_schema_builder.ValidationKeys.empty.value: False,
-        metadata_package_schema_builder.ValidationKeys.required.value: True
-    }
-
-
-def _generate_schema_by_data_type(data_type, a_regex_handler):
+def _generate_schema_by_data_type(curr_field_from_form, a_regex_handler, overriding_datatype=None):
     """
 
     :type a_regex_handler: regex_handler.RegexHandler
     """
-    curr_schema = _generate_basic_schema()
-    curr_schema.update({
-        metadata_package_schema_builder.ValidationKeys.type.value: data_type
-    })
+
+    data_type = overriding_datatype if overriding_datatype else curr_field_from_form[InputNames.data_type]
+    phi_val = InputNames.is_phi.value in curr_field_from_form
+
+    curr_schema = {
+        metadata_package_schema_builder.ValidationKeys.empty.value: False,
+        metadata_package_schema_builder.ValidationKeys.required.value: True,
+        metadata_package_schema_builder.ValidationKeys.type.value: data_type,
+        InputNames.is_phi.value: phi_val
+    }
 
     regex_for_data_type = a_regex_handler.get_regex_val_by_name(data_type)
     if regex_for_data_type:

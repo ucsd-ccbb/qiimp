@@ -77,6 +77,10 @@ class PerSamplePackage(object):
                 ValidationKeys.type.value: CerberusDataTypes.Text.value,
                 ValidationKeys.regex.value: self.SAMPLE_NAME_REGEX,
                 ValidationKeys.empty.value: False,
-                ValidationKeys.required.value: True
+                ValidationKeys.required.value: True,
+                # TODO: This is_phi value shouldn't be hardcoded here.  Then again, my understanding is that eventually
+                # this entire per-sample package will no longer be hardcoded here but will be in yaml, so not bothering
+                # to refactor unless that understanding changes.
+                "is_phi": False
             }
         }
