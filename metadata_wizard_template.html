@@ -6,9 +6,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Metadata Wizard</title>
-    <!-- bootstrap stylesheet -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
+	<link href='http://fonts.googleapis.com/css?family=Lato:300,400,700,900' rel='stylesheet' type='text/css' />
+	<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="{{ static_url("third-party/microbiome/css/bootstrap.css") }}" rel="stylesheet" />
+    <link href="{{ static_url("third-party/microbiome/css/screen.css") }}" rel="stylesheet" />
 
     <style type="text/css">
         .fieldTemplate {
@@ -24,6 +25,17 @@
             padding: 2px;
             border-top: 1px solid black;
         }
+    .wizard_logo {
+        background: url({{ static_url("third-party/microbiome/img/logo-microbiome.png") }}) no-repeat center center;
+        display: inline-block;
+        width: 100px;
+        height: 100px;
+        margin: 25px 10px;
+        background-size: 100%;
+        position: relative;
+        font-size: 0;
+        z-index: 1;
+    }
     </style>
 
 
@@ -33,9 +45,6 @@
     <!-- jquery validation plugin -->
     <script src={{ static_url("third-party/jquery_validation/jquery.validate.min.js") }}></script>
     <script src={{ static_url("third-party/jquery_validation/additional-methods.min.js") }}></script>
-
-    <!-- bootstrap js -->
-    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script> -->
 
     <!-- js-yaml -->
     <script src={{ static_url("third-party/js-yaml.min.js") }}></script>
@@ -178,6 +187,13 @@
 <body onload='overlay_check();'>
 <form id = "package_form">
     <div class="container" id="package_div">
+        <div class="row">
+            <div class="col-sm-4 wizard_logo">
+            </div>
+            <div class="col-sm-8">
+                <h1>Metadata Wizard</h1>
+            </div>
+        </div>
         <div class="row" id="mode_div">
             <div class="col-sm-12">
                 How would you like to select your metadata package?<br />

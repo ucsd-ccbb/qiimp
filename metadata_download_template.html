@@ -3,14 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <title>Metadata Template Download</title>
-    <!-- bootstrap stylesheet -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<link href='http://fonts.googleapis.com/css?family=Lato:300,400,700,900' rel='stylesheet' type='text/css' />
+	<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="{{ static_url("third-party/microbiome/css/bootstrap.css") }}" rel="stylesheet" />
+    <link href="{{ static_url("third-party/microbiome/css/screen.css") }}" rel="stylesheet" />
+    <style type="text/css">
+    .wizard_logo {
+        background: url({{ static_url("third-party/microbiome/img/logo-microbiome.png") }}) no-repeat center center;
+        display: inline-block;
+        width: 100px;
+        height: 100px;
+        margin: 25px 10px;
+        background-size: 100%;
+        position: relative;
+        font-size: 0;
+        z-index: 1;
+    }
+    </style>
 </head>
 <body>
     <div class="container" id="container">
         <div class="row">
+            <div class="col-sm-4 wizard_logo">
+            </div>
+            <div class="col-sm-8">
+                <h1>Metadata Wizard Download</h1>
+            </div>
+        </div>
+        <div class="row">
             <div class="col-sm-12">
-                Download your <a href={{ static_url(template_file_name) }}>customized metadata template spreadsheet</a> now!
+                <strong>Download your <a href="{{ static_url(template_file_name) }}">customized metadata template spreadsheet</a> now!</strong>
+                <br />
+                <br />
+                To make another metadata template, click <a href="http://{{ main_url }}">here</a>.
             </div>
         </div>
     </div>

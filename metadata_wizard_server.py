@@ -24,6 +24,7 @@ _packages_by_keys = {
 }
 
 _package_class = None
+_main_url = None
 _full_websocket_url = None
 _regex_handler = None
 
@@ -191,11 +192,12 @@ class MainHandler(tornado.web.RequestHandler):
             dict_of_validation_schema_by_index.update(package_class.schema)
             file_name = xlsx_builder.write_workbook(study_name, dict_of_validation_schema_by_index, _regex_handler)
 
-            self.render("metadata_download_template.html", template_file_name=file_name)
+            self.redirect("/download/{0}".format(file_name))
         except Exception as e:
             self.send_error(exc_info=sys.exc_info())
 
     def write_error(self, status_code, **kwargs):
+        global _main_url
         error_details_list = []
         exc_info_key = "exc_info"
         if exc_info_key in kwargs:
@@ -211,7 +213,18 @@ class MainHandler(tornado.web.RequestHandler):
         subject = "Metadata Wizard error report"
         mailto_url = "mailto:{0}?subject={1}&body={2}".format(email_addr, quote(subject), quote(error_details))
 
-        self.render("metadata_error_template.html", mailto_url=mailto_url, error_trace=error_details)
+        self.render("metadata_error_template.html", mailto_url=mailto_url, error_trace=error_details,
+                    main_url=_main_url)
+
+    def data_received(self, chunk):
+        # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
+        pass
+
+
+class DownloadHandler(tornado.web.RequestHandler):
+    def get(self, slug):
+        global _main_url
+        self.render("metadata_download_template.html", template_file_name=slug, main_url=_main_url)
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
@@ -224,7 +237,8 @@ if __name__ == "__main__":
 
     static_path, websocket_url, listen_port = _get_config_values(is_deployed)
     if static_path == "": static_path = local_dir
-    _full_websocket_url = "ws://{0}:{1}/websocket".format(websocket_url, listen_port)
+    _main_url = "{0}:{1}".format(websocket_url, listen_port)
+    _full_websocket_url = "ws://{0}/websocket".format(_main_url)
 
     _regex_handler = regex_handler.RegexHandler(os.path.join(local_dir, 'regex_definitions.yaml'))
 
@@ -233,7 +247,8 @@ if __name__ == "__main__":
     }
     application = tornado.web.Application([
         (r"/", MainHandler),
-        (r"/websocket", PackageHandler)
+        (r"/websocket", PackageHandler),
+        (r"/download/([^/]+)", DownloadHandler)
     ], **settings)
 
     application.listen(listen_port)
