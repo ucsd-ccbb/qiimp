@@ -34,6 +34,11 @@ class ValidationWorksheet(xlsx_basics.MetadataWorksheet):
 
         self.worksheet = self._create_worksheet("validation")
 
+    def hide_columns(self, first_col_index, last_col_index=None):
+        first_col_letter = xlsx_basics.get_col_letters(first_col_index)
+        last_col_letter = first_col_letter if last_col_index is None else xlsx_basics.get_col_letters(last_col_index)
+        self.worksheet.set_column('{0}:{1}'.format(first_col_letter, last_col_letter), None, None, {'hidden': True})
+
 
 # I know what you're thinking: if all these functions take in the ValidationWorksheet object as their first argument,
 # why the heck aren't they methods of the Validation Worksheet object?  Well, they don't *all* take that in as their
@@ -43,7 +48,7 @@ class ValidationWorksheet(xlsx_basics.MetadataWorksheet):
 # have to ... those functions are in a different module to keep them separate.
 def write_static_validation_grid_and_helpers(val_sheet, schema_dict):
     _write_static_validation_grid(val_sheet, schema_dict)
-    return _write_static_helper_rows_and_cols(val_sheet)
+    return _write_static_helper_rows_and_cols(val_sheet)\
 
 
 # write invariant sample by feature grid
@@ -52,6 +57,7 @@ def _write_static_validation_grid(val_sheet, schema_dict):
 
     :type val_sheet: ValidationWorksheet
     """
+    curr_grid_col_index = None
     sorted_keys = xlsx_basics.sort_keys(schema_dict)
     for field_index, field_name in enumerate(sorted_keys):
         field_specs_dict = schema_dict[field_name]
@@ -78,6 +84,8 @@ def _write_static_validation_grid(val_sheet, schema_dict):
                 # xlsx_basics.format_and_write_array_formula(val_sheet, curr_grid_col_index, unformatted_formula_str,
                 #                                            write_col=True, cell_range_str=metadata_cell_range_str)
 
+    # hide all the columns in the static grid.  Use value of curr_grid_col_index left over from last time thru loop.
+    if curr_grid_col_index: val_sheet.hide_columns(val_sheet.first_static_grid_col_index, curr_grid_col_index)
 
 def _write_static_helper_rows_and_cols(val_sheet):
     """
@@ -119,6 +127,7 @@ def _write_static_helper_ranges(val_sheet, header_and_writer_func_tuple_list,
     def get_row_index(header_index):
         return val_sheet.first_helper_rows_row_index + header_index
 
+    col_index = None
     write_col = False
     if range_index_and_range_str_tuple_by_header_dict is None:
         range_index_and_range_str_tuple_by_header_dict = {}
@@ -136,6 +145,10 @@ def _write_static_helper_ranges(val_sheet, header_and_writer_func_tuple_list,
         curr_range_str = curr_write_method(val_sheet, curr_range_index,
                                            range_index_and_range_str_tuple_by_header_dict)
         range_index_and_range_str_tuple_by_header_dict[curr_header] = (curr_range_index, curr_range_str)
+
+    if write_col and col_index is not None:
+        # use the col_index left over from last time through loop
+        val_sheet.hide_columns(val_sheet.first_static_grid_col_index-1, col_index)
 
     return range_index_and_range_str_tuple_by_header_dict
 

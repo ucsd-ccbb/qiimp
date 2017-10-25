@@ -191,8 +191,11 @@ class MetadataWorksheet(object):
     def _create_worksheet(self, sheet_name, permissive_protect_options=None, num_cols_to_freeze=1):
         result = create_worksheet(self.workbook, sheet_name, permissive_protect_options, num_cols_to_freeze)
 
-        first_unused_col_letter = get_col_letters(self.last_data_col_index+1)
-        result.set_column('{0}:XFD'.format(first_unused_col_letter), None, None, {'hidden': True})
+        # Hmm, it appears that hiding columns does not play well with freezing columns :(  This functionality taken
+        # out until/unless I have time to determine whether this is a problem with the xlsxwriter library or with my
+        # usage of it.
+        # first_unused_col_letter = get_col_letters(self.last_data_col_index+1)
+        # result.set_column('{0}:XFD'.format(first_unused_col_letter), None, None, {'hidden': True})
         result.set_default_row(hide_unused_rows=True)
 
         return result
