@@ -98,16 +98,16 @@ def _write_dynamic_name_link_col(val_sheet, index_and_range_str_tuple_by_header_
         helper_name_val = "INDEX({conditional_name_fixed_range_str},{row_num},0)".format(
             conditional_name_fixed_range_str=helper_name_fixed_range_str, row_num=row_rank_num)
 
-        # this looks up the value in the is_absent helper column for this sample (either True or False)
-        is_absent = xlsx_basics.format_range(
-            index_and_range_str_tuple_by_header_dict[val_sheet.IS_ABSENT_HEADER][0], curr_row_index)
+        # this looks up the value in the is_valid helper column for this sample (either True or False)
+        is_valid = xlsx_basics.format_range(
+            index_and_range_str_tuple_by_header_dict[val_sheet.IS_VALID_ROW_HEADER][0], curr_row_index)
 
         curr_cell = xlsx_basics.format_range(val_sheet.name_link_col_index, curr_row_index)
 
-        # If this sample is absent entirely, write a space into the dynamic name cell.  Otherwise, write a link to the
+        # If this sample is entirely valid, write a space into the dynamic name cell.  Otherwise, write a link to the
         # name column for this sample in the metadata sheet
-        full_formula = "=IF({is_absent},\" \",HYPERLINK({link_address},{helper_name_val}))".format(
-            is_absent=is_absent, link_address=link_address, helper_name_val=helper_name_val)
+        full_formula = "=IF({is_valid},\" \",HYPERLINK({link_address},{helper_name_val}))".format(
+            is_valid=is_valid, link_address=link_address, helper_name_val=helper_name_val)
         val_sheet.worksheet.write_formula(curr_cell, full_formula, url_format)
 
 
