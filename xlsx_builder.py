@@ -14,6 +14,7 @@ import regex_handler
 
 
 def write_workbook(study_name, schema_dict, a_regex_handler):
+    num_allowable_samples = 1000
     # TODO: either expand code to use num_samples and add real code to get in from interface, or take out unused hook
     num_samples = 0
     num_columns = len(schema_dict.keys())
@@ -26,7 +27,8 @@ def write_workbook(study_name, schema_dict, a_regex_handler):
                                                'strings_to_urls': True})
 
     # write metadata worksheet
-    metadata_worksheet = xlsx_basics.MetadataWorksheet(workbook, num_columns, num_samples, a_regex_handler)
+    metadata_worksheet = xlsx_basics.MetadataWorksheet(workbook, num_columns, num_samples, a_regex_handler,
+                                                       num_allowable_samples=num_allowable_samples)
     xlsx_metadata_grid_builder.write_metadata_grid(metadata_worksheet, schema_dict)
 
     # write validation worksheet

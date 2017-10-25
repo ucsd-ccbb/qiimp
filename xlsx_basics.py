@@ -134,22 +134,19 @@ def sort_keys(schema_dict):
 class MetadataWorksheet(object):
     # I think the column range available for worksheets is 'A:XFD'
 
-    def __init__(self, workbook, num_attributes, num_samples, a_regex_handler, make_sheet=True):
+    def __init__(self, workbook, num_attributes, num_samples, a_regex_handler, make_sheet=True, num_allowable_samples=1000):
         """
 
         :type a_regex_handler: regex_handler.RegexHandler
         """
 
-        # I've tested 250, 1000, 1500, 2000 and 10,000; at 10,000 rows of formulas, the workbook bogs down horribly.
-        # Haven't checked anything in between ...
-        self.last_allowable_row_for_sample_index = 2000
-
         self.workbook = workbook
         self.metadata_sheet_name = "metadata"
+        self.regex_handler = a_regex_handler
+        self.num_allowable_samples = num_allowable_samples
+        self._num_field_columns = num_attributes
         # _num_samples not currently used; here as a hook for some of Austin's future requests
         self._num_samples = num_samples
-        self._num_field_columns = num_attributes
-        self.regex_handler = a_regex_handler
 
         self.bold_format = make_format(workbook, {'bold': True})
         self.hidden_cell_setting = {'hidden': 1}
@@ -173,6 +170,9 @@ class MetadataWorksheet(object):
 
         self.sample_id_col_index = 0  # column indices are zero-based
         self.name_row_index = 1  # row indices are one-based
+        # I've tested 250, 1000, 1500, 2000 and 10,000; at 10,000 rows of formulas, the workbook bogs down horribly.
+        # Haven't checked anything in between ...
+        self.last_allowable_row_for_sample_index = self.num_allowable_samples + self.name_row_index
         self.first_data_row_index = self.name_row_index + 1
         self.last_data_row_index = self.last_allowable_row_for_sample_index
         self.first_data_col_index = self.sample_id_col_index + 1
@@ -184,9 +184,18 @@ class MetadataWorksheet(object):
         # sometime down the road, *this* is where that change should be reflected.
         self.name_col_index = self.first_data_col_index
 
-        if make_sheet: self.worksheet = create_worksheet(self.workbook, self.metadata_sheet_name,
-                                                         self._permissive_protect_options,
-                                                         num_cols_to_freeze=self.name_col_index+1)
+        if make_sheet:
+            self.worksheet = self._create_worksheet(self.metadata_sheet_name, self._permissive_protect_options)
+
+    def _create_worksheet(self, sheet_name, permissive_protect_options=None):
+        num_cols_to_freeze=self.name_col_index + 1
+        result = create_worksheet(self.workbook, sheet_name, permissive_protect_options, num_cols_to_freeze)
+
+        first_unused_col_letter = get_col_letters(self.last_data_col_index+1)
+        result.set_column('{0}:XFD'.format(first_unused_col_letter), None, None, {'hidden': True})
+        result.set_default_row(hide_unused_rows=True)
+
+        return result
 
 
 # region functions for working with worksheet objects

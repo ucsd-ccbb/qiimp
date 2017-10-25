@@ -32,7 +32,7 @@ class ValidationWorksheet(xlsx_basics.MetadataWorksheet):
         # instance variable in case that changes in the future.
         self.name_static_col_index = self.name_col_index + self._col_offset
 
-        self.worksheet = xlsx_basics.create_worksheet(self.workbook, "validation")
+        self.worksheet = self._create_worksheet("validation")
 
 
 # I know what you're thinking: if all these functions take in the ValidationWorksheet object as their first argument,

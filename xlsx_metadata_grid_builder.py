@@ -37,6 +37,11 @@ def write_metadata_grid(data_worksheet, schema_dict):
 
         _add_default_if_any(data_worksheet, field_specs_dict, curr_col_index)
 
+        max_samples_msg = "No more than {0} samples can be entered in this worksheet.  If you need to submit metadata" \
+                          " for >{0} samples, please contact CMI directly.".format(data_worksheet.num_allowable_samples)
+        xlsx_basics.write_header(data_worksheet, max_samples_msg, data_worksheet.first_data_col_index,
+                                 data_worksheet.last_allowable_row_for_sample_index+1)
+
 
 def _write_sample_id_col(data_sheet):
     """
