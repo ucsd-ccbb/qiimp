@@ -185,10 +185,10 @@ class MetadataWorksheet(object):
         self.name_col_index = self.first_data_col_index
 
         if make_sheet:
-            self.worksheet = self._create_worksheet(self.metadata_sheet_name, self._permissive_protect_options)
+            self.worksheet = self._create_worksheet(self.metadata_sheet_name, self._permissive_protect_options,
+                                                    num_cols_to_freeze=self.name_col_index + 1)
 
-    def _create_worksheet(self, sheet_name, permissive_protect_options=None):
-        num_cols_to_freeze=self.name_col_index + 1
+    def _create_worksheet(self, sheet_name, permissive_protect_options=None, num_cols_to_freeze=1):
         result = create_worksheet(self.workbook, sheet_name, permissive_protect_options, num_cols_to_freeze)
 
         first_unused_col_letter = get_col_letters(self.last_data_col_index+1)
