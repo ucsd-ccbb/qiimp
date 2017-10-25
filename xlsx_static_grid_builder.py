@@ -87,6 +87,7 @@ def _write_static_validation_grid(val_sheet, schema_dict):
     # hide all the columns in the static grid.  Use value of curr_grid_col_index left over from last time thru loop.
     if curr_grid_col_index: val_sheet.hide_columns(val_sheet.first_static_grid_col_index, curr_grid_col_index)
 
+
 def _write_static_helper_rows_and_cols(val_sheet):
     """
 
