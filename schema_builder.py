@@ -180,7 +180,13 @@ def _generate_schema_by_data_type(curr_field_from_form, a_regex_handler, overrid
     """
 
     data_type = overriding_datatype if overriding_datatype else curr_field_from_form[InputNames.data_type.value]
-    phi_val = InputNames.is_phi.value in curr_field_from_form
+
+    # TODO: The is_phi handling here is a bit half-a**ed; would like to come back and refactor so not mixing
+    # ValidationKeys and InputNames enums, etc.
+    if curr_field_from_form:
+        phi_val = InputNames.is_phi.value in curr_field_from_form
+    else:
+        phi_val = False
 
     curr_schema = {
         metadata_package_schema_builder.ValidationKeys.empty.value: False,

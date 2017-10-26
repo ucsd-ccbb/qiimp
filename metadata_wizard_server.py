@@ -153,18 +153,16 @@ class MainHandler(tornado.web.RequestHandler):
                         pass
                     else:
                         retain_list = False
-                        # slice off the field index at the end.
-                        # NB: it is OK if the field indices do not start at zero and/or are not contiguous
+                        # slice off the field index at the end
                         split_val = curr_key.split(schema_builder.SEPARATOR)
                         index_str = split_val[-1]
-
+                        if "[]" in index_str:
+                            retain_list = True
+                        index_str = index_str.replace("[]", "")
                         try:
                             index = int(index_str)  # index will be last separated value in key name
                             curr_schema = dict_of_field_schemas_by_index[index]
                             base_key = curr_key.replace(schema_builder.SEPARATOR + index_str, "")
-                            if "[]" in base_key:
-                                retain_list = True
-                            base_key = base_key.replace("[]", "")
 
                             revised_values = _parse_form_value(curr_value, retain_list)
                             if revised_values:  # "truish"--not empty string, whitespace, etc

@@ -380,7 +380,7 @@
                                 <div class="panel-body">
                                     <fieldset name="allowed_missing_vals_fieldset{{schema_builder.TEMPLATE_SUFFIX}}" id="allowed_missing_vals_fieldset{{schema_builder.TEMPLATE_SUFFIX}}">
                                         {% for curr_enum in metadata_package_schema_builder.EbiMissingValues %}
-                                        <input type="checkbox" name="{{schema_builder.InputNames.allowed_missing_vals.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.allowed_missing_vals.name}}_{{curr_enum.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="{{curr_enum.name}}"/> {{curr_enum.value}}<br />
+                                        <input type="checkbox" name="{{schema_builder.InputNames.allowed_missing_vals.name}}{{schema_builder.TEMPLATE_SUFFIX}}[]" id="{{schema_builder.InputNames.allowed_missing_vals.name}}_{{curr_enum.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="{{curr_enum.name}}"/> {{curr_enum.value}}<br />
                                         {% end %}
                                     </fieldset>
                                 </div>
