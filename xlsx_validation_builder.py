@@ -300,17 +300,17 @@ def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict, f
         if make_text:
             constraint = "{0}{1}".format(comparison_str, threshold_val)
         else:
-            guaranteed_pass_val = _get_guaranteed_pass_value(threshold_val, is_greater_than)
             if field_type == datetime.datetime:
                 constraint = _make_date_constraint(comparison_str, threshold_val, a_regex_handler.datetime_regex,
-                                                   guaranteed_pass_val)
+                                                   is_greater_than)
             else:
+                guaranteed_pass_val = _get_guaranteed_pass_value(threshold_val, is_greater_than)
                 constraint = "IFERROR(NUMBERVALUE({0}),{1}){2}{3}".format(cell_placeholder, guaranteed_pass_val,
                                                                           comparison_str, threshold_val)
     return constraint
 
 
-def _make_date_constraint(comparison_str, threshold_val, datetime_regex, guaranteed_pass_val):
+def _make_date_constraint(comparison_str, threshold_val, datetime_regex, increase):
     # get all the pieces of the threshold value
     regex = re.compile(datetime_regex)
     regex_matches = regex.match(threshold_val).groups()
@@ -323,6 +323,7 @@ def _make_date_constraint(comparison_str, threshold_val, datetime_regex, guarant
 
     # Note: we are going BACKWARDS through the matches, so as to start with seconds and work up to years.
     # Also note that end of range is -1, because we want to see the 0-index group, and range is exclusive of endpoint.
+    curr_compare_str = comparison_str
     for i in range(last_group_index, -1, -1):
         curr_match = regex_matches[i]
         if curr_match is not None:
@@ -331,15 +332,20 @@ def _make_date_constraint(comparison_str, threshold_val, datetime_regex, guarant
             startpos = get_start_position(i)
             # all values are two positions long except for year, which is four
             val_length = len(curr_match)
+            guaranteed_pass_val = _get_guaranteed_pass_value(curr_threshold_val, increase)
             curr_input_val = "IFERROR(INT(MID({0},{1},{2})), {3})".format(cell_placeholder, startpos, val_length,
                                                                           guaranteed_pass_val)
 
-            curr_level_constraint = curr_input_val + "{0}{1}".format(comparison_str, curr_threshold_val)
+            curr_level_constraint = curr_input_val + "{0}{1}".format(curr_compare_str, curr_threshold_val)
             pieces.append(curr_level_constraint)
 
             if result:
                 pieces.append("IF(" + curr_input_val + "={0},{1}, TRUE)".format(curr_threshold_val, result))
-            result = _make_logical_constraint(pieces, is_and=True, make_text=False)
+            else:
+                # prepare for next time through loop
+                curr_compare_str = comparison_str.replace("=", "")
+            result = _make_logical_constraint(pieces, is_and=False, make_text=False)
+
 
     return result
 
