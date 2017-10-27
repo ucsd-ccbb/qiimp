@@ -69,12 +69,12 @@ def _get_default_types_to_input_fields():
     }
 
 
-def _get_cast_func_by_data_type():
-    return {metadata_package_schema_builder.CerberusDataTypes.Text.value: str,
-            metadata_package_schema_builder.CerberusDataTypes.Decimal.value: float,
-            metadata_package_schema_builder.CerberusDataTypes.Integer.value: int,
-            metadata_package_schema_builder.CerberusDataTypes.DateTime.value: _cast_date_time
-            }
+# def _get_cast_func_by_data_type():
+#     return {metadata_package_schema_builder.CerberusDataTypes.Text.value: str,
+#             metadata_package_schema_builder.CerberusDataTypes.Decimal.value: float,
+#             metadata_package_schema_builder.CerberusDataTypes.Integer.value: int,
+#             metadata_package_schema_builder.CerberusDataTypes.DateTime.value: _cast_date_time
+#             }
 
 
 def get_validation_schema(curr_field_from_form, a_regex_handler):
@@ -142,19 +142,20 @@ def _generate_datetime_schema(curr_field_from_form, a_regex_handler):
 
 
 def _generate_categorical_schema(curr_field_from_form, a_regex_handler):
-    data_type = curr_field_from_form[InputNames.data_type.value]
-    cast_funcs_by_type = _get_cast_func_by_data_type()
-    cast_func = cast_funcs_by_type[data_type]
-    curr_schema = _generate_schema_by_data_type(curr_field_from_form, a_regex_handler)
+    # data_type = curr_field_from_form[InputNames.data_type.value]
+    # cast_funcs_by_type = _get_cast_func_by_data_type()
+    # cast_func = cast_funcs_by_type[data_type]
+    # curr_schema = _generate_schema_by_data_type(curr_field_from_form, a_regex_handler)
+    curr_schema = _generate_text_schema(curr_field_from_form, a_regex_handler)
 
     categorical_vals_str = curr_field_from_form[InputNames.categorical_values.value]
     split_categorical_vals = categorical_vals_str.split("\r\n")
     split_categorical_vals = [x.strip() for x in split_categorical_vals]
 
-    typed_categorical_vals = [cast_func(x) for x in split_categorical_vals]
+    # typed_categorical_vals = [cast_func(x) for x in split_categorical_vals]
 
     curr_schema.update({
-        metadata_package_schema_builder.ValidationKeys.allowed.value: typed_categorical_vals
+        metadata_package_schema_builder.ValidationKeys.allowed.value: split_categorical_vals
     })
     return curr_schema
 
