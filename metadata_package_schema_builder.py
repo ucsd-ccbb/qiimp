@@ -23,6 +23,7 @@ class ValidationKeys(Enum):
     max_exclusive = "max_exclusive"
     forbidden = "forbidden"
     regex = "regex"
+    unique = "unique"
 
 
 class CerberusDataTypes(Enum):
@@ -78,6 +79,7 @@ class PerSamplePackage(object):
                 ValidationKeys.regex.value: self.SAMPLE_NAME_REGEX,
                 ValidationKeys.empty.value: False,
                 ValidationKeys.required.value: True,
+                ValidationKeys.unique.value: True,
                 # TODO: This is_phi value shouldn't be hardcoded here.  Then again, my understanding is that eventually
                 # this entire per-sample package will no longer be hardcoded here but will be in yaml, so not bothering
                 # to refactor unless that understanding changes.

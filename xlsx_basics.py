@@ -51,19 +51,24 @@ def format_range(first_col_index, first_row_index, last_col_index=None, last_row
                  first_col_fixed=False, first_row_fixed=False, last_col_fixed=None, last_row_fixed=False):
     first_col_letter = get_col_letters(first_col_index)
     second_col_letter = first_col_letter if last_col_index is None else get_col_letters(last_col_index)
-    last_row_index = last_row_index if last_row_index is not None else first_row_index
     formatted_sheet_name = "{0}!".format(sheet_name) if sheet_name is not None else ""
     if last_col_index is None and last_col_fixed is None:
         last_col_fixed = first_col_fixed
 
-    first_half_of_range = "{0}{1}{2}{3}".format(get_fix_symbol(first_col_fixed), first_col_letter,
-                                                get_fix_symbol(first_row_fixed), first_row_index)
-    second_half_of_range = "{0}{1}{2}{3}".format(get_fix_symbol(last_col_fixed), second_col_letter,
-                                                 get_fix_symbol(last_row_fixed), last_row_index)
+    # get just the column section of the first and second half of the range
+    first_half_of_range = "{0}{1}".format(get_fix_symbol(first_col_fixed), first_col_letter)
+    second_half_of_range = "{0}{1}".format(get_fix_symbol(last_col_fixed), second_col_letter)
 
-    if second_half_of_range == first_half_of_range:
-        second_half_of_range = ""
-    else:
+    if first_row_index is not None:
+        last_row_index = last_row_index if last_row_index is not None else first_row_index
+
+        first_half_of_range = first_half_of_range + "{0}{1}".format(get_fix_symbol(first_row_fixed), first_row_index)
+        second_half_of_range = second_half_of_range + "{0}{1}".format(get_fix_symbol(last_row_fixed), last_row_index)
+
+        if second_half_of_range == first_half_of_range:
+            second_half_of_range = ""
+
+    if second_half_of_range is not "":
         second_half_of_range = ":{0}".format(second_half_of_range)
 
     return "{0}{1}{2}".format(formatted_sheet_name, first_half_of_range, second_half_of_range)
@@ -81,7 +86,8 @@ def copy_formula_throughout_range(worksheet, partial_formula_str, first_col_inde
                                          last_row_index=last_row_index, sheet_name=sheet_name,
                                          col_fixed=first_col_fixed, row_fixed=first_row_fixed)
 
-    for curr_col_letter, curr_row_index, curr_cell in cell_enumerator:
+    for curr_col_index, curr_row_index, curr_cell in cell_enumerator:
+        curr_col_letter = get_col_letters(curr_col_index)
         completed_formula = partial_formula_str.format(cell=curr_cell, curr_col_letter=curr_col_letter,
                                                        curr_row_index=curr_row_index, first_row_index=first_row_index,
                                                        last_row_index=last_row_index)
@@ -105,12 +111,11 @@ def loop_through_range(first_col_index, first_row_index, last_col_index=None, la
 
     # at outer level, move across columns
     for curr_col_index in range(first_col_index, last_col_index + 1):  # +1 bc range is exclusive of last number!
-        curr_col_letter = get_col_letters(curr_col_index)
         # at inner level, move down rows
         for curr_row_index in range(first_row_index, last_row_index + 1):  # +1 bc range is exclusive of last number!
             curr_cell = format_range(curr_col_index, curr_row_index, sheet_name=sheet_name,
                                      first_col_fixed=col_fixed, first_row_fixed=row_fixed)
-            yield curr_col_letter, curr_row_index, curr_cell
+            yield curr_col_index, curr_row_index, curr_cell
 
 
 def sort_keys(schema_dict):
