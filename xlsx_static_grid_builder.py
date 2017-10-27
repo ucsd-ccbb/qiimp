@@ -48,7 +48,7 @@ class ValidationWorksheet(xlsx_basics.MetadataWorksheet):
 # have to ... those functions are in a different module to keep them separate.
 def write_static_validation_grid_and_helpers(val_sheet, schema_dict):
     _write_static_validation_grid(val_sheet, schema_dict)
-    return _write_static_helper_rows_and_cols(val_sheet)\
+    return _write_static_helper_rows_and_cols(val_sheet)
 
 
 # write invariant sample by feature grid
