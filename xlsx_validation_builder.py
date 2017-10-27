@@ -1,3 +1,4 @@
+import collections
 import datetime
 import re
 
@@ -55,10 +56,8 @@ def get_formula_constraint(field_schema_dict, a_regex_handler, field_data_type=N
     return and_constraint_clause
 
 
-def get_default_formula(field_schema_dict, trigger_col_letter, field_data_type=None, make_text=False):
+def get_default_formula(field_schema_dict, trigger_col_letter, make_text=False):
     result = None
-    curr_level_type = _get_field_data_type(field_schema_dict)
-    if curr_level_type is not None: field_data_type = curr_level_type
 
     # default is only filled in if user has put something into a trigger column, to avoid confusing them by having
     # entries in rows that they haven't even thought about yet.
@@ -67,14 +66,21 @@ def get_default_formula(field_schema_dict, trigger_col_letter, field_data_type=N
         if make_text:
             result = "The default value is {0}".format(default_val)
         else:
-            if field_data_type is str or field_data_type is datetime.datetime:
+            # at this point I don't need the field type of the field but rather the data type of the *default* value:
+            # for example, a field with the data type integer could nonetheless have a *string* default of
+            # missing: not provided, and that value would need to be written in as a string with quotes around it.
+
+            # Here I am *assuming* that the sub-dict the default is in has a data type key; I think it always should
+            data_type_of_default = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
+            if data_type_of_default == metadata_package_schema_builder.CerberusDataTypes.Text.value or \
+                            data_type_of_default == metadata_package_schema_builder.CerberusDataTypes.DateTime.value:
                 default_val = '"{0}"'.format(default_val)
 
             result = '=IF({trigger_col_letter}{{curr_row_index}}="", "", {default_val})'.format(
                 trigger_col_letter=trigger_col_letter, default_val=default_val)
     elif metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
         for curr_subschema_dict in field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]:
-            result = get_default_formula(curr_subschema_dict, trigger_col_letter, field_data_type, make_text)
+            result = get_default_formula(curr_subschema_dict, trigger_col_letter, make_text)
             if result is not None:
                 break
             # end if found default
@@ -100,7 +106,7 @@ def get_field_constraint_description(field_schema_dict, a_regex_handler):
     default_desc = get_default_formula(field_schema_dict, None, make_text=True)
     if default_desc: text_pieces.append(default_desc + ".")
 
-    result = "\n".join(text_pieces)
+    result = " ".join(text_pieces)
     # This capitalizes the first letter.  Not using capitalize() or title() because those capitalize the first letter
     # *and* lower-case all the other letters, but I want to touch nothing except the first letter.
     result = result[0].upper() + result[1:]
@@ -323,6 +329,7 @@ def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict, f
                                                    is_greater_than)
             else:
                 constraint = "{0}{1}{2}".format(cell_placeholder, comparison_str, threshold_val)
+
     return constraint
 
 
@@ -361,7 +368,6 @@ def _make_date_constraint(comparison_str, threshold_val, datetime_regex, increas
                 # prepare for next time through loop
                 curr_compare_str = comparison_str.replace("=", "")
             result = _make_logical_constraint(pieces, is_and=False, make_text=False)
-
 
     return result
 
