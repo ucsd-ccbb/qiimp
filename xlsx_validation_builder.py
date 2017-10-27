@@ -1,5 +1,4 @@
 import datetime
-import re
 
 import metadata_package_schema_builder
 import schema_builder
