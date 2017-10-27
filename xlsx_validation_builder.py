@@ -314,8 +314,7 @@ def _make_forbidden_constraint(field_schema_dict, field_data_type, make_text):
                                  field_schema_dict, field_data_type, make_text=make_text)
 
 
-def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict, field_type, make_text, a_regex_handler,
-                                is_greater_than):
+def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict, field_type, make_text):
     constraint = None
     if schema_key in field_schema_dict:
         threshold_val = field_schema_dict[schema_key]
@@ -323,15 +322,51 @@ def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict, f
             constraint = "{0}{1}".format(comparison_str, threshold_val)
         else:
             if field_type == datetime.datetime:
-                constraint = _make_date_constraint(comparison_str, threshold_val, a_regex_handler.datetime_regex,
-                                                   is_greater_than)
+                constraint = _make_date_constraint(comparison_str, threshold_val)
             else:
                 constraint = "{0}{1}{2}".format(cell_placeholder, comparison_str, threshold_val)
 
     return constraint
 
 
-def _make_date_constraint(comparison_str, threshold_val, datetime_regex, increase):
+# Here's a representative portion of the logic that this constraint is creating a formula to reflect:
+#
+# if year doesn't exist in input
+# 	pass comparison (assume you fail elsewhere)
+# else
+# 	if year in input equals year in limit
+# 		if month doesn't exist in input
+# 			pass (give user the benefit of the doubt)
+# 		else
+# 			if month in input equals month in limit
+# 				if day doesn't exist in input
+# 					pass (give user the benefit of the doubt)
+# 				else
+# 					if day in input equals day in limit
+# 						if hour doesn't exist in input
+# 							pass (give user the benefit of the doubt)
+# 						else
+# 							if hour in input equals hour in limit
+# 								if minute doesn't exist in input
+# 									pass (give user the benefit of the doubt
+# 								else
+# 									if minute in input equals minute in limit
+# 										if second doesn't exist in input
+# 											pass (give user the benefit of the doubt)
+# 										else
+# 											return second in input compared to second in limit
+# 										endif second doesn't/does exist in input
+# 									else
+# 										return minute in input compared to minute in limit
+# 									endif minute in input equals minute in limit
+# 								endif minute doesn't/does exist in input
+#
+# 							else
+# 								return hour in input compared to hour in limit
+# 							endif hour in input equals hour in limit
+# 						endif hour doesn't/does exist in input
+# <etc and so on up the if tree >
+def _make_date_constraint(comparison_str, threshold_val):
     def get_start_position(limit_index):
         return 1 if limit_index == 5 else ((5 - limit_index) + 1) * 3
 
@@ -389,19 +424,19 @@ def _get_guaranteed_pass_value(threshold_val, increase):
 
 def _make_lte_max_constraint(field_schema_dict, field_type, make_text, a_regex_handler):
     return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_inclusive.value,
-                                       "<=", field_schema_dict, field_type, make_text, a_regex_handler, False)
+                                       "<=", field_schema_dict, field_type, make_text)
 
 
 def _make_gte_min_constraint(field_schema_dict, field_type, make_text, a_regex_handler):
     return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.min_inclusive.value,
-                                       ">=", field_schema_dict, field_type, make_text, a_regex_handler, True)
+                                       ">=", field_schema_dict, field_type, make_text)
 
 
 def _make_lt_max_constraint(field_schema_dict, field_type, make_text, a_regex_handler):
     return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_exclusive.value,
-                                       "<", field_schema_dict, field_type, make_text, a_regex_handler, False)
+                                       "<", field_schema_dict, field_type, make_text)
 
 
 def _make_gt_min_constraint(field_schema_dict, field_type, make_text, a_regex_handler):
     return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.min_exclusive.value,
-                                       ">", field_schema_dict, field_type, make_text, a_regex_handler, True)
+                                       ">", field_schema_dict, field_type, make_text)
