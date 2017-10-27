@@ -186,11 +186,10 @@ disease state:
 dosage:
   anyof:
   - allowed: ['not applicable', 'missing: not collected']
-    default: '0.5'
     empty: false
     required: true
     type: string
-  - {min: '0.5', required: true, type: number}
+  - {min: '0.5', required: true, type: number, default: '0.5'}
 geo_loc_name: {empty: false, required: true, type: string}
 height: *id003
 height_units: *id004
