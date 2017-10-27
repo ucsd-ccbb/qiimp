@@ -5,18 +5,18 @@ function resetFieldDetails(event) {
     var field_index = event.data.field_index;
 
     displayFieldDetails(selected_field_type, field_index);
-    enableDisableTextDataType(selected_field_type, field_index);
+    //enableDisableTextDataType(selected_field_type, field_index);
 }
 
-// Enable/disable the "text" option in data type when the field type is changed
-function enableDisableTextDataType(selected_field_type, field_index){
-    var data_type_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DATA_TYPE, field_index);
-
-    // if the field type is categorical, the data type may be text.  If field type is anything else, text is disabled.
-    var select_option_for_field_type_selector = data_type_id_selector + " option[value='" + text_type_value + "']";
-    enableOrDisableBySelectorAndValue(select_option_for_field_type_selector, selected_field_type, "categorical");
-        resetSelectedOptionIfDisabled(data_type_id_selector);
-}
+// // Enable/disable the "text" option in data type when the field type is changed
+// function enableDisableTextDataType(selected_field_type, field_index){
+//     var data_type_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DATA_TYPE, field_index);
+//
+//     // if the field type is categorical, the data type may be text.  If field type is anything else, text is disabled.
+//     var select_option_for_field_type_selector = data_type_id_selector + " option[value='" + text_type_value + "']";
+//     enableOrDisableBySelectorAndValue(select_option_for_field_type_selector, selected_field_type, "categorical");
+//         resetSelectedOptionIfDisabled(data_type_id_selector);
+// }
 
 // Show/hide appropriate interface elements when field type is changed
 function displayFieldDetails(selected_field_type, field_index) {
