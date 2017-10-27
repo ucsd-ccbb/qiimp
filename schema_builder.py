@@ -1,4 +1,3 @@
-import datetime
 from enum import Enum
 
 import metadata_package_schema_builder
@@ -203,28 +202,6 @@ def _generate_schema_by_data_type(curr_field_from_form, a_regex_handler, overrid
         })
 
     return curr_schema
-
-
-def _cast_date_time(datetime_string):
-    # by default, assume cast fails
-    is_valid = False
-    result = None
-
-    allowed_formats = ["%Y", "%Y-%m", "%Y-%m-%d", "%Y-%m-%d %H", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]
-    for curr_format in allowed_formats:
-        try:
-            result = datetime.datetime.strptime(datetime_string, curr_format)
-            is_valid = True
-            break
-        except ValueError:
-            pass  # if this format gave error, just try next one
-
-    # if none of the formats passed, NOW raise an error
-    if not is_valid:
-        raise ValueError("{0} cannot be converted to any of these datetime formats: {1}".format(
-            datetime_string, " or ".join(allowed_formats)))
-
-    return result
 
 
 def _set_default_keyval_if_any(curr_field_from_form, curr_schema):

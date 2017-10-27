@@ -171,7 +171,20 @@ collection_timestamp:
   - regex: '^([0-9]{1,4})(?:-([0-9]{1,2})(?:-([0-9]{1,2})(?: ([0-9]{1,2})(?::([0-9]{1,2})(?::([0-9]{1,2}))?)?)?)?)?$'
     empty: false
     required: true
+    type: datetime
+other_timestamp:
+  anyof:
+  - allowed: ['missing: not provided']
+    default: 'missing: not provided'
+    empty: false
+    required: true
     type: string
+  - regex: '^([0-9]{1,4})(?:-([0-9]{1,2})(?:-([0-9]{1,2})(?: ([0-9]{1,2})(?::([0-9]{1,2})(?::([0-9]{1,2}))?)?)?)?)?$'
+    empty: false
+    required: true
+    type: datetime
+    min: '2011'
+    max: '2012-06-30'
 disease state:
   anyof:
   - allowed: ['not applicable', 'missing: not provided']

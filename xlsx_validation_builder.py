@@ -1,4 +1,3 @@
-import collections
 import datetime
 import re
 
@@ -334,40 +333,52 @@ def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict, f
 
 
 def _make_date_constraint(comparison_str, threshold_val, datetime_regex, increase):
-    # get all the pieces of the threshold value
-    regex = re.compile(datetime_regex)
-    regex_matches = regex.match(threshold_val).groups()
+    def get_start_position(limit_index):
+        return 1 if limit_index == 5 else ((5 - limit_index) + 1) * 3
+
+    # convert the threshold from whatever format it came in as to a datetime
+    datetime_threshold_val = _cast_date_time(threshold_val)
+    limit_thresholds = [datetime_threshold_val.second, datetime_threshold_val.minute, datetime_threshold_val.hour,
+                     datetime_threshold_val.day, datetime_threshold_val.month, datetime_threshold_val.year]
 
     result = None
-    last_group_index = len(regex_matches) - 1
+    for curr_index, curr_threshold_val in enumerate(limit_thresholds):
+        startpos = get_start_position(curr_index)
+        # all values are two positions long except for year, which is four
+        val_length = 2 if curr_index < 5 else 4
+        curr_input_val = "INT(MID({cell},{start_pos},{num_chars}))".format(cell=cell_placeholder, start_pos=startpos,
+                                                                           num_chars=val_length)
+        curr_level_check = curr_input_val + "{0}{1}".format(comparison_str, curr_threshold_val)
 
-    def get_start_position(match_index):
-        return 1 if match_index == 0 else (match_index+1) * 3
+        if result is not None:
+            curr_level_check = "IF({curr_input_val}={curr_threshold_val},{more_granual_check},{curr_level_check})".format(
+                curr_input_val=curr_input_val, curr_threshold_val=curr_threshold_val, more_granual_check=result,
+                curr_level_check=curr_level_check)
 
-    # Note: we are going BACKWARDS through the matches, so as to start with seconds and work up to years.
-    # Also note that end of range is -1, because we want to see the 0-index group, and range is exclusive of endpoint.
-    curr_compare_str = comparison_str
-    for i in range(last_group_index, -1, -1):
-        curr_match = regex_matches[i]
-        if curr_match is not None:
-            pieces = []
-            curr_threshold_val = int(curr_match)
-            startpos = get_start_position(i)
-            # all values are two positions long except for year, which is four
-            val_length = len(curr_match)
-            guaranteed_pass_val = _get_guaranteed_pass_value(curr_threshold_val, increase)
-            curr_input_val = "IFERROR(INT(MID({0},{1},{2})), {3})".format(cell_placeholder, startpos, val_length,
-                                                                          guaranteed_pass_val)
+        result = "IF(ISERROR({curr_input_val}),TRUE,{curr_level_check})".format(curr_input_val=curr_input_val,
+                                                                                curr_level_check=curr_level_check)
 
-            curr_level_constraint = curr_input_val + "{0}{1}".format(curr_compare_str, curr_threshold_val)
-            pieces.append(curr_level_constraint)
+    return result
 
-            if result:
-                pieces.append("IF(" + curr_input_val + "={0},{1}, TRUE)".format(curr_threshold_val, result))
-            else:
-                # prepare for next time through loop
-                curr_compare_str = comparison_str.replace("=", "")
-            result = _make_logical_constraint(pieces, is_and=False, make_text=False)
+
+def _cast_date_time(datetime_string):
+    # by default, assume cast fails
+    is_valid = False
+    result = None
+
+    allowed_formats = ["%Y", "%Y-%m", "%Y-%m-%d", "%Y-%m-%d %H", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]
+    for curr_format in allowed_formats:
+        try:
+            result = datetime.datetime.strptime(datetime_string, curr_format)
+            is_valid = True
+            break
+        except ValueError:
+            pass  # if this format gave error, just try next one
+
+    # if none of the formats passed, NOW raise an error
+    if not is_valid:
+        raise ValueError("{0} cannot be converted to any of these datetime formats: {1}".format(
+            datetime_string, " or ".join(allowed_formats)))
 
     return result
 
