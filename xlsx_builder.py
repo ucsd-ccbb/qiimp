@@ -237,7 +237,7 @@ latitude:
     required: true
     type: string
   - {min: -90, max: 90, required: true, type: number}
-sample_name: {empty: false, regex: '^[a-zA-Z0-9\.]+$', required: true, type: string}
+sample_name: {empty: false, regex: '^[a-zA-Z0-9\.]+$', required: true, type: string, unique: true}
 sample_type:
   allowed: [stool, mucus]
   required: true

@@ -9,6 +9,7 @@ var websocket_url = "";
 var field_name_regex = null;
 var text_type_value = null;
 var no_default_radio_value = null;
+var max_selectbox_size = null;
 
 
 // Dynamically generate HTML specifying input elements for a new field

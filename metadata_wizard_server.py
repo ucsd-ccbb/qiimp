@@ -133,7 +133,7 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         global _full_websocket_url
         self.render("metadata_wizard_template.html", websocket_url=_full_websocket_url,
-                    allowed_min_browser_versions=_allowed_min_browser_versions)
+                    allowed_min_browser_versions=_allowed_min_browser_versions, select_size=10)
 
     def post(self):
         global _regex_handler

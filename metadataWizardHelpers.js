@@ -135,6 +135,8 @@ function updateSelectWithNewCategories(select_id_selector, values_list, selected
     }
 
     $(select_id_selector).html(new_options.join(''));
+    // set the size of the select box to be the number of categories or the max
+    $(select_id_selector).attr('size', Math.min(value_list.length, max_selectbox_size))
 }
 
 function getTemplateFromBaseIdentifier(base_name){

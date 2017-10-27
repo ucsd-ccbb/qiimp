@@ -75,10 +75,12 @@ def _write_static_validation_grid(val_sheet, schema_dict):
             cell_enumerator = xlsx_basics.loop_through_range(curr_grid_col_index, val_sheet.first_data_row_index,
                                                              last_row_index=
                                                              val_sheet.last_allowable_row_for_sample_index)
-            for _, curr_row_index, curr_cell_range in cell_enumerator:
+            for curr_col_index, curr_row_index, curr_cell_range in cell_enumerator:
+                metadata_col_range = xlsx_basics.format_range(curr_metadata_col_index, None,
+                                                        sheet_name=val_sheet.metadata_sheet_name)
                 metadata_cell = xlsx_basics.format_range(curr_metadata_col_index, curr_row_index,
                                                          sheet_name=val_sheet.metadata_sheet_name)
-                formatted_formula_str = unformatted_formula_str.format(cell=metadata_cell)
+                formatted_formula_str = unformatted_formula_str.format(cell=metadata_cell, col_range=metadata_col_range)
                 val_sheet.worksheet.write_formula(curr_cell_range, formatted_formula_str)
 
                 # xlsx_basics.format_and_write_array_formula(val_sheet, curr_grid_col_index, unformatted_formula_str,

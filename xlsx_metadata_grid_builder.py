@@ -1,5 +1,8 @@
+import collections
+
 import xlsx_basics
 import xlsx_validation_builder
+import metadata_package_schema_builder
 
 
 def write_metadata_grid(data_worksheet, schema_dict):
@@ -10,7 +13,8 @@ def write_metadata_grid(data_worksheet, schema_dict):
 
     _write_sample_id_col(data_worksheet)
 
-    # format everything in metadata sheet as text to prevent autoformatting!
+    unlocked = xlsx_basics.make_format(data_worksheet.workbook, is_locked=False)
+    # format as text to prevent autoformatting!
     unlocked_text = xlsx_basics.make_format(data_worksheet.workbook, {'num_format': '@'}, is_locked=False)
 
     sorted_keys = xlsx_basics.sort_keys(schema_dict)
@@ -19,8 +23,10 @@ def write_metadata_grid(data_worksheet, schema_dict):
         curr_col_index = field_index + 1  # add one bc sample id is in first col
 
         xlsx_basics.write_header(data_worksheet, field_name, field_index + 1)
-        data_worksheet.worksheet.set_column(curr_col_index, curr_col_index, None, unlocked_text)
+        curr_format = unlocked_text if _determine_if_format_should_be_text(field_specs_dict) else unlocked
+        data_worksheet.worksheet.set_column(curr_col_index, curr_col_index, None, curr_format)
 
+        col_range = xlsx_basics.format_range(curr_col_index, None)
         starting_cell_name = xlsx_basics.format_range(curr_col_index, data_worksheet.first_data_row_index)
         whole_col_range = xlsx_basics.format_range(curr_col_index, data_worksheet.first_data_row_index,
                                                    last_row_index=data_worksheet.last_allowable_row_for_sample_index)
@@ -30,7 +36,8 @@ def write_metadata_grid(data_worksheet, schema_dict):
         if validation_dict is not None:
             if value_key in validation_dict:
                 unformatted_validation_formula = validation_dict[value_key]
-                formatted_validation_formula = unformatted_validation_formula.format(cell=starting_cell_name)
+                formatted_validation_formula = unformatted_validation_formula.format(
+                    cell=starting_cell_name, col_range=col_range)
                 validation_dict[value_key] = formatted_validation_formula
 
             data_worksheet.worksheet.data_validation(whole_col_range, validation_dict)
@@ -168,3 +175,41 @@ def _add_default_if_any(data_worksheet, field_specs_dict, col_index):
                                                   data_worksheet.first_data_row_index,
                                                   last_row_index=data_worksheet.last_allowable_row_for_sample_index,
                                                   cell_format=None)
+
+
+def _determine_if_format_should_be_text(field_specs_dict):
+    result = True  # by default, assume format should be text
+
+    data_type_vals = _apply_func_to_nested_dict_vals(
+        field_specs_dict, lambda x: _find_val_for_key(x, metadata_package_schema_builder.ValidationKeys.type.value))
+    if metadata_package_schema_builder.CerberusDataTypes.Integer.value in data_type_vals or \
+        metadata_package_schema_builder.CerberusDataTypes.Decimal.value in data_type_vals:
+        # in these cases, format needs to remain General
+        result = False
+
+    return result
+
+
+def _find_val_for_key(a_dict, a_key):
+    result = []
+    if a_key in a_dict:
+        result.append(a_dict[a_key])
+    return result
+
+
+def _apply_func_to_nested_dict_vals(a_val, func_to_apply):
+    result = []
+
+    if hasattr(a_val, 'items'):
+        result.extend(func_to_apply(a_val))
+
+        for curr_key, curr_val in a_val.items():
+            result.extend(_apply_func_to_nested_dict_vals(curr_val, func_to_apply))
+    else:
+        # see https://stackoverflow.com/a/6711233 on why this type-checking is kosher.
+        # using str instead of basestring because later is not in python 3
+        if isinstance(a_val, collections.Iterable) and not isinstance(a_val, str):
+            for curr_item in a_val:
+                result.extend(_apply_func_to_nested_dict_vals(curr_item, func_to_apply))
+
+    return result

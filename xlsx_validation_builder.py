@@ -7,6 +7,7 @@ import regex_handler
     
 text_placeholder = "value"
 cell_placeholder = "{cell}"
+col_range_placeholder = "{col_range}"
     
 
 def roll_up_allowed_onlies(field_schema_dict, a_regex_handler):
@@ -202,6 +203,10 @@ def _get_single_level_formula_constraint(field_schema_dict, a_regex_handler, fie
     type_constraint = _make_type_constraint(field_schema_dict, make_text=make_text)
     if type_constraint is not None: and_constraints.append(type_constraint)
 
+    # get the unique constraint
+    unique_constraint = _make_unique_constraint(field_schema_dict, make_text)
+    if unique_constraint is not None: and_constraints.append(unique_constraint)
+
     # get the min constraint
     min_constraint = _make_gte_min_constraint(field_schema_dict, field_data_type, make_text, a_regex_handler)
     if min_constraint is not None: and_constraints.append(min_constraint)
@@ -222,12 +227,25 @@ def _get_single_level_formula_constraint(field_schema_dict, a_regex_handler, fie
     allowed_constraint = _make_allowed_constraint(field_schema_dict, field_data_type, make_text=make_text)
     if allowed_constraint is not None: and_constraints.append(allowed_constraint)
 
+    # get the regex constraint
     regex_constraint = _make_regex_constraint(field_schema_dict, make_text, a_regex_handler)
     if regex_constraint is not None: and_constraints.append(regex_constraint)
 
     # make an 'and' clause for the constraints
     and_constraint_clause = _make_logical_constraint(and_constraints, True, make_text=make_text)
     return and_constraint_clause
+
+
+def _make_unique_constraint(field_schema_dict, make_text):
+    constraint = None
+    unique_key = metadata_package_schema_builder.ValidationKeys.unique.value
+    if unique_key in field_schema_dict:
+        if make_text:
+            constraint = "must be unique"
+        else:
+            constraint = "COUNTIF({0}, {1}) = 1".format(col_range_placeholder, cell_placeholder)
+
+    return constraint
 
 
 def _make_regex_constraint(field_schema_dict, make_text, a_regex_handler):
@@ -304,9 +322,7 @@ def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict, f
                 constraint = _make_date_constraint(comparison_str, threshold_val, a_regex_handler.datetime_regex,
                                                    is_greater_than)
             else:
-                guaranteed_pass_val = _get_guaranteed_pass_value(threshold_val, is_greater_than)
-                constraint = "IFERROR(NUMBERVALUE({0}),{1}){2}{3}".format(cell_placeholder, guaranteed_pass_val,
-                                                                          comparison_str, threshold_val)
+                constraint = "{0}{1}{2}".format(cell_placeholder, comparison_str, threshold_val)
     return constraint
 
 
