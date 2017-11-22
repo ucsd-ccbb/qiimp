@@ -229,7 +229,7 @@ $(document).ready(function () {
     var new_html = $('<div/>', {
         'class' : 'row field', html: generateFieldHtml()
     });
-    new_html.appendTo('#container');
+    new_html.appendTo('#field_details_div');
 
     // once the new elements exist, set up events/etc
     decorateNewElements();
@@ -239,7 +239,7 @@ $(document).ready(function () {
     $('#addField').click(function () {
         $('<div/>', {
             'class' : 'row field', html: generateFieldHtml()
-        }).hide().appendTo('#container').slideDown('slow');
+        }).hide().appendTo('#field_details_div').slideDown('slow');
 
         // once the new elements exist, set up events/etc
         decorateNewElements();
