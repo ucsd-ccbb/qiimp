@@ -1,3 +1,40 @@
+function validatePutativeFieldName(putative_field_name){
+    var error_msgs = [];
+    error_msgs.push(validateNameIsNotReserved(putative_field_name));
+    error_msgs.push(validateNameMatchesPattern(putative_field_name));
+    error_msgs.push(validateNameIsUnique(putative_field_name));
+    // (filter - JS 1.6 and above)
+    error_msgs = error_msgs.filter(function(x){ return x !== null });
+    return error_msgs;
+}
+
+function validateNameIsNotReserved(putative_field_name) {
+    var result = null;
+    // if the value in the name element appears in the list of reserved words, then it is invalid
+    if (g_reserved_words.indexOf(putative_field_name) > -1) {
+        result = "Field name must not be a reserved word.";
+    }
+    return result;
+}
+
+function validateNameMatchesPattern(putative_field_name) {
+    var result = null;
+    if (!field_name_regex.test(putative_field_name)) {
+        result = "Only lower-case letters, numbers, and underscores are permitted, and must not start with a number.";
+    }
+    return result;
+}
+
+function validateNameIsUnique(putative_field_name) {
+    var result = null; // default: assume unique
+    if (existing_field_names[putative_field_name]){
+        result = "Field name must be unique."
+    }
+    return result;
+}
+
+
+
 function addAlwaysRequiredRule(field_index, required_base_name) {
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
     $(id_selector).rules("add", {
@@ -17,28 +54,6 @@ function addConditionalRequiredRule(field_index, condition_base_name, required_b
     });
 }
 
-function addUniqueNameRule(field_index){
-    var name_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, field_index);
-    $(name_id_selector).rules("add", {
-       nameIsUnique: true
-    });
-}
-
-function addNameIsNotReservedRule(field_index){
-    var name_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, field_index);
-    $(name_id_selector).rules("add", {
-       nameIsNotReserved: true
-    });
-}
-
-function addLowerCaseLettersAndUnderscoreRule(field_index, required_base_name) {
-    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
-    $(id_selector).rules("add", {
-        pattern: field_name_regex,
-        messages: {pattern: "Only lower-case letters, numbers, and underscores are permitted, and must not start with a number."}
-    });
-}
-
 function addDateTimeValidationRule(field_index, required_base_name){
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
     $(id_selector).rules("add", {
@@ -46,13 +61,8 @@ function addDateTimeValidationRule(field_index, required_base_name){
     });
 }
 
-
 function addOnChangeEvent(field_index, base_name, onChangeFunc){
     addEventHandler("change", field_index, base_name, onChangeFunc);
-}
-
-function addOnClickEvent(field_index, base_name, onChangeFunc){
-    addEventHandler("click", field_index, base_name, onChangeFunc);
 }
 
 function addEventHandler(event_name, field_index, base_name, onEventFunc){
@@ -106,15 +116,12 @@ function resetSelectedOptionIfDisabled(select_id_selector){
 }
 
 function updateSelectWithNewCategories(select_id_selector, values_list, selected_value, add_placeholder,
-                                       list_has_dual_values){
+                                       list_has_dual_values, retain_existing){
     function build_option_str(new_val, new_text, is_selected) {
         var selected_str = "";
         if (is_selected) {selected_str = "selected"}
         return '<option value="' + new_val + '" ' + selected_str + '>' + new_text + '</option>'
     }
-
-    // remove existing options
-    $(select_id_selector).empty();
 
     // add new options
     var new_options = [];
@@ -122,6 +129,12 @@ function updateSelectWithNewCategories(select_id_selector, values_list, selected
     if (add_placeholder) {
         new_options.push(build_option_str("", "--Select One--", false))
     }
+
+    if (retain_existing) {
+        // first add the existing options to the "new options" list
+        new_options.push($(select_id_selector).html());
+    }
+
     for (var i = 0; i < values_list.length; i++) {
         var new_val = values_list[i];
         var new_text = new_val;
@@ -136,7 +149,8 @@ function updateSelectWithNewCategories(select_id_selector, values_list, selected
 
     $(select_id_selector).html(new_options.join(''));
     // set the size of the select box to be the number of categories or the max
-    $(select_id_selector).attr('size', Math.min(value_list.length, max_selectbox_size))
+    // $(select_id_selector).attr('size', Math.min(values_list.length, max_selectbox_size))
+    $(select_id_selector).attr('size', max_selectbox_size)
 }
 
 function getTemplateFromBaseIdentifier(base_name){
@@ -159,8 +173,4 @@ function getIdSelectorFromId(id_str) {
 
 function getNewIdentifierFromTemplateAndIndex(full_template_name, field_index) {
     return full_template_name.replace(TEMPLATE_SUFFIX, SEPARATOR + field_index.toString());
-}
-
-function getCurrNumFields() {
-    return $('.field').length;
 }

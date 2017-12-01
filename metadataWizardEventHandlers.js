@@ -8,16 +8,6 @@ function resetFieldDetails(event) {
     //enableDisableTextDataType(selected_field_type, field_index);
 }
 
-// // Enable/disable the "text" option in data type when the field type is changed
-// function enableDisableTextDataType(selected_field_type, field_index){
-//     var data_type_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DATA_TYPE, field_index);
-//
-//     // if the field type is categorical, the data type may be text.  If field type is anything else, text is disabled.
-//     var select_option_for_field_type_selector = data_type_id_selector + " option[value='" + text_type_value + "']";
-//     enableOrDisableBySelectorAndValue(select_option_for_field_type_selector, selected_field_type, "categorical");
-//         resetSelectedOptionIfDisabled(data_type_id_selector);
-// }
-
 // Show/hide appropriate interface elements when field type is changed
 function displayFieldDetails(selected_field_type, field_index) {
     var elements_to_show = fields_to_show_by_field_type[selected_field_type];
@@ -89,18 +79,24 @@ function updateDefaultsWithMissings(event){
 // Refresh select box options for categorical default when category items text area is changed
 function updateDefaultsWithCategories(event) {
     var field_index = event.data.field_index;
-    // remove existing options
     var default_categorical_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DEFAULT_CATEGORICAL,
         field_index);
-
-    // add new options
-    var split = $(this).val().split('\n');
-    var lines = [];
-    for (var i = 0; i < split.length; i++) {
-        if (split[i]) { lines.push(split[i]);}
-    }
+    var lines = getValuesFromMultilineTextArea($(this).val());
 
     updateSelectWithNewCategories(default_categorical_id_selector, lines);
+}
+
+function getValuesFromMultilineTextArea(textarea_val) {
+    // collect new options into array
+    var split = textarea_val.split('\n');
+    var result = [];
+    for (var i = 0; i < split.length; i++) {
+        if (split[i]) {
+            result.push(split[i]);
+        }
+    }
+
+    return result;
 }
 
 // Refresh select box options for boolean default when boolean true_value or false_value text is changed
@@ -137,4 +133,69 @@ function removeField(event){
     var button_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.REMOVE_FIELD, field_index);
     var field_div_element = $(button_id_selector).closest('.row.field');
     field_div_element.remove();
+}
+
+// NB: This function doesn't enable or disable ANYTHING--all it does is show and hide.  This is because hidden inputs
+// need to remain enabled so they can be validated even when hidden (by overriding the default "ignore" setting on the
+// jquery validator.  Conversely, blocks that are shown may still contain elements within them that remain disabled,
+// and those should NOT be validated.
+function onSelectedFieldNameChange(element) {
+    var selected_field_num = element.value;
+
+    // Loop over each potential field number
+    for (var i = 0; i < next_field_num; i++) {
+        // make the selector for this field_details_#
+        var curr_field_details_id_selector = getIdSelectorFromId(getIdentifierFromBaseNameAndFieldIndex("field_details", i));
+        // if this is the selected field number
+        // NB: ignore pycharm lint complaint here!
+        // I actively WANT type-conversion at this point, as the selected field num is really a string ...
+        if (i == selected_field_num) {
+            $(curr_field_details_id_selector).removeClass('hidden');
+        } else {
+            // TODO: handle case where there is no item matching the selector
+            // (note there may NOT be--list can be sparse if the user deletes any fields)
+            $(curr_field_details_id_selector).addClass('hidden');
+        }
+    }
+}
+
+// when someone clicks to add a field, a new set of elements
+// is added to represent that new field and *its* events are set up
+function clickAddField(element) {
+    var field_names_id_selector = getIdSelectorFromId("field_names");
+    if (!$(field_names_id_selector).valid()) {
+        // if the field names list is NOT valid, quit without making any new fields
+        return
+    }
+
+    var input_field_names = getValuesFromMultilineTextArea($(field_names_id_selector).val());
+    var new_field_nums_and_names = [];
+
+    for (var i = 0; i < input_field_names.length; i++) {
+        var curr_field_name = input_field_names[i];
+        if ((curr_field_name !== "") && (!existing_field_names[curr_field_name])) {
+            existing_field_names[curr_field_name] = true;
+
+            var new_html = generateFieldHtml(curr_field_name);
+            $('<div/>', {html: new_html}).appendTo('#field_details_div');
+
+            // once the new elements exist, set up events/etc
+            decorateNewElements(next_field_num);
+
+            new_field_nums_and_names.push([next_field_num, curr_field_name]);
+            next_field_num++;
+        }
+    }
+
+    // add new values to the select list for field_names_sel
+    var field_names_sel_id_selector = getIdSelectorFromId("field_names_sel");
+    updateSelectWithNewCategories(field_names_sel_id_selector, new_field_nums_and_names, null, false,
+        true, true);
+
+    // show the div with the field names and details
+    var existing_fields_id_selector = getIdSelectorFromId("existing_fields");
+    $(existing_fields_id_selector).removeClass('hidden');
+
+    // empty the values that were in the textarea
+    $(field_names_id_selector).val('');
 }

@@ -10,11 +10,13 @@ var field_name_regex = null;
 var text_type_value = null;
 var no_default_radio_value = null;
 var max_selectbox_size = null;
+var existing_field_names = {};
+var next_field_num = 0;
 
 
 // Dynamically generate HTML specifying input elements for a new field
-function generateFieldHtml() {
-    var field_index = getCurrNumFields();
+function generateFieldHtml(fieldName) {
+    var field_index = next_field_num;
     var $html = $('.fieldTemplate').clone();
     var template_id_objects = $("[id$=" + TEMPLATE_SUFFIX + "]");
 
@@ -25,6 +27,7 @@ function generateFieldHtml() {
         var new_id = getNewIdentifierFromTemplateAndIndex(curr_object.id, field_index);
         var new_id_selector = getIdSelectorFromId(new_id);
         $html.find(curr_id_selector).prop('id', new_id);
+        var new_object_html_element = $html.find(new_id_selector)[0];
 
         // if the element has a name attribute, change its element clone's name to a field-specific one
         // see https://stackoverflow.com/a/1318091
@@ -33,53 +36,32 @@ function generateFieldHtml() {
         // `attr` is false.  Check for both.
         if (typeof name_attr !== typeof undefined && name_attr !== false) {
             var new_name = getNewIdentifierFromTemplateAndIndex(curr_object.name, field_index);
-            $html.find(new_id_selector)[0].name = new_name;
+            new_object_html_element.name = new_name;
+        }
+
+        // TODO: remove hard-coding of field name
+        if (curr_object.id.startsWith("field_name")){
+            // If current element is the field_name field, set its value to the input value
+            new_object_html_element.value = fieldName;
         }
     }
 
-    return $html.html();
+    var return_val = $html.html();
+    return return_val;
 }
 
 // Add events/validations to dynamically created input elements for new field
-function decorateNewElements() {
-    var newest_field_index = getCurrNumFields() - 1;
-
-    for (i = 0, len = NEW_ELEMENT_SET_UP_FUNCTIONS.length; i < len; i++) {
+function decorateNewElements(newest_field_index) {
+    for (var i = 0, len = NEW_ELEMENT_SET_UP_FUNCTIONS.length; i < len; i++) {
         NEW_ELEMENT_SET_UP_FUNCTIONS[i](newest_field_index);
     }
 }
 
-// For JQuery validation plugin, custom validator functions always have
-// first argument: the current value of the validated element. Second argument: the element to be validated
-$.validator.addMethod("nameIsUnique", function(value, element) {
-    var return_val = true; // default: assume unique
-    var num_fields = getCurrNumFields();
-    var found_field_names = $.extend({}, package_fields);
-    for (i = 0; i < num_fields; i++) {
-        var curr_field_name_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, i);
-        var curr_field_name_value = $(curr_field_name_id_selector).val();
-        if (curr_field_name_value !== "") {
-            if( found_field_names[curr_field_name_value] ){
-                return_val = false;
-                break;
-            } else {
-                found_field_names[curr_field_name_value] = true;
-            }
-        }
-    }
-
-    return return_val;
-}, "Field name must be unique");
-
-// For JQuery validation plugin, custom validator functions always have
-// first argument: the current value of the validated element. Second argument: the element to be validated
-$.validator.addMethod("nameIsNotReserved", function(value, element) {
-    // if the value in the name element appears in the list of reserved words, then it is invalid
-    return (g_reserved_words.indexOf(value) <= -1);
-}, "Field name must not be a reserved word.");
-
 var allowed_date_formats = ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", "YYYY-MM-DD HH", "YYYY-MM-DD", "YYYY-MM",
     "YYYY"];
+
+// For JQuery validation plugin, custom validator functions always have
+// first argument: the current value of the validated element. Second argument: the element to be validated
 $.validator.addMethod("isValidDateTime", function(value, element){
     // From Austin re collection_timestamp: "The only formats allowed are:
     // yyyy-mm-dd hh:mm:ss or
@@ -102,15 +84,38 @@ $.validator.addMethod("isValidDateTime", function(value, element){
     return this.optional(element) || return_val;
 }, "DateTime must be a valid timestamp in one of these formats: " + allowed_date_formats.join(" or "));
 
+// For JQuery validation plugin, custom validator functions always have
+// first argument: the current value of the validated element. Second argument: the element to be validated
+$.validator.addMethod("isValidFieldNamesList", function(value, element){
+    var input_field_names = getValuesFromMultilineTextArea(value);
+
+    var full_err_msgs = [];
+    for (var i = 0; i < input_field_names.length; i++) {
+        var curr_field_name = input_field_names[i];
+        if (curr_field_name !== "") {
+            var curr_err_msgs = validatePutativeFieldName(curr_field_name);
+            if (curr_err_msgs.length > 0){
+                // TODO: refactor hardcoding of ul/li generation and class setting
+                full_err_msgs.push(curr_field_name + ":<ul class='error_list'><li class='error_item'>" + curr_err_msgs.join("</li><li class='error_item'>") + "</li></ul>");
+            }
+        }
+    }
+
+    var return_val = full_err_msgs.length <= 0;
+    if (full_err_msgs.length > 0){
+        full_err_msgs.unshift("Please address the following issues:")
+    }
+    $(element).data('error_msg', full_err_msgs.join("<br />"));
+
+    return this.optional(element) || return_val;
+}, function(params, element) {
+  return $(element).data('error_msg');
+});
+
+
 var package_fields = {};
 
 var NEW_ELEMENT_SET_UP_FUNCTIONS = [
-    function(field_index) { //make field name required and also unique
-        addAlwaysRequiredRule(field_index, SpecialInputs.FIELD_NAME);
-        addUniqueNameRule(field_index);
-        addNameIsNotReservedRule(field_index);
-        addLowerCaseLettersAndUnderscoreRule(field_index, SpecialInputs.FIELD_NAME);
-    },
     function(field_index) {  // set onchange handler on field type and make required
         addAlwaysRequiredRule(field_index, SpecialInputs.FIELD_TYPE);
         addOnChangeEvent(field_index, SpecialInputs.FIELD_TYPE, resetFieldDetails);
@@ -168,8 +173,8 @@ $(document).ready(function () {
         async: false,
         data: "text",
         success: function(text) {
-            var raw_reserved_words = jsyaml.load( text );
-            for (var i=0, len = raw_reserved_words.length; i < len; i++) {
+            var raw_reserved_words = jsyaml.load(text);
+            for (var i = 0, len = raw_reserved_words.length; i < len; i++) {
                 var curr_word = raw_reserved_words[i];
                 if (curr_word === null) {
                     curr_word = "null";
@@ -194,6 +199,7 @@ $(document).ready(function () {
             temp_package_fields[fields_list[i]] = true;
         }
         package_fields = $.extend({}, temp_package_fields);
+        existing_field_names = $.extend({}, package_fields);
         $(getIdSelectorFromId("metadata_form")).removeClass('hidden');
     };
 
@@ -205,43 +211,63 @@ $(document).ready(function () {
         submitHandler: getPackage
     });
 
+    var submitted = false;
     $("#metadata_form").validate({
-	        rules: {
-	            "study_name": {
-	                required: true,
-	                pattern: /^[a-zA-Z0-9 ]*$/,
-                    minlength: 2,
-	                maxlength: 400
+        ignore: [],
+        rules: {
+            "study_name": {
+                required: true,
+                pattern: /^[a-zA-Z0-9 ]*$/,
+                minlength: 2,
+                maxlength: 400
+            },
+            "field_names": {
+                isValidFieldNamesList: true
+            }
+        },
+        messages: {
+            "study_name": {
+                required: "This field is required.",
+                pattern: "Only letters, numbers, and spaces are permitted.",
+                maxlength: "This field must be 400 characters or fewer."
+            }
+        },
+        onfocusout: function(element) {
+           $(element).valid();
+        },
+        showErrors: function(errorMap, errorList) {
+            if (submitted) {
+                submitted = false;
+                // TODO: refactor hard-coding of msg prefix, ul/li creation, class setting
+                var summary = "Please correct the following issues:<br /><ul class='error_list'>";
+                for (var curr_index in errorList){
+                    // NB: ignore pycharm warning about hasOwnProperty() check per https://stackoverflow.com/a/25724382
+                    var curr_item = errorList[curr_index];
+                    var curr_id = curr_item.element.id;
+                    var label_text = $("#label_" + curr_id).text();
+                    // TODO: remove hardcode of separator
+                    var id_pieces = curr_id.split("_");
+                    var field_num_str = id_pieces[id_pieces.length-1];
+                    if (!isNaN(field_num_str) && !isNaN(parseFloat(field_num_str))){
+                        // TODO: remove hardcode of "field_name_"
+                        var curr_field_name = $("#field_name_"+field_num_str)[0].value;
+                        label_text = curr_field_name + " " + label_text;
+                    }
+                    if (!label_text.endsWith(":")) {
+                        label_text += ":";
+                    }
+                    var new_msg_pieces = ["<li class='error_item'>", label_text, curr_item.message, "</li>"];
+                    summary += new_msg_pieces.join(" ")
+                }
 
-	            }
-	        },
-	        messages: {
-	            "study_name": {
-	                required: "This field is required.",
-	                pattern: "Only letters, numbers, and spaces are permitted.",
-	                maxlength: "This field must be 400 characters or fewer."
-	            }
-	        }
-	    }
-    );
+                summary += "</ul>";
+                $("#error_summary_div").html(summary);
+            }
 
-    // Get the html from template and add a set of elements for the first field
-    var new_html = $('<div/>', {
-        'class' : 'row field', html: generateFieldHtml()
-    });
-    new_html.appendTo('#field_details_div');
-
-    // once the new elements exist, set up events/etc
-    decorateNewElements();
-
-    // Add event so that when someone clicks to add a row, a new set of elements
-    // is added to represent that new field and *its* events are set up
-    $('#addField').click(function () {
-        $('<div/>', {
-            'class' : 'row field', html: generateFieldHtml()
-        }).hide().appendTo('#field_details_div').slideDown('slow');
-
-        // once the new elements exist, set up events/etc
-        decorateNewElements();
+            this.defaultShowErrors();
+        },
+        invalidHandler: function(form, validator) {
+            submitted = true;
+        }
     });
 });

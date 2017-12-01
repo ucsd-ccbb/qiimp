@@ -12,6 +12,9 @@
     <link href="{{ static_url("third-party/microbiome/css/screen.css") }}" rel="stylesheet" />
 
     <style type="text/css">
+        .no-border {
+            border: 0;
+        }
         .left-detail-block {
             border-right: 1px solid black;
         }
@@ -40,6 +43,13 @@
         .buttons {
             padding: 2px;
             border-top: 1px solid black;
+        }
+        .error_list {
+            padding-left: 40px;
+            list-style-type: circle;
+        }
+        .error_item {
+            list-style-type: circle;
         }
     .wizard_logo {
         background: url({{ static_url("third-party/microbiome/img/logo-microbiome.png") }}) no-repeat center center;
@@ -214,14 +224,14 @@
             <div class="col-sm-12">
                 How would you like to select your metadata package?<br />
                 <input type="radio" name="metadata_mode" id = "metadata_mode_wizard" value="wizard" onchange="onModeChange(this)" required>
-                <label id="metadata_mode_wizard_label" for="metadata_mode_wizard"> Use Wizard</label><br />
+                <label id="label_metadata_mode_wizard" for="metadata_mode_wizard"> Use Wizard</label><br />
                 <input type="radio" name="metadata_mode" id = "metadata_mode_power" value="power" onchange="onModeChange(this)">
-                <label id="metadata_mode_power_label" for="metadata_mode_power"> Select Manually</label>
+                <label id="label_metadata_mode_power" for="metadata_mode_power"> Select Manually</label>
             </div>
         </div>
         <div class="row hidden" id="power_div">
             <div class="col-sm-12">
-                <label id="package_select_label" for="package_select"> Metadata Packages:</label>
+                <label id="label_package_select" for="package_select"> Metadata Packages:</label>
                 <select name="package_select" id="package_select" size="{{select_size}}" disabled required>
                     <!-- TODO: refactor to pull from back end! -->
                     <!-- TODO: After Austin is done making packages, take out setting Generic to selected by default -->
@@ -232,7 +242,7 @@
         <div id="wizard_div" class="hidden">
             <div class="row" id="sample_type_div">
                 <div class="col-sm-12">
-                    <label id="sample_type_label" for="sample_type_select"> Sample Type:</label>
+                    <label id="label_sample_type" for="sample_type_select"> Sample Type:</label>
                     <select name="sample_type_select" id="sample_type_select" onchange="onSampleTypeChange(this)" size="{{select_size}}" disabled required>
                         <!-- TODO: refactor to pull from back end! -->
                         <option value="other">Other</option>
@@ -243,7 +253,7 @@
             <div id="host_associated_div" class="hidden">
                 <div class="row" id="host_div">
                     <div class="col-sm-12">
-                        <label id="host_select_label" for="host_select"> Host Organism:</label>
+                        <label id="label_host_select" for="host_select"> Host Organism:</label>
                         <select name="host_select" id="host_select" onchange="checkSampleTypePlusHostImplications(this)" size="{{select_size}}" disabled required>
                             <!-- TODO: refactor to pull from back end! -->
                             <option value="other">Other</option>
@@ -252,7 +262,7 @@
                 </div>
                 <div class="row" id="host_specific_sample_type_div" >
                     <div class="col-sm-12">
-                        <label id="host_sample_site_select_label" for="host_sample_site_select"> Host Sample Site:</label>
+                        <label id="label_host_sample_site_select" for="host_sample_site_select"> Host Sample Site:</label>
                         <select name="host_sample_site_select" id="host_sample_site_select" size="{{select_size}}" disabled required>
                         </select>
                     </div>
@@ -276,7 +286,7 @@
         <div class="container" id="container">
             <div class="row">
                 <div class="col-sm-12">
-                    <label for="{{schema_builder.InputNames.study_name.value}}"> Study Name:</label>
+                    <label id = "label_{{schema_builder.InputNames.study_name.value}}" for="{{schema_builder.InputNames.study_name.value}}"> Study Name:</label>
                     <input id="{{schema_builder.InputNames.study_name.value}}" name = "{{schema_builder.InputNames.study_name.value}}" type="text" placeholder="Study name" />
                 </div>
             </div>
@@ -292,302 +302,311 @@
                     </select>
                     -->
                     <br />
-                    Enter any custom fields for your experiment below:
+                    Enter any custom fields for your experiment below:<br />
+                    <label class="hidden" id="label_field_names" for="field_names">Custom Fields:</label>
+                    <textarea rows="5" cols="25" name="field_names" id="field_names" placeholder="e.g., phenotype&#10;timepoint&#10;disease_state"></textarea><br />
+                    <br />&nbsp;
+                    <input type="button" value="Add Field" id="addField" onclick="clickAddField(this)">
                 </div>
             </div>
-            <div class="row">
-                <div class="col-sm-2"><strong>Field Name</strong></div>
-                <div class="col-sm-10">
-                    <div class="row">
-                        <div class="col-sm-2"><strong>Field Type</strong></div>
-                        <div class="col-sm-10"><strong>Field Details</strong></div>
+            <div class="hidden" id="existing_fields">
+                <div class="row">
+                    <div class="col-sm-2"><label id="label_field_names_sel" for="field_names_sel"><strong>Field Name</strong></label></div>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-sm-2"><strong>Field Type</strong></div>
+                            <div class="col-sm-10"><strong>Field Details</strong></div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-2">
-                    <select name="field_names" id="field_names" size=10 >
-                        <option value="" disabled>Add a field name above</option>
-                    </select>
-                </div>
-                <div class="col-sm-10" id="field_details_div">
-                    <div class="fieldTemplate row">
-                        <div class="col-sm-2">
-                            <select name="{{schema_builder.InputNames.field_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.field_type.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size={{len(schema_builder.FieldTypes)}} >
-                                {% for curr_enum in schema_builder.FieldTypes %}
-                                <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
-                                {% end %}
-                            </select>
-                        </div>
-                        <div class="col-sm-10">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <div class="row">
-                                        <div class="col-sm-4">
-                                            <label for="{{schema_builder.InputNames.field_desc.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Description:</label>
-                                        </div>
-                                        <div class="col-sm-8">
-                                            <textarea rows=4 placeholder="e.g., the age of the subject in years" name="{{schema_builder.InputNames.field_desc.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.field_desc.name}}{{schema_builder.TEMPLATE_SUFFIX}}" ></textarea>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <label for="{{schema_builder.InputNames.is_phi.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Protected Health Info:</label>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input type="checkbox" name="{{schema_builder.InputNames.is_phi.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.is_phi.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="True">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 initially_hidden hidden" style="border-left: 1px solid black;" id="allowed_missing_vals_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                    <fieldset name="allowed_missing_vals_fieldset{{schema_builder.TEMPLATE_SUFFIX}}" id="allowed_missing_vals_fieldset{{schema_builder.TEMPLATE_SUFFIX}}">
-                                        <legend>Allowed Missing Values (Optional)</legend>
-                                        {% for curr_enum in metadata_package_schema_builder.EbiMissingValues %}
-                                        <input type="checkbox" name="{{schema_builder.InputNames.allowed_missing_vals.name}}{{schema_builder.TEMPLATE_SUFFIX}}[]" id="{{schema_builder.InputNames.allowed_missing_vals.name}}_{{curr_enum.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="{{curr_enum.name}}" disabled /> {{curr_enum.value}}<br />
+                <div class="row">
+                    <div class="col-sm-2">
+                        <select name="field_names_sel" id="field_names_sel" size="{{select_size}}" onchange="onSelectedFieldNameChange(this)">
+                        </select>
+                    </div>
+                    <div class="col-sm-10" id="field_details_div">
+                        <div class="fieldTemplate">
+                            <div class="row field hidden" id="field_details{{schema_builder.TEMPLATE_SUFFIX}}">
+                                <div class="col-sm-2">
+                                    <input type="hidden" name="{{schema_builder.InputNames.field_name.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.field_name.name}}{{schema_builder.TEMPLATE_SUFFIX}}">
+                                    <label class="hidden" id="label_{{schema_builder.InputNames.field_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.field_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Field Type</label>
+                                    <select name="{{schema_builder.InputNames.field_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.field_type.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size={{len(schema_builder.FieldTypes)}} >
+                                        {% for curr_enum in schema_builder.FieldTypes %}
+                                        <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
                                         {% end %}
-                                    </fieldset>
+                                    </select>
                                 </div>
-                            </div>
-                            <div class="initially_hidden hidden row detail-row" id="boolean_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                <div class="col-sm-6 left-detail-block">
+                                <div class="col-sm-10">
                                     <div class="row">
-                                        <div class="col-sm-4">
-                                            <label for="{{schema_builder.InputNames.true_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}">True Value:</label>
+                                        <div class="col-sm-6">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <label id="label_{{schema_builder.InputNames.field_desc.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.field_desc.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Description:</label>
+                                                </div>
+                                                <div class="col-sm-8">
+                                                    <textarea rows=4 placeholder="e.g., the age of the subject in years" name="{{schema_builder.InputNames.field_desc.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.field_desc.name}}{{schema_builder.TEMPLATE_SUFFIX}}" ></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <label id="label_{{schema_builder.InputNames.is_phi.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.is_phi.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Protected Health Info:</label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <input type="checkbox" name="{{schema_builder.InputNames.is_phi.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.is_phi.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="True">
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-sm-8">
-                                            <input type ="text" name="{{schema_builder.InputNames.true_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.true_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., Yes" disabled required/><br />
+                                        <div class="col-sm-6 initially_hidden hidden" style="border-left: 1px solid black;" id="allowed_missing_vals_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                            <fieldset name="allowed_missing_vals_fieldset{{schema_builder.TEMPLATE_SUFFIX}}" id="allowed_missing_vals_fieldset{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                <legend>Allowed Missing Values (Optional)</legend>
+                                                {% for curr_enum in metadata_package_schema_builder.EbiMissingValues %}
+                                                <input type="checkbox" name="{{schema_builder.InputNames.allowed_missing_vals.name}}{{schema_builder.TEMPLATE_SUFFIX}}[]" id="{{schema_builder.InputNames.allowed_missing_vals.name}}_{{curr_enum.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="{{curr_enum.name}}" disabled /> {{curr_enum.value}}<br />
+                                                {% end %}
+                                            </fieldset>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="row">
-                                        <div class="col-sm-4">
-                                            <label for="{{schema_builder.InputNames.false_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}">False Value:</label>
+                                    <div class="initially_hidden hidden row detail-row" id="boolean_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                        <div class="col-sm-6 left-detail-block">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <label id="label_{{schema_builder.InputNames.true_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.true_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}">True Value:</label>
+                                                </div>
+                                                <div class="col-sm-8">
+                                                    <input type ="text" name="{{schema_builder.InputNames.true_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.true_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., Yes" disabled required/><br />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-sm-8">
-                                            <input type ="text" name="{{schema_builder.InputNames.false_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.false_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., No" disabled required/><br />
+                                        <div class="col-sm-6">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <label id="label_{{schema_builder.InputNames.false_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.false_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}">False Value:</label>
+                                                </div>
+                                                <div class="col-sm-8">
+                                                    <input type ="text" name="{{schema_builder.InputNames.false_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.false_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., No" disabled required/><br />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="initially_hidden hidden row" id="continuous_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                <div class="col-sm-12">
-                                    <div class="row detail-row">
+                                    <div class="initially_hidden hidden row" id="continuous_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                        <div class="col-sm-12">
+                                            <div class="row detail-row">
+                                                <div class="col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-sm-6 left-detail-block">
+                                                            <div class="row">
+                                                                <div class = "col-sm-4">
+                                                                    <label id="label_{{schema_builder.InputNames.data_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.data_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Data Type:</label>
+                                                                </div>
+                                                                <div class="col-sm-8">
+                                                                    <select name="{{schema_builder.InputNames.data_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.data_type.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="{{len(metadata_package_schema_builder.CerberusDataTypes)-1}}" disabled required>
+                                                                        {% for curr_enum in metadata_package_schema_builder.CerberusDataTypes %}
+                                                                            {% if curr_enum is not metadata_package_schema_builder.CerberusDataTypes.Text %}
+                                                                                <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
+                                                                            {% end %}
+                                                                        {% end %}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <div class="row">
+                                                                <div class = "col-sm-4">
+                                                                    <label id="label_{{schema_builder.InputNames.units.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.units.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Units:</label>
+                                                                </div>
+                                                                <div class="col-sm-4">
+                                                                    <input name="{{schema_builder.InputNames.units.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.units.name}}{{schema_builder.TEMPLATE_SUFFIX}}" type="text" placeholder="e.g., years"  disabled required/>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row detail-row">
+                                                <div class="col-sm-12">
+                                                    <div class="row">
+                                                        <div class = "col-sm-6 left-detail-block">
+                                                            <fieldset name="minimum_{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                                <legend>Minimum (Optional)</legend>
+                                                                <div class="row">
+                                                                    <div class="col-sm-4">
+                                                                        <label id="label_{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Minimum</span> Comparison</label>
+                                                                    </div>
+                                                                    <div class="col-sm-8">
+                                                                        <select name="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.minimum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled>
+                                                                            <option value="{{metadata_package_schema_builder.ValidationKeys.min_exclusive.value}}">Greater Than</option>
+                                                                            <option value="{{metadata_package_schema_builder.ValidationKeys.min_inclusive.value}}">Greater Than Or Equal To</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col-sm-4">
+                                                                        <label id="label_{{schema_builder.InputNames.minimum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.minimum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Minimum</span> Value</label>
+                                                                    </div>
+                                                                    <div class="col-sm-8">
+                                                                        <input type ="text" name="{{schema_builder.InputNames.minimum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.minimum_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 3"  disabled/>
+                                                                    </div>
+                                                                </div>
+                                                            </fieldset>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <fieldset name="minimum_{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                                <legend>Maximum (Optional)</legend>
+                                                                <div class="row">
+                                                                    <div class="col-sm-4">
+                                                                        <label id="label_{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Maximum</span> Comparison</label>
+                                                                    </div>
+                                                                    <div class="col-sm-8">
+                                                                        <select name="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.maximum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled>
+                                                                            <option value="{{metadata_package_schema_builder.ValidationKeys.max_exclusive.value}}">Less Than</option>
+                                                                            <option value="{{metadata_package_schema_builder.ValidationKeys.max_inclusive.value}}">Less Than Or Equal To</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col-sm-4">
+                                                                        <label id="label_{{schema_builder.InputNames.maximum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.maximum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Maximum</span> Value</label>
+                                                                    </div>
+                                                                    <div class="col-sm-8">
+                                                                        <input type ="text" name="{{schema_builder.InputNames.maximum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.maximum_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g, 10"  disabled/><br />
+                                                                    </div>
+                                                                </div>
+                                                            </fieldset>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="initially_hidden hidden row detail-row" id="categorical_div{{schema_builder.TEMPLATE_SUFFIX}}">
                                         <div class="col-sm-12">
                                             <div class="row">
-                                                <div class="col-sm-6 left-detail-block">
-                                                    <div class="row">
-                                                        <div class = "col-sm-4">
-                                                            <label for="{{schema_builder.InputNames.data_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Data Type:</label>
+                                                <div class="col-sm-2">
+                                                    <label id="label_{{schema_builder.InputNames.categorical_values.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.categorical_values.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Categorical Values</label> (One Per Line)
+                                                </div>
+                                                <div class="col-sm-10">
+                                                    <textarea rows="5" cols="25" name="{{schema_builder.InputNames.categorical_values.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.categorical_values.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., Low&#10;Medium&#10;High" disabled required></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row detail-row">
+                                        <div class="col-sm-6">
+                                            <fieldset name="defaults{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                <legend>Default Value</legend>
+                                                <div class="row">
+                                                    <div class="col-sm-12">
+                                                        <div class="row">
+                                                            <div class="col-sm-1">
+                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "{{schema_builder.DefaultTypes.no_default.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.no_default.name}}" checked="checked">
+                                                            </div>
+                                                            <div class="col-sm-11">
+                                                                <label id="label_no_default{{schema_builder.TEMPLATE_SUFFIX}}" for="no_default{{schema_builder.TEMPLATE_SUFFIX}}">No Default</label>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-sm-8">
-                                                            <select name="{{schema_builder.InputNames.data_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.data_type.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="{{len(metadata_package_schema_builder.CerberusDataTypes)-1}}" disabled required>
-                                                                {% for curr_enum in metadata_package_schema_builder.CerberusDataTypes %}
-                                                                    {% if curr_enum is not metadata_package_schema_builder.CerberusDataTypes.Text %}
-                                                                        <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
+                                                    </div>
+                                                </div>
+                                                <div class="initially_hidden hidden row" id="allowed_missing_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="col-sm-12">
+                                                        <div class="row">
+                                                            <div class="col-sm-1">
+                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "allowed_missing_default{{schema_builder.TEMPLATE_SUFFIX}}" value="allowed_missing_default">
+                                                            </div>
+                                                            <div class="col-sm-11">
+                                                                <label id="label_{{schema_builder.InputNames.allowed_missing_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.allowed_missing_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Allowed Missing Default</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-sm-1"></div>
+                                                            <div class="col-sm-11">
+                                                                <select name="{{schema_builder.InputNames.allowed_missing_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.allowed_missing_default_select.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="{{len(metadata_package_schema_builder.EbiMissingValues)}}" disabled required>
+                                                                    {% for curr_enum in metadata_package_schema_builder.EbiMissingValues %}
+                                                                    <option value="{{curr_enum.name}}" disabled>{{curr_enum.value}}</option>
                                                                     {% end %}
-                                                                {% end %}
-                                                            </select>
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="col-sm-6">
-                                                    <div class="row">
-                                                        <div class = "col-sm-4">
-                                                            <label for="{{schema_builder.InputNames.units.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Units:</label>
+                                                <div class="initially_hidden hidden row" id="categorical_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="col-sm-12">
+                                                        <div class="row">
+                                                            <div class="col-sm-1">
+                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "categorical_default{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.categorical_default.name}}">
+                                                            </div>
+                                                            <div class="col-sm-11">
+                                                                <label id="label_categorical_default{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.categorical_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Categorical Default</label>
+                                                            </div>
                                                         </div>
-                                                        <div class="col-sm-4">
-                                                            <input name="{{schema_builder.InputNames.units.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.units.name}}{{schema_builder.TEMPLATE_SUFFIX}}" type="text" placeholder="e.g., years"  disabled required/>
+                                                        <div class="row">
+                                                            <div class="col-sm-1"></div>
+                                                            <div class="col-sm-11">
+                                                                <select name="{{schema_builder.InputNames.categorical_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.categorical_default_select.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="1" disabled required></select>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                                <div class="initially_hidden hidden row" id = "continuous_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="col-sm-12">
+                                                        <div class="row">
+                                                            <div class="col-sm-1">
+                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "continuous_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.continuous_default.name}}">
+                                                            </div>
+                                                            <div class="col-sm-11">
+                                                                <label id="label_continuous_default{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.continuous_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Continuous Default</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                                <div class="col-sm-1"></div>
+                                                                <div class="col-sm-11">
+                                                                    <input type="text" name="{{schema_builder.InputNames.continuous_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.continuous_default.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 3" disabled required>
+                                                                </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="initially_hidden hidden row" id = "boolean_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="col-sm-12">
+                                                        <div class="row">
+                                                            <div class="col-sm-1">
+                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "boolean_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.boolean_default.name}}">
+                                                            </div>
+                                                            <div class="col-sm-11">
+                                                                <label id="label_boolean_default{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Boolean Default</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-sm-1"></div>
+                                                            <div class="col-sm-11">
+                                                                <select name="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" size="1" disabled required></select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="initially_hidden hidden row" id = "text_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="col-sm-12">
+                                                        <div class="row">
+                                                            <div class="col-sm-1">
+                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "text_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.text_default.name}}">
+                                                            </div>
+                                                            <div class="col-sm-4">
+                                                                <label id="label_text_default{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Text Default</label><br />
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-sm-1"></div>
+                                                            <div class="col-sm-11">
+                                                                <textarea name="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 0.5 ml subcutaneously" disabled required></textarea>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
                                         </div>
                                     </div>
                                     <div class="row detail-row">
                                         <div class="col-sm-12">
-                                            <div class="row">
-                                                <div class = "col-sm-6 left-detail-block">
-                                                    <fieldset name="minimum_{{schema_builder.TEMPLATE_SUFFIX}}">
-                                                        <legend>Minimum (Optional)</legend>
-                                                        <div class="row">
-                                                            <div class="col-sm-4">
-                                                                <label for="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Comparison</label>
-                                                            </div>
-                                                            <div class="col-sm-8">
-                                                                <select name="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.minimum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled>
-                                                                    <option value="{{metadata_package_schema_builder.ValidationKeys.min_exclusive.value}}">Greater Than</option>
-                                                                    <option value="{{metadata_package_schema_builder.ValidationKeys.min_inclusive.value}}">Greater Than Or Equal To</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-sm-4">
-                                                                <label for="{{schema_builder.InputNames.minimum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Value</label>
-                                                            </div>
-                                                            <div class="col-sm-8">
-                                                                <input type ="text" name="{{schema_builder.InputNames.minimum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.minimum_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 3"  disabled/>
-                                                            </div>
-                                                        </div>
-                                                    </fieldset>
-                                                </div>
-                                                <div class="col-sm-6">
-                                                    <fieldset name="minimum_{{schema_builder.TEMPLATE_SUFFIX}}">
-                                                        <legend>Maximum (Optional)</legend>
-                                                        <div class="row">
-                                                            <div class="col-sm-4">
-                                                                <label for="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Comparison</label>
-                                                            </div>
-                                                            <div class="col-sm-8">
-                                                                <select name="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.maximum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled>
-                                                                    <option value="{{metadata_package_schema_builder.ValidationKeys.max_exclusive.value}}">Less Than</option>
-                                                                    <option value="{{metadata_package_schema_builder.ValidationKeys.max_inclusive.value}}">Less Than Or Equal To</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-sm-4">
-                                                                <label for="{{schema_builder.InputNames.maximum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Value</label>
-                                                            </div>
-                                                            <div class="col-sm-8">
-                                                                <input type ="text" name="{{schema_builder.InputNames.maximum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.maximum_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g, 10"  disabled/><br />
-                                                            </div>
-                                                        </div>
-                                                    </fieldset>
-                                                </div>
-                                            </div>
+                                           <input type="button" value="Remove Field" name="remove_field{{schema_builder.TEMPLATE_SUFFIX}}" id="remove_field{{schema_builder.TEMPLATE_SUFFIX}}">
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="initially_hidden hidden row detail-row" id="categorical_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                <div class="col-sm-12">
-                                    <div class="row">
-                                        <div class="col-sm-2">
-                                            <label for="{{schema_builder.InputNames.categorical_values.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Categorical Values (One Per Line)</label>
-                                        </div>
-                                        <div class="col-sm-10">
-                                            <textarea rows="5" cols="25" name="{{schema_builder.InputNames.categorical_values.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.categorical_values.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., Low&#10;Medium&#10;High" disabled required></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row detail-row">
-                                <div class="col-sm-6">
-                                    <fieldset name="defaults{{schema_builder.TEMPLATE_SUFFIX}}">
-                                        <legend>Default Value</legend>
-                                        <div class="row">
-                                            <div class="col-sm-12">
-                                                <div class="row">
-                                                    <div class="col-sm-1">
-                                                        <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "{{schema_builder.DefaultTypes.no_default.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.no_default.name}}" checked="checked">
-                                                    </div>
-                                                    <div class="col-sm-11">
-                                                        <label for="no_default{{schema_builder.TEMPLATE_SUFFIX}}">No Default</label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="initially_hidden hidden row" id="allowed_missing_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                            <div class="col-sm-12">
-                                                <div class="row">
-                                                    <div class="col-sm-1">
-                                                        <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "allowed_missing_default{{schema_builder.TEMPLATE_SUFFIX}}" value="allowed_missing_default">
-                                                    </div>
-                                                    <div class="col-sm-11">
-                                                        <label for="{{schema_builder.InputNames.allowed_missing_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Allowed Missing Default</label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-sm-1"></div>
-                                                    <div class="col-sm-11">
-                                                        <select name="{{schema_builder.InputNames.allowed_missing_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.allowed_missing_default_select.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="{{len(metadata_package_schema_builder.EbiMissingValues)}}" disabled required>
-                                                            {% for curr_enum in metadata_package_schema_builder.EbiMissingValues %}
-                                                            <option value="{{curr_enum.name}}" disabled>{{curr_enum.value}}</option>
-                                                            {% end %}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="initially_hidden hidden row" id="categorical_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                            <div class="col-sm-12">
-                                                <div class="row">
-                                                    <div class="col-sm-1">
-                                                        <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "categorical_default{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.categorical_default.name}}">
-                                                    </div>
-                                                    <div class="col-sm-11">
-                                                        <label id="categorical_default_label{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.categorical_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Categorical Default</label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-sm-1"></div>
-                                                    <div class="col-sm-11">
-                                                        <select name="{{schema_builder.InputNames.categorical_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.categorical_default_select.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="1" disabled required></select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="initially_hidden hidden row" id = "continuous_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                            <div class="col-sm-12">
-                                                <div class="row">
-                                                    <div class="col-sm-1">
-                                                        <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "continuous_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.continuous_default.name}}">
-                                                    </div>
-                                                    <div class="col-sm-11">
-                                                        <label id="continuous_default_label{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.continuous_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Continuous Default</label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                        <div class="col-sm-1"></div>
-                                                        <div class="col-sm-11">
-                                                            <input type="text" name="{{schema_builder.InputNames.continuous_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.continuous_default.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 3" disabled required>
-                                                        </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="initially_hidden hidden row" id = "boolean_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                            <div class="col-sm-12">
-                                                <div class="row">
-                                                    <div class="col-sm-1">
-                                                        <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "boolean_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.boolean_default.name}}">
-                                                    </div>
-                                                    <div class="col-sm-11">
-                                                        <label id="boolean_default_label{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Boolean Default</label>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-sm-1"></div>
-                                                    <div class="col-sm-11">
-                                                        <select name="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" size="1" disabled required></select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="initially_hidden hidden row" id = "text_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                            <div class="col-sm-12">
-                                                <div class="row">
-                                                    <div class="col-sm-1">
-                                                        <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "text_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.text_default.name}}">
-                                                    </div>
-                                                    <div class="col-sm-4">
-                                                        <label id="text_default_label{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Text Default</label><br />
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-sm-1"></div>
-                                                    <div class="col-sm-11">
-                                                        <textarea name="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 0.5 ml subcutaneously" disabled required></textarea>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </fieldset>
-                                </div>
-                            </div>
-                            <div class="row detail-row">
-                                <div class="col-sm-12">
-                                   <input type="button" value="Remove Field" name="remove_field{{schema_builder.TEMPLATE_SUFFIX}}" id="remove_field{{schema_builder.TEMPLATE_SUFFIX}}">
                                 </div>
                             </div>
                         </div>
@@ -598,9 +617,12 @@
     </div>
 
     <div class="container">
+        <div class="row">
+            <div id="error_summary_div" class="col-sm-12"></div>
+        </div>
         <div class="row buttons">
             <div class="col-sm-12">
-                <input class="submit" type="submit" value="Submit">&nbsp;<input type="button" value="Add Field" id="addField">
+                <input class="submit" type="submit" value="Submit">
             </div>
         </div>
     </div>
