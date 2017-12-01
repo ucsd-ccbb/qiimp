@@ -248,6 +248,7 @@ $(document).ready(function () {
                     // TODO: remove hardcode of separator
                     var id_pieces = curr_id.split("_");
                     var field_num_str = id_pieces[id_pieces.length-1];
+                    // Check if string contains a valid integer, per https://stackoverflow.com/a/35759874
                     if (!isNaN(field_num_str) && !isNaN(parseFloat(field_num_str))){
                         // TODO: remove hardcode of "field_name_"
                         var curr_field_name = $("#field_name_"+field_num_str)[0].value;
