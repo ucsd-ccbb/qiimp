@@ -1,3 +1,9 @@
+function getFieldNameValueByIndex(field_index) {
+    var field_name_input_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, field_index);
+    var field_name_input = $(field_name_input_id_selector)[0];
+    return field_name_input.value;
+}
+
 function validatePutativeFieldName(putative_field_name){
     var error_msgs = [];
     error_msgs.push(validateNameIsNotReserved(putative_field_name));
@@ -12,7 +18,7 @@ function validateNameIsNotReserved(putative_field_name) {
     var result = null;
     // if the value in the name element appears in the list of reserved words, then it is invalid
     if (g_reserved_words.indexOf(putative_field_name) > -1) {
-        result = "Field name must not be a reserved word.";
+        result = "'" + putative_field_name + "' is not an allowed field name because it is a reserved word.";
     }
     return result;
 }
@@ -32,8 +38,6 @@ function validateNameIsUnique(putative_field_name) {
     }
     return result;
 }
-
-
 
 function addAlwaysRequiredRule(field_index, required_base_name) {
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);

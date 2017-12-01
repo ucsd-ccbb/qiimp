@@ -128,11 +128,20 @@ function updateTypeValidations(event){
 
 function removeField(event){
     var field_index = event.data.field_index;
-    //TODO: add code to get confirmation if any fields are filled
-    //get row div for this field
+    var confirm_msg = "Permanently delete the '" + getFieldNameValueByIndex(field_index) + "' field?";
+    if (!confirm(confirm_msg)) {
+        return; //do nothing if they fail to confirm
+    }
+
+    //find and remove row div for this field
     var button_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.REMOVE_FIELD, field_index);
     var field_div_element = $(button_id_selector).closest('.row.field');
     field_div_element.remove();
+
+    // remove field from field_names list
+    var select_option_id_string = SpecialInputs.FIELD_NAMES_SELECT + " option[value='" + field_index + "']";
+    var select_option_id_selector = getIdSelectorFromId(select_option_id_string);
+    $(select_option_id_selector).remove();
 }
 
 // NB: This function doesn't enable or disable ANYTHING--all it does is show and hide.  This is because hidden inputs
@@ -162,7 +171,7 @@ function onSelectedFieldNameChange(element) {
 // when someone clicks to add a field, a new set of elements
 // is added to represent that new field and *its* events are set up
 function clickAddField(element) {
-    var field_names_id_selector = getIdSelectorFromId("field_names");
+    var field_names_id_selector = getIdSelectorFromId(SpecialInputs.FIELD_NAMES);
     if (!$(field_names_id_selector).valid()) {
         // if the field names list is NOT valid, quit without making any new fields
         return
@@ -188,7 +197,7 @@ function clickAddField(element) {
     }
 
     // add new values to the select list for field_names_sel
-    var field_names_sel_id_selector = getIdSelectorFromId("field_names_sel");
+    var field_names_sel_id_selector = getIdSelectorFromId(SpecialInputs.FIELD_NAMES_SELECT);
     updateSelectWithNewCategories(field_names_sel_id_selector, new_field_nums_and_names, null, false,
         true, true);
 
