@@ -65,7 +65,7 @@ function checkSampleTypePlusHostImplications(element){
         show_host_site_select = true;
         var curr_hostsite = host_sites_by_host_and_sample_type[potential_key];
         updateSelectWithNewCategories(host_site_select_id_selector, curr_hostsite.getSitesList(),
-            curr_hostsite.selected_item, curr_hostsite.has_placeholder, true);
+            curr_hostsite.selected_item, curr_hostsite.has_placeholder, true, false, true);
     }
 
     showEnableOrHideDisable(getIdSelectorFromId("host_specific_sample_type_div"), show_host_site_select);

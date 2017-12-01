@@ -120,7 +120,7 @@ function resetSelectedOptionIfDisabled(select_id_selector){
 }
 
 function updateSelectWithNewCategories(select_id_selector, values_list, selected_value, add_placeholder,
-                                       list_has_dual_values, retain_existing){
+                                       list_has_dual_values, retain_existing, fixed_size){
     function build_option_str(new_val, new_text, is_selected) {
         var selected_str = "";
         if (is_selected) {selected_str = "selected"}
@@ -152,9 +152,22 @@ function updateSelectWithNewCategories(select_id_selector, values_list, selected
     }
 
     $(select_id_selector).html(new_options.join(''));
-    // set the size of the select box to be the number of categories or the max
-    // $(select_id_selector).attr('size', Math.min(values_list.length, max_selectbox_size))
-    $(select_id_selector).attr('size', max_selectbox_size)
+    var num_options = values_list.length;
+    if (fixed_size){
+        num_options = null;
+    }
+    setSelectSize(select_id_selector, num_options);
+}
+
+// num_options is optional.  If you want the select box to be the minimum of the number of options or the max size,
+// include this argument.  If you want the select box to always be the max size, just pass null for this argument.
+function setSelectSize(select_id_selector, num_options){
+    var size = max_selectbox_size;
+    if (num_options !== null) {
+        // set the size of the select box to be the number of categories or the max
+        size = Math.min(num_options, max_selectbox_size)
+    }
+    $(select_id_selector).attr('size', size)
 }
 
 function getTemplateFromBaseIdentifier(base_name){

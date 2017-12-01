@@ -12,6 +12,9 @@
     <link href="{{ static_url("third-party/microbiome/css/screen.css") }}" rel="stylesheet" />
 
     <style type="text/css">
+        select {
+            padding: 2px;
+        }
         .no-border {
             border: 0;
         }
@@ -51,17 +54,21 @@
         .error_item {
             list-style-type: circle;
         }
-    .wizard_logo {
-        background: url({{ static_url("third-party/microbiome/img/logo-microbiome.png") }}) no-repeat center center;
-        display: inline-block;
-        width: 100px;
-        height: 100px;
-        margin: 25px 10px;
-        background-size: 100%;
-        position: relative;
-        font-size: 0;
-        z-index: 1;
-    }
+        .error_msg {
+            color: orangered;
+            margin: 5px;
+        }
+        .wizard_logo {
+            background: url({{ static_url("third-party/microbiome/img/logo-microbiome.png") }}) no-repeat center center;
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            margin: 25px 10px;
+            background-size: 100%;
+            position: relative;
+            font-size: 0;
+            z-index: 1;
+        }
     </style>
 
 
@@ -620,11 +627,11 @@
 
     <div class="container">
         <div class="row">
-            <div id="error_summary_div" class="col-sm-12"></div>
+            <div id="error_summary_div" class="error_msg col-sm-12"></div>
         </div>
         <div class="row buttons">
             <div class="col-sm-12">
-                <input class="submit" type="submit" value="Submit">
+                <input class="submit" style="float: right;" type="submit" value="Submit">
             </div>
         </div>
     </div>

@@ -199,7 +199,7 @@ function clickAddField(element) {
     // add new values to the select list for field_names_sel
     var field_names_sel_id_selector = getIdSelectorFromId(SpecialInputs.FIELD_NAMES_SELECT);
     updateSelectWithNewCategories(field_names_sel_id_selector, new_field_nums_and_names, null, false,
-        true, true);
+        true, true, true);
 
     // show the div with the field names and details
     var existing_fields_id_selector = getIdSelectorFromId("existing_fields");

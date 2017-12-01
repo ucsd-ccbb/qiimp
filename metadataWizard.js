@@ -214,6 +214,7 @@ $(document).ready(function () {
     var submitted = false;
     $("#metadata_form").validate({
         ignore: [],
+        errorClass: "error_msg",
         rules: {
             "study_name": {
                 required: true,
