@@ -142,6 +142,9 @@ function removeField(event){
     var select_option_id_string = SpecialInputs.FIELD_NAMES_SELECT + " option[value='" + field_index + "']";
     var select_option_id_selector = getIdSelectorFromId(select_option_id_string);
     $(select_option_id_selector).remove();
+    
+    // remove field from existing_field_names dict
+    delete existing_field_names[field_name];
 }
 
 // NB: This function doesn't enable or disable ANYTHING--all it does is show and hide.  This is because hidden inputs
