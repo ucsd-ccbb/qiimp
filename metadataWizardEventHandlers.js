@@ -128,7 +128,8 @@ function updateTypeValidations(event){
 
 function removeField(event){
     var field_index = event.data.field_index;
-    var confirm_msg = "Permanently delete the '" + getFieldNameValueByIndex(field_index) + "' field?";
+    var field_name = getFieldNameValueByIndex(field_index);
+    var confirm_msg = "Permanently delete the '" + field_name + "' field?";
     if (!confirm(confirm_msg)) {
         return; //do nothing if they fail to confirm
     }
@@ -138,11 +139,11 @@ function removeField(event){
     var field_div_element = $(button_id_selector).closest('.row.field');
     field_div_element.remove();
 
-    // remove field from field_names list
+    // remove field from field_names selectbox
     var select_option_id_string = SpecialInputs.FIELD_NAMES_SELECT + " option[value='" + field_index + "']";
     var select_option_id_selector = getIdSelectorFromId(select_option_id_string);
     $(select_option_id_selector).remove();
-    
+
     // remove field from existing_field_names dict
     delete existing_field_names[field_name];
 }
