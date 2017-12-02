@@ -1,3 +1,141 @@
+function temp_parse_form_round_trip(){
+    // TODO: currently not handling non-field values (default locale, study name, etc) ... should I?
+
+
+
+    // NB: I do NOT care (or require) that the fields go in with the same field indexes they did in the original
+    // form that we are recreating.  The only thing I care about is that they go in in the same ORDER.
+    var text = "0:\n" +
+        "  allowed_missing_default_select: ebi_not_provided\n" +
+        "  allowed_missing_vals[]:\n" +
+        "  - ebi_not_collected\n" +
+        "  - ebi_not_provided\n" +
+        "  categorical_values: \"kiw\\r\\nned\\r\\ngugg\"\n" +
+        "  default_value: allowed_missing_default\n" +
+        "  field_name: phenotype\n" +
+        "  field_type: categorical\n" +
+        "1:\n" +
+        "  default_value: text_default\n" +
+        "  field_desc: a lot of fun\n" +
+        "  field_name: is_patient\n" +
+        "  field_type: string\n" +
+        "  text_default: green";
+    var round_trip_form_vals_dict = jsyaml.load(text);
+    addFields(round_trip_form_vals_dict);
+}
+
+function addFields(input_field_names_or_dicts){
+    var new_field_nums_and_names = [];
+    var is_dicts = !Array.isArray(input_field_names_or_dicts);
+
+    for (var curr_item in input_field_names_or_dicts) {
+        var curr_field_dict = null;
+        var curr_field_name = input_field_names_or_dicts[curr_item];
+        if (is_dicts) {
+            curr_field_dict = curr_field_name;
+            curr_field_name = curr_field_dict[SpecialInputs.FIELD_NAME];
+        }
+
+        if ((curr_field_name !== "") && (!existing_field_names[curr_field_name])) {
+            existing_field_names[curr_field_name] = true;
+
+            var new_html = generateFieldHtml(curr_field_name);
+            $('<div/>', {html: new_html}).appendTo('#field_details_div');
+
+            // once the new elements exist, set up events/etc
+            decorateNewElements(next_field_num);
+
+            if (curr_field_dict !== null){
+                for (var curr_field_key in curr_field_dict) {
+                    var input_value = curr_field_dict[curr_field_key];
+                    var input_name= getIdentifierFromBaseNameAndFieldIndex(curr_field_key, next_field_num);
+
+                    // TODO: refactor hard-coded square brackets
+                    if (curr_field_key.endsWith("[]")) {
+                        // TODO: must find better way to place brackets ... also icky in template.html
+                        input_name = input_name.replace("[]", "");
+                        input_name = input_name + "[]";
+                        // assume we're dealing with values from a checkbox fieldset
+                        for (var curr_checkbox_val_index in input_value){
+                            // only trigger onchange event after setting last value in field;
+                            // otherwise, since fields come through dictionary in basically arbitrary order,
+                            // effect of partial change of allowed missing checkboxes can wipe out
+                            // allowed missing default select, if that happened to come through first,
+                            // because of allowed missing fieldset's onchange's call to resetSelectedOptionIfDisabled.
+                            var trigger_onchange = curr_checkbox_val_index === input_value.length-1;
+                            setFormValue(input_name, input_value[curr_checkbox_val_index], trigger_onchange);
+                        }
+                    } else {
+                        setFormValue(input_name, input_value, true);
+                    }
+                }
+            }
+
+            new_field_nums_and_names.push([next_field_num, curr_field_name]);
+            next_field_num++;
+        }
+    }
+
+    // add new values to the select list for field_names_sel
+    var field_names_sel_id_selector = getIdSelectorFromId(SpecialInputs.FIELD_NAMES_SELECT);
+    updateSelectWithNewCategories(field_names_sel_id_selector, new_field_nums_and_names, null, false,
+        true, true, true);
+
+    // show the div with the field names and details
+    var existing_fields_id_selector = getIdSelectorFromId("existing_fields");
+    $(existing_fields_id_selector).removeClass('hidden');
+}
+
+function setFormValue(input_name, input_value, trigger_onchange){
+    var input_name_selector = "[name='" + input_name + "']";
+    var input_element = $(input_name_selector);
+    var input_type = getElementType(input_element);
+
+    // TODO: refactor out option selector generation?
+    switch(input_type) {
+        case "checkbox":
+            $(input_name_selector + "[value='" + input_value + "']").prop("checked", true);
+            break;
+        case "radio":
+            $(input_name_selector + "[value='" + input_value + "']").prop("checked", true);
+            break;
+        case "select":
+            $(input_name_selector + " option[value='" + input_value + "']").prop("selected", true);
+            break;
+        case "textarea":
+            $(input_name_selector).html(input_value);
+            break;
+        case "hidden":
+            // NB: INTENTIONAL FALL-THROUGH to text case!  Do NOT add break here.
+        case "text":
+            $(input_name_selector).attr("value", input_value);
+            break;
+        default:
+            // TODO: add error handling
+    }
+
+    if (trigger_onchange) {
+        // Manually trigger onchange event, if any, of changed form element(s)
+        $(input_name_selector).change();
+    }
+}
+
+// From https://stackoverflow.com/a/9116746
+function getElementType(element){
+    return element[0].tagName == "INPUT" ? element[0].type.toLowerCase() : element[0].tagName.toLowerCase();
+}
+
+function findFieldIndexFromNameOrId(field_identifier){
+    var result = null;  // default: assume field has no index (like "study_name")
+    var id_pieces = field_identifier.split(SEPARATOR);
+    var field_num_str = id_pieces[id_pieces.length-1];
+    // Check if string contains a valid integer, per https://stackoverflow.com/a/35759874
+    if (!isNaN(field_num_str) && !isNaN(parseFloat(field_num_str))){
+        result = parseInt(field_num_str);
+    }
+    return result;
+}
+
 function getFieldNameValueByIndex(field_index) {
     var field_name_input_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, field_index);
     var field_name_input = $(field_name_input_id_selector)[0];

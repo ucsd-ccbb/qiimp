@@ -5,7 +5,6 @@ function resetFieldDetails(event) {
     var field_index = event.data.field_index;
 
     displayFieldDetails(selected_field_type, field_index);
-    //enableDisableTextDataType(selected_field_type, field_index);
 }
 
 // Show/hide appropriate interface elements when field type is changed
@@ -128,7 +127,8 @@ function updateTypeValidations(event){
 
 function removeField(event){
     var field_index = event.data.field_index;
-    var confirm_msg = "Permanently delete the '" + getFieldNameValueByIndex(field_index) + "' field?";
+    var field_name = getFieldNameValueByIndex(field_index);
+    var confirm_msg = "Permanently delete the '" + field_name + "' field?";
     if (!confirm(confirm_msg)) {
         return; //do nothing if they fail to confirm
     }
@@ -138,10 +138,13 @@ function removeField(event){
     var field_div_element = $(button_id_selector).closest('.row.field');
     field_div_element.remove();
 
-    // remove field from field_names list
+    // remove field from field_names selectbox
     var select_option_id_string = SpecialInputs.FIELD_NAMES_SELECT + " option[value='" + field_index + "']";
     var select_option_id_selector = getIdSelectorFromId(select_option_id_string);
     $(select_option_id_selector).remove();
+
+    // remove field from existing_field_names dict
+    delete existing_field_names[field_name];
 }
 
 // NB: This function doesn't enable or disable ANYTHING--all it does is show and hide.  This is because hidden inputs
@@ -178,32 +181,7 @@ function clickAddField(element) {
     }
 
     var input_field_names = getValuesFromMultilineTextArea($(field_names_id_selector).val());
-    var new_field_nums_and_names = [];
-
-    for (var i = 0; i < input_field_names.length; i++) {
-        var curr_field_name = input_field_names[i];
-        if ((curr_field_name !== "") && (!existing_field_names[curr_field_name])) {
-            existing_field_names[curr_field_name] = true;
-
-            var new_html = generateFieldHtml(curr_field_name);
-            $('<div/>', {html: new_html}).appendTo('#field_details_div');
-
-            // once the new elements exist, set up events/etc
-            decorateNewElements(next_field_num);
-
-            new_field_nums_and_names.push([next_field_num, curr_field_name]);
-            next_field_num++;
-        }
-    }
-
-    // add new values to the select list for field_names_sel
-    var field_names_sel_id_selector = getIdSelectorFromId(SpecialInputs.FIELD_NAMES_SELECT);
-    updateSelectWithNewCategories(field_names_sel_id_selector, new_field_nums_and_names, null, false,
-        true, true, true);
-
-    // show the div with the field names and details
-    var existing_fields_id_selector = getIdSelectorFromId("existing_fields");
-    $(existing_fields_id_selector).removeClass('hidden');
+    addFields(input_field_names);
 
     // empty the values that were in the textarea
     $(field_names_id_selector).val('');

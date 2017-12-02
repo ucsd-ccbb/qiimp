@@ -13,7 +13,7 @@
 
     <style type="text/css">
         select {
-            padding: 2px;
+            padding: 4px;
         }
         .no-border {
             border: 0;
@@ -102,7 +102,7 @@
         TEMPLATE_SUFFIX = "{{schema_builder.TEMPLATE_SUFFIX}}";
         field_name_regex = /{{ metadata_package_schema_builder.PerSamplePackage.FIELD_NAME_REGEX }}/
 
-        // Note that these are to be the bases (without template suffix or separator) of form element NAMES, not IDs
+        // Note that these are to be the bases (without template suffix or separator)
         SpecialInputs = {
             FIELD_NAME: "{{schema_builder.InputNames.field_name.value}}",
             FIELD_TYPE: "{{schema_builder.InputNames.field_type.value}}",
@@ -232,13 +232,15 @@
         <div class="row" id="mode_div">
             <div class="col-sm-12">
                 How would you like to select your metadata package?<br />
-                <input type="radio" name="metadata_mode" id = "metadata_mode_wizard" value="wizard" onchange="onModeChange(this)" required>
-                <label id="label_metadata_mode_wizard" for="metadata_mode_wizard"> Use Wizard</label><br />
-                <input type="radio" name="metadata_mode" id = "metadata_mode_power" value="power" onchange="onModeChange(this)">
-                <label id="label_metadata_mode_power" for="metadata_mode_power"> Select Manually</label>
+                <input type="radio" name="metadata_mode" id = "metadata_mode_wizard" value="wizard" onchange="onModeChange(this)" required>&nbsp;
+                <label id="label_metadata_mode_wizard" for="metadata_mode_wizard">Use Wizard</label><br />
+                <input type="radio" name="metadata_mode" id="metadata_mode_existing" value="existing" onchange="onModeChange(this)">&nbsp;
+                <label id="label_metadata_mode_existing" for="metadata_mode_existing">Use Existing</label><br />
+                <input type="radio" name="metadata_mode" id = "metadata_mode_power" value="power" onchange="onModeChange(this)">&nbsp;
+                <label id="label_metadata_mode_power" for="metadata_mode_power">Select Manually</label><br />
             </div>
         </div>
-        <div class="row hidden" id="power_div">
+        <div id="power_div" class="row hidden" >
             <div class="col-sm-12">
                 <label id="label_package_select" for="package_select"> Metadata Packages:</label>
                 <select name="package_select" id="package_select" size="{{select_size}}" disabled required>
@@ -276,6 +278,12 @@
                         </select>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div id="existing_div" class="row hidden">
+            <div class="col=sm-12">
+                <label id = "label_upload_file_name" for="upload_file_name">TODO implement upload:</label>
+                <input type="text" id="upload_file_name" name="upload_file_name" value="TODO implement upload" disabled required>
             </div>
         </div>
         <div class="row" id="select_package_button_div">

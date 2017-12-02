@@ -188,7 +188,8 @@ class MainHandler(tornado.web.RequestHandler):
             # required from this schema.  Then, get back selected optionals from interface (currently not done)
             # and get those from schema--and change them to required.
             dict_of_validation_schema_by_index.update(package_class.schema)
-            file_name = xlsx_builder.write_workbook(study_name, dict_of_validation_schema_by_index, _regex_handler)
+            file_name = xlsx_builder.write_workbook(study_name, dict_of_validation_schema_by_index, _regex_handler,
+                                                    dict_of_field_schemas_by_index)
 
             self.redirect("/download/{0}".format(file_name))
         except Exception as e:

@@ -5,7 +5,8 @@ var HOST_ASSOCIATED_SAMPLE_TYPES = [
 ];
 
 function onModeChange(element){
-    var mode_divs = ["power_div", "wizard_div"];
+    // TODO: will need considerable work here to handle upload of existing
+    var mode_divs = ["power_div", "wizard_div", "existing_div"];
     var selected_mode = element.value;
     var div_to_display_basename = selected_mode.replace("metadata_mode_","");
     var div_to_display = div_to_display_basename + "_div";
@@ -105,20 +106,28 @@ function getPackage(){
     // get the precise, organism-specific package to use specified through the wizard
     var host_sample_site_select_id_selector = getIdSelectorFromId("host_sample_site_select");
 
-    if (!$(package_select_id_selector).is(':disabled')) {
-        // if the power user value is not disabled, use it
-        package_key = $(package_select_id_selector).val();
-    } else if (!$(host_sample_site_select_id_selector).is(':disabled')) {
-        // if the precise, organism-specific package to use specified through the wizard is not disabled, use it
-        package_key = $(host_sample_site_select_id_selector).val();
-    } else {
-        // get the host type and the sample type and paste them together to get the package name to look for
-        var host = $(getIdSelectorFromId("host_select")).val();
-        var sample_type = $(getIdSelectorFromId("sample_type_select")).val();
-        package_key = host + "_" + sample_type;
-    } //end if
+    var upload_val_selector = getIdSelectorFromId("upload_file_name");
 
-    ws.send(package_key);
+    if (!$(upload_val_selector).is(':disabled')) {
+        // TODO: Temporary for testing.  Needs to have real functionality filled in
+        $(getIdSelectorFromId("metadata_form")).removeClass('hidden');
+        temp_parse_form_round_trip();
+    } else {
+        if (!$(package_select_id_selector).is(':disabled')) {
+            // if the power user value is not disabled, use it
+            package_key = $(package_select_id_selector).val();
+        } else if (!$(host_sample_site_select_id_selector).is(':disabled')) {
+            // if the precise, organism-specific package to use specified through the wizard is not disabled, use it
+            package_key = $(host_sample_site_select_id_selector).val();
+        } else {
+            // get the host type and the sample type and paste them together to get the package name to look for
+            var host = $(getIdSelectorFromId("host_select")).val();
+            var sample_type = $(getIdSelectorFromId("sample_type_select")).val();
+            package_key = host + "_" + sample_type;
+        }
+
+        ws.send(package_key);
+    } //end if
 
     // always return false so we don't really submit
     return false;

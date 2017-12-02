@@ -246,11 +246,9 @@ $(document).ready(function () {
                     var curr_item = errorList[curr_index];
                     var curr_id = curr_item.element.id;
                     var label_text = $("#label_" + curr_id).text();
-                    var id_pieces = curr_id.split(SEPARATOR);
-                    var field_num_str = id_pieces[id_pieces.length-1];
-                    // Check if string contains a valid integer, per https://stackoverflow.com/a/35759874
-                    if (!isNaN(field_num_str) && !isNaN(parseFloat(field_num_str))){
-                        var curr_field_name = getFieldNameValueByIndex(field_num_str);
+                    var field_index = findFieldIndexFromNameOrId(curr_id);
+                    if (field_index !== null){
+                        var curr_field_name = getFieldNameValueByIndex(field_index);
                         label_text = curr_field_name + " " + label_text;
                     }
                     if (!label_text.endsWith(":")) {

@@ -12,7 +12,7 @@ class InputNames(Enum):
     field_name = "field_name"
     field_type = "field_type"
     field_desc = "field_desc"
-    allowed_missing_vals = "allowed_missing_vals[]"
+    allowed_missing_vals = "allowed_missing_vals"
     default_value = "default_value"
     allowed_missing_default_select = "allowed_missing_default_select"
     categorical_default_select = "categorical_default_select"
@@ -81,7 +81,8 @@ def get_validation_schema(curr_field_from_form, a_regex_handler):
     validation_schema = _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler)
 
     if InputNames.allowed_missing_vals.value in curr_field_from_form:
-        allowed_missing_vals_from_form = curr_field_from_form[InputNames.allowed_missing_vals.value]
+        # NB: allowed_missing_vals is a fieldset of checkboxes, so it is indicated by its name plus a set of brackets
+        allowed_missing_vals_from_form = curr_field_from_form[InputNames.allowed_missing_vals.value + "[]"]
         # NB: allowed_missing_vals from form are the *names* of the ebi missing values (like "ebi_not_collected"
         # instead of "missing: not collected" because the punctuation/etc in the actual values causes some problems with
         # my jquery selectors.  Thus, it is necessary to convert them from name to value before use in validation schema
