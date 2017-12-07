@@ -5,13 +5,13 @@ var TEMPLATE_SUFFIX = "";
 var SEPARATOR = "";
 var SpecialInputs = {};
 var fields_to_show_by_field_type = {};
-var websocket_url = "";
 var field_name_regex = null;
 var text_type_value = null;
 var no_default_radio_value = null;
 var max_selectbox_size = null;
 var existing_field_names = {};
 var next_field_num = 0;
+var package_fields = {};
 
 
 // Dynamically generate HTML specifying input elements for a new field
@@ -112,9 +112,6 @@ $.validator.addMethod("isValidFieldNamesList", function(value, element){
   return $(element).data('error_msg');
 });
 
-
-var package_fields = {};
-
 var NEW_ELEMENT_SET_UP_FUNCTIONS = [
     function(field_index) {  // set onchange handler on field type and make required
         addAlwaysRequiredRule(field_index, SpecialInputs.FIELD_TYPE);
@@ -186,30 +183,40 @@ $(document).ready(function () {
         }
     });
 
-
-    ws = new WebSocket(websocket_url);
-    ws.onmessage = function(evt) {
-        var fields_message = "<br />The following fields will be added to your metadata template: " +  evt.data +
-            ".<br /><strong>Note that none of these names will be available for custom fields.</strong><br /><br />";
-        $(getIdSelectorFromId("package_details_div")).html(fields_message);
-
-        var fields_list = evt.data.split(", ");
-        var temp_package_fields = {};
-        for (var i = 0, len = fields_list.length; i < len; i++) {
-            temp_package_fields[fields_list[i]] = true;
-        }
-        package_fields = $.extend({}, temp_package_fields);
-        existing_field_names = $.extend({}, package_fields);
-        $(getIdSelectorFromId("metadata_form")).removeClass('hidden');
-    };
-
-    ws.onopen = function () {};
-    ws.onclose = function () {};
-
-    // set up validators
-    $("#package_form").validate({
-        submitHandler: getPackage
+    // From https://www.tutorialrepublic.com/twitter-bootstrap-tutorial/bootstrap-accordion.php
+    // Add minus icon for collapse element which is open by default
+    $(".collapse.in").each(function(){
+        $(this).siblings(".panel-heading").find(".glyphicon").addClass("glyphicon-minus").removeClass("glyphicon-plus");
     });
+    // Toggle plus minus icon on show hide of collapse element
+    $(".collapse").on('show.bs.collapse', function(){
+        $(this).parent().find(".glyphicon").removeClass("glyphicon-plus").addClass("glyphicon-minus");
+    }).on('hide.bs.collapse', function(){
+        $(this).parent().find(".glyphicon").removeClass("glyphicon-minus").addClass("glyphicon-plus");
+    });
+
+    // From https://blueimp.github.io/jQuery-File-Upload/basic.html
+    var url = "http://localhost:8898/upload";
+    $('#fileupload').fileupload({
+        url: url,
+        dataType: 'json',
+        done: function (e, data) {
+            $.each(data.result.files, function (index, file) {
+                $('<p/>').text(file.name).appendTo('#files');
+            });
+
+            // NB: I do NOT care (or require) that the fields go in with the same field indexes they did in the original
+            // form that we are recreating.  The only thing I care about is that they go in in the same ORDER.
+            addFields(data.result["fields"]);
+        },
+        progressall: function (e, data) {
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+            $('#progress .progress-bar').css(
+                'width',
+                progress + '%'
+            );
+        }
+    }).prop('disabled', !$.support.fileInput).parent().addClass($.support.fileInput ? undefined : 'disabled');
 
     var submitted = false;
     $("#metadata_form").validate({
@@ -224,6 +231,9 @@ $(document).ready(function () {
             },
             "field_names": {
                 isValidFieldNamesList: true
+            },
+            "files[]": {
+                extension: "xlsx"
             }
         },
         messages: {
@@ -231,6 +241,9 @@ $(document).ready(function () {
                 required: "This field is required.",
                 pattern: "Only letters, numbers, and spaces are permitted.",
                 maxlength: "This field must be 400 characters or fewer."
+            },
+            "files[]": {
+                extension: "Only .xlsx files produced by the metadata wizard may be uploaded."
             }
         },
         onfocusout: function(element) {

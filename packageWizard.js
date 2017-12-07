@@ -5,8 +5,7 @@ var HOST_ASSOCIATED_SAMPLE_TYPES = [
 ];
 
 function onModeChange(element){
-    // TODO: will need considerable work here to handle upload of existing
-    var mode_divs = ["power_div", "wizard_div", "existing_div"];
+    var mode_divs = ["power_div", "wizard_div"];
     var selected_mode = element.value;
     var div_to_display_basename = selected_mode.replace("metadata_mode_","");
     var div_to_display = div_to_display_basename + "_div";
@@ -99,6 +98,32 @@ function HostSites(sample_type, host, sites_list, has_placeholder, has_other, se
 }
 
 function getPackage(){
+    // TODO: Would be nice to do nothing if they are "changing" the package to what it already is ...
+    // If any custom fields have been added, warn the user they will be cleared by replacing the package
+    if (next_field_num > 0) {
+        var confirm_msg = "Changing the package selection will remove all custom fields.  Clear existing custom fields and change package?";
+        if (!confirm(confirm_msg)) {
+            return; //do nothing if they fail to confirm
+        }
+    }
+
+    // hide field_details_div, custom_fields_div, show no_package_warning_div
+    $(getIdSelectorFromId(SpecialInputs.EXISTING_FIELDS_DIV)).addClass('hidden');
+    $(getIdSelectorFromId(SpecialInputs.CUSTOM_FIELDS_DIV)).addClass('hidden');
+    $(getIdSelectorFromId(SpecialInputs.NO_PACKAGE_WARNING_DIV)).removeClass('hidden');
+
+    // clear field_names_sel, field_details_div, which contains the custom fields, and package_details_div
+    $(getIdSelectorFromId(SpecialInputs.FIELD_NAMES_SELECT)).empty();
+    $(getIdSelectorFromId(SpecialInputs.FIELD_DETAILS_DIV)).empty();
+    $(getIdSelectorFromId(SpecialInputs.PACKAGE_DETAILS_DIV)).empty();
+
+    // TODO: Also need to clear out the list of uploaded files
+
+    // Reset variables tracking package and custom fields
+    package_fields = {};
+    existing_field_names = {};
+    next_field_num = 0;
+
     var package_key = null;
     // get the "power user" value--the precise, organism-specific package to use
     var package_select_id_selector = getIdSelectorFromId("package_select");
@@ -106,29 +131,48 @@ function getPackage(){
     // get the precise, organism-specific package to use specified through the wizard
     var host_sample_site_select_id_selector = getIdSelectorFromId("host_sample_site_select");
 
-    var upload_val_selector = getIdSelectorFromId("upload_file_name");
-
-    if (!$(upload_val_selector).is(':disabled')) {
-        // TODO: Temporary for testing.  Needs to have real functionality filled in
-        $(getIdSelectorFromId("metadata_form")).removeClass('hidden');
-        temp_parse_form_round_trip();
+    if (!$(package_select_id_selector).is(':disabled')) {
+        // if the power user value is not disabled, use it
+        package_key = $(package_select_id_selector).val();
+    } else if (!$(host_sample_site_select_id_selector).is(':disabled')) {
+        // if the precise, organism-specific package to use specified through the wizard is not disabled, use it
+        package_key = $(host_sample_site_select_id_selector).val();
     } else {
-        if (!$(package_select_id_selector).is(':disabled')) {
-            // if the power user value is not disabled, use it
-            package_key = $(package_select_id_selector).val();
-        } else if (!$(host_sample_site_select_id_selector).is(':disabled')) {
-            // if the precise, organism-specific package to use specified through the wizard is not disabled, use it
-            package_key = $(host_sample_site_select_id_selector).val();
-        } else {
-            // get the host type and the sample type and paste them together to get the package name to look for
-            var host = $(getIdSelectorFromId("host_select")).val();
-            var sample_type = $(getIdSelectorFromId("sample_type_select")).val();
-            package_key = host + "_" + sample_type;
-        }
+        // get the host type and the sample type and paste them together to get the package name to look for
+        var host = $(getIdSelectorFromId("host_select")).val();
+        var sample_type = $(getIdSelectorFromId("sample_type_select")).val();
+        package_key = host + "_" + sample_type;
+    }
 
-        ws.send(package_key);
-    } //end if
+    var r = {
+        url : '/package',
+        type : 'POST',
+        data : package_key,
+        dataType: 'text',
+        success : ajax_ok,
+        error: ajax_err
+    };
+    $.ajax(r);
+}
 
-    // always return false so we don't really submit
-    return false;
+function ajax_err(request, error) {
+    console.log(request);
+    console.log(error);
+}
+function ajax_ok(data) {
+    var fields_message = "<br />The following fields will be added to your metadata template: " +  data +
+        ".<br /><strong>Note that none of these names will be available for custom fields.</strong><br /><br />";
+    $(getIdSelectorFromId("package_details_div")).html(fields_message);
+
+    var fields_list = data.split(", ");
+    var temp_package_fields = {};
+    for (var i = 0, len = fields_list.length; i < len; i++) {
+        temp_package_fields[fields_list[i]] = true;
+    }
+
+    package_fields = $.extend({}, temp_package_fields);
+    existing_field_names = $.extend({}, package_fields);
+
+    $(getIdSelectorFromId(SpecialInputs.NO_PACKAGE_WARNING_DIV)).addClass('hidden');
+    $(getIdSelectorFromId(SpecialInputs.CUSTOM_FIELDS_DIV)).removeClass('hidden');
 }

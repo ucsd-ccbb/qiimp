@@ -36,38 +36,28 @@ function addFields(input_field_names_or_dicts){
             curr_field_name = curr_field_dict[SpecialInputs.FIELD_NAME];
         }
 
+        // TODO: Should I run the usual validations here instead of when adding from form?
+        // Basically, question is: do I trust that fields coming in from an existing spreadsheet will be valid?
         if ((curr_field_name !== "") && (!existing_field_names[curr_field_name])) {
             existing_field_names[curr_field_name] = true;
 
             var new_html = generateFieldHtml(curr_field_name);
-            $('<div/>', {html: new_html}).appendTo('#field_details_div');
+            $('<div/>', {html: new_html}).appendTo(getIdSelectorFromId(SpecialInputs.FIELD_DETAILS_DIV));
 
             // once the new elements exist, set up events/etc
             decorateNewElements(next_field_num);
 
-            if (curr_field_dict !== null){
-                for (var curr_field_key in curr_field_dict) {
-                    var input_value = curr_field_dict[curr_field_key];
-                    var input_name= getIdentifierFromBaseNameAndFieldIndex(curr_field_key, next_field_num);
+            if (curr_field_dict !== null) {
+                // Ugh, allowed_missing_vals[] is a terrible PITA that needs to be set FIRST because otherwise the
+                // default stuff gets all confused
+                if (curr_field_dict["allowed_missing_vals[]"]) {
+                    readInAndResetFormField(curr_field_dict, "allowed_missing_vals[]");
+                    delete curr_field_dict["allowed_missing_vals[]"];
+                }
 
-                    // TODO: refactor hard-coded square brackets
-                    if (curr_field_key.endsWith("[]")) {
-                        // TODO: must find better way to place brackets ... also icky in template.html
-                        input_name = input_name.replace("[]", "");
-                        input_name = input_name + "[]";
-                        // assume we're dealing with values from a checkbox fieldset
-                        for (var curr_checkbox_val_index in input_value){
-                            // only trigger onchange event after setting last value in field;
-                            // otherwise, since fields come through dictionary in basically arbitrary order,
-                            // effect of partial change of allowed missing checkboxes can wipe out
-                            // allowed missing default select, if that happened to come through first,
-                            // because of allowed missing fieldset's onchange's call to resetSelectedOptionIfDisabled.
-                            var trigger_onchange = curr_checkbox_val_index === input_value.length-1;
-                            setFormValue(input_name, input_value[curr_checkbox_val_index], trigger_onchange);
-                        }
-                    } else {
-                        setFormValue(input_name, input_value, true);
-                    }
+                // Now loop over everything else
+                for (var curr_field_key in curr_field_dict) {
+                    readInAndResetFormField(curr_field_dict, curr_field_key);
                 }
             }
 
@@ -82,24 +72,53 @@ function addFields(input_field_names_or_dicts){
         true, true, true);
 
     // show the div with the field names and details
-    var existing_fields_id_selector = getIdSelectorFromId("existing_fields");
-    $(existing_fields_id_selector).removeClass('hidden');
+    $(getIdSelectorFromId(SpecialInputs.EXISTING_FIELDS_DIV)).removeClass('hidden');
+}
+
+function readInAndResetFormField(curr_field_dict, curr_field_key) {
+    var input_value = curr_field_dict[curr_field_key];
+    var input_name= getIdentifierFromBaseNameAndFieldIndex(curr_field_key, next_field_num);
+
+    // TODO: refactor hard-coded square brackets
+    if (curr_field_key.endsWith("[]")) {
+        // TODO: must find better way to place brackets ... also icky in template.html
+        input_name = input_name.replace("[]", "");
+        input_name = input_name + "[]";
+        // assume we're dealing with values from a checkbox fieldset
+        for (var curr_checkbox_val_index in input_value){
+            // only trigger onchange event after setting last value in field;
+            // otherwise, since fields come through dictionary in basically arbitrary order,
+            // effect of partial change of allowed missing checkboxes can wipe out
+            // allowed missing default select, if that happened to come through first,
+            // because of allowed missing fieldset's onchange's call to resetSelectedOptionIfDisabled.
+
+            // NB: Ignore pycharm conversion warning--actively WANT conversion here, since
+            // curr_checkbox_val_index is a string representation of an int and input_value.length-1 is
+            // an ACTUAL integer
+            var trigger_onchange = curr_checkbox_val_index == input_value.length-1;
+            setFormValue(input_name, input_value[curr_checkbox_val_index], trigger_onchange);
+        }
+    } else {
+        setFormValue(input_name, input_value, true);
+    }
 }
 
 function setFormValue(input_name, input_value, trigger_onchange){
     var input_name_selector = "[name='" + input_name + "']";
+    var input_selector = input_name_selector;
     var input_element = $(input_name_selector);
     var input_type = getElementType(input_element);
 
     // TODO: refactor out option selector generation?
     switch(input_type) {
         case "checkbox":
-            $(input_name_selector + "[value='" + input_value + "']").prop("checked", true);
-            break;
+            // NB: INTENTIONAL FALL-THROUGH to text case!  Do NOT add break here.
         case "radio":
-            $(input_name_selector + "[value='" + input_value + "']").prop("checked", true);
+            input_selector = input_name_selector + "[value='" + input_value + "']";
+            $(input_selector).prop("checked", true);
             break;
         case "select":
+            // NB: Don't reset input_selector: for select boxes, onchange is on select, not on option
             $(input_name_selector + " option[value='" + input_value + "']").prop("selected", true);
             break;
         case "textarea":
@@ -116,7 +135,7 @@ function setFormValue(input_name, input_value, trigger_onchange){
 
     if (trigger_onchange) {
         // Manually trigger onchange event, if any, of changed form element(s)
-        $(input_name_selector).change();
+        $(input_selector).change();
     }
 }
 

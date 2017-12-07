@@ -1,12 +1,17 @@
 import argparse
 from collections import defaultdict
 import configparser
+import json
 import os
 import sys
 import traceback
+import tempfile
+import yaml
 
 from urllib.parse import quote
 
+import openpyxl
+import tornado.escape
 import tornado.ioloop  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.web  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.websocket
@@ -77,15 +82,14 @@ def _parse_form_value(curr_value, retain_list=False):
     return revised_values
 
 
-class PackageHandler(tornado.websocket.WebSocketHandler):
-    def data_received(self, chunk):
-        pass
+class PackageHandler(tornado.web.RequestHandler):
+    def get(self, *args, **kwargs):
+        raise NotImplementedError("Get not supported for PackageHandler.")
 
-    def open(self):
-        pass
-
-    def on_message(self, message):
+    def post(self, *args):
         global _packages_by_keys
+
+        message = self.request.body.decode('ascii')
 
         # default package, if all else fails, is "other"
         package_key = "other"
@@ -123,9 +127,67 @@ class PackageHandler(tornado.websocket.WebSocketHandler):
         # to display them as checkboxes.  If they are checked, include them in schema AS REQUIRED
         return_delimited_str = ", ".join(sorted(package_class.schema.keys()))
         _set_package_class(package_key)
-        self.write_message(return_delimited_str)
+        self.write(return_delimited_str)
+        self.finish()
 
-    def on_close(self):
+    def data_received(self, chunk):
+        # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
+        pass
+
+
+class UploadHandler(tornado.web.RequestHandler):
+    def get(self, *args, **kwargs):
+        raise NotImplementedError("Get not supported for UploadHandler.")
+
+    def post(self, *args):
+        # TODO: refactor hard-coding of element name
+        fileinfo_dict = self.request.files["files[]"][0]
+        file_name = fileinfo_dict['filename']
+
+        # The libraries for reading xlsx files don't accept a stream, only a file name, so I HAVE to write this to a
+        # file at least temporarily ...
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+        temp_file.write(fileinfo_dict['body'])
+        temp_file.close()  # but DON'T delete yet
+
+        # TODO: Add openpyxl reading here
+        wb = openpyxl.load_workbook(filename=temp_file.name)
+        sheet_names = wb.get_sheet_names()
+        if "metadata_form" not in sheet_names:
+            raise ValueError("Spreadsheet '{0}' does not appear to have been produced by the metadata wizard.".format(
+                file_name))
+
+        form_sheet = wb["metadata_form"]
+        form_string = form_sheet['A1'].value
+        form_dict = yaml.load(form_string)
+
+        # send back name of file that was uploaded
+        self.write(json.dumps(
+            {"files": [{"name": file_name}],
+             "fields": form_dict}))
+        self.finish()
+
+        #   {
+        #     "name": "picture1.jpg",
+        #     "size": 902604,
+        #     "url": "http:\/\/example.org\/files\/picture1.jpg",
+        #     "thumbnailUrl": "http:\/\/example.org\/files\/thumbnail\/picture1.jpg",
+        #     "deleteUrl": "http:\/\/example.org\/files\/picture1.jpg",
+        #     "deleteType": "DELETE"
+        #   },
+        #   {
+        #     "name": "picture2.jpg",
+        #     "size": 841946,
+        #     "url": "http:\/\/example.org\/files\/picture2.jpg",
+        #     "thumbnailUrl": "http:\/\/example.org\/files\/thumbnail\/picture2.jpg",
+        #     "deleteUrl": "http:\/\/example.org\/files\/picture2.jpg",
+        #     "deleteType": "DELETE"
+        #   }
+        # ]}))
+
+
+    def data_received(self, chunk):
+        # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
         pass
 
 
@@ -246,8 +308,10 @@ if __name__ == "__main__":
     }
     application = tornado.web.Application([
         (r"/", MainHandler),
-        (r"/websocket", PackageHandler),
-        (r"/download/([^/]+)", DownloadHandler)
+        # (r"/websocket", PackageHandler),
+        (r"/download/([^/]+)", DownloadHandler),
+        (r"/(upload)$", UploadHandler),
+        (r"/(package)$", PackageHandler)
     ], **settings)
 
     application.listen(listen_port)

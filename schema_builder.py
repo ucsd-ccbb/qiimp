@@ -80,9 +80,11 @@ def get_validation_schema(curr_field_from_form, a_regex_handler):
     field_name = curr_field_from_form[InputNames.field_name.value]
     validation_schema = _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler)
 
-    if InputNames.allowed_missing_vals.value in curr_field_from_form:
+    # TODO: OMG how I hate this [] syntax ... need to figure out how to clean up ...
+    allowed_missing_val_key = InputNames.allowed_missing_vals.value + "[]"
+    if allowed_missing_val_key in curr_field_from_form:
         # NB: allowed_missing_vals is a fieldset of checkboxes, so it is indicated by its name plus a set of brackets
-        allowed_missing_vals_from_form = curr_field_from_form[InputNames.allowed_missing_vals.value + "[]"]
+        allowed_missing_vals_from_form = curr_field_from_form[allowed_missing_val_key]
         # NB: allowed_missing_vals from form are the *names* of the ebi missing values (like "ebi_not_collected"
         # instead of "missing: not collected" because the punctuation/etc in the actual values causes some problems with
         # my jquery selectors.  Thus, it is necessary to convert them from name to value before use in validation schema
