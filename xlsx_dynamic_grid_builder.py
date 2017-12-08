@@ -104,10 +104,15 @@ def _write_dynamic_name_link_col(val_sheet, index_and_range_str_tuple_by_header_
 
         curr_cell = xlsx_basics.format_range(val_sheet.name_link_col_index, curr_row_index)
 
-        # If this sample is entirely valid, write a space into the dynamic name cell.  Otherwise, write a link to the
-        # name column for this sample in the metadata sheet
-        full_formula = "=IF({is_valid},\" \",HYPERLINK({link_address},{helper_name_val}))".format(
-            is_valid=is_valid, link_address=link_address, helper_name_val=helper_name_val)
+        # If this sample is entirely valid as shown by the fact that the first data cell in the dynamic grid for this
+        # row is just an empty string, write a space into the dynamic name cell.  Otherwise, write a link to the
+        # name column for this sample in the metadata sheet.  NB: it does NOT work to look at
+        # the value in the is_valid helper column for this sample (either True or False) because the samples
+        # change order based on validation status ...
+        first_data_cell_in_first_data_col = xlsx_basics.format_range(val_sheet.name_link_col_index + 1, curr_row_index)
+        full_formula = "=IF({first_validation_cell}=\" \",\" \",HYPERLINK({link_address},{helper_name_val}))".format(
+            first_validation_cell=first_data_cell_in_first_data_col, link_address=link_address,
+            helper_name_val=helper_name_val)
         val_sheet.worksheet.write_formula(curr_cell, full_formula, url_format)
 
 
