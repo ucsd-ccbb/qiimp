@@ -1,24 +1,94 @@
-// These global variables are filled using info from the back-end at load time
-var g_reserved_word_url = "";
-var g_reserved_words = [];
-var TEMPLATE_SUFFIX = "";
-var SEPARATOR = "";
-var SpecialInputs = {};
-var fields_to_show_by_field_type = {};
-var field_name_regex = null;
-var text_type_value = null;
-var no_default_radio_value = null;
-var max_selectbox_size = null;
-var existing_field_names = {};
-var next_field_num = 0;
-var package_fields = {};
+var g_transferred_variables = new TranferredVariables();
+var g_submitted = false;
+var g_fields_state;
 
+function TranferredVariables(){
+    // These values are filled using info from the back-end at load time
+    this.TEMPLATE_SUFFIX = "";
+    this.SEPARATOR = "";
+    this.ELEMENT_IDENTIFIERS = {};
+    this.SHOWN_ELEMENTS_BY_FIELD_TYPE = {};
+    this.FIELD_NAME_REGEX = null;
+    this.NO_DEFAULT_RADIO_VALUE = null;
+    this.MAX_SELECTBOX_SIZE = null;
+    this.UPLOAD_URL = null;
+}
+
+function Fields(){
+    this.package_key = null;
+    this._reserved_words = [];
+    this._package_fields = {};
+    this._existing_field_names = {};
+    this._uploaded_file_names = [];
+    this._next_field_num = 0;
+}
+
+Fields.prototype.hasExistingField = function (potential_field_name){
+    return this._existing_field_names[potential_field_name];
+};
+
+Fields.prototype.addExistingField = function(potential_field_name){
+  if (!this.hasExistingField(potential_field_name)){
+      this._existing_field_names[potential_field_name] = true;
+  }
+};
+
+Fields.prototype.removeExistingField = function(field_name) {
+      // remove field from existing_field_names dict
+    delete this._existing_field_names[field_name];
+};
+
+Fields.prototype.getCurrentNextFieldNum = function(){
+    return this._next_field_num;
+};
+
+Fields.prototype.incrementNextFieldNum = function(){
+    this._next_field_num++;
+};
+
+Fields.prototype.setPackageFields = function(package_fields_list){
+    var package_fields = {};
+    for (var i = 0, len = package_fields_list.length; i < len; i++) {
+        var curr_field_name = package_fields_list[i];
+        this._package_fields[curr_field_name] = true;
+        this.addExistingField(curr_field_name);
+    }
+};
+
+Fields.prototype.addUploadedFileNames = function(uploaded_files_dict_list){
+    for (var curr_index in uploaded_files_dict_list){
+        var curr_file_dict = uploaded_files_dict_list[curr_index];
+        // TODO: someday: remove hardcoding of key name
+        this._uploaded_file_names.push(curr_file_dict["name"]);
+    }
+};
+
+Fields.prototype.getUploadedFileNames = function(){
+    return this._uploaded_file_names;
+};
+
+Fields.prototype.setReservedWords = function(raw_reserved_words_list){
+    // Need special handling for null, also need to lowercase everything
+    for (var i = 0, len = raw_reserved_words_list.length; i < len; i++) {
+        var curr_word = raw_reserved_words_list[i];
+        if (curr_word === null) {
+            curr_word = "null";
+        } else {
+            curr_word = curr_word.toString();
+        }
+        this._reserved_words.push(curr_word.toLowerCase());
+    }
+};
+
+Fields.prototype.getReservedWords = function(){
+    return this._reserved_words;
+};
 
 // Dynamically generate HTML specifying input elements for a new field
 function generateFieldHtml(fieldName) {
-    var field_index = next_field_num;
+    var field_index = g_fields_state.getCurrentNextFieldNum();
     var $html = $('.fieldTemplate').clone();
-    var template_id_objects = $("[id$=" + TEMPLATE_SUFFIX + "]");
+    var template_id_objects = $("[id$=" + g_transferred_variables.TEMPLATE_SUFFIX + "]");
 
     for (var i = 0, len = template_id_objects.length; i < len; i++) {
         // change the element clone's template id to field-specific id
@@ -39,7 +109,7 @@ function generateFieldHtml(fieldName) {
             new_object_html_element.name = new_name;
         }
 
-        // TODO: remove hard-coding of field name
+        // TODO: someday: remove hard-coding of field name
         if (curr_object.id.startsWith("field_name")){
             // If current element is the field_name field, set its value to the input value
             new_object_html_element.value = fieldName;
@@ -95,7 +165,7 @@ $.validator.addMethod("isValidFieldNamesList", function(value, element){
         if (curr_field_name !== "") {
             var curr_err_msgs = validatePutativeFieldName(curr_field_name);
             if (curr_err_msgs.length > 0){
-                // TODO: refactor hardcoding of ul/li generation and class setting
+                // TODO: someday: refactor hardcoding of ul/li generation and class setting
                 full_err_msgs.push(curr_field_name + ":<ul class='error_list'><li class='error_item'>" + curr_err_msgs.join("</li><li class='error_item'>") + "</li></ul>");
             }
         }
@@ -112,77 +182,7 @@ $.validator.addMethod("isValidFieldNamesList", function(value, element){
   return $(element).data('error_msg');
 });
 
-var NEW_ELEMENT_SET_UP_FUNCTIONS = [
-    function(field_index) {  // set onchange handler on field type and make required
-        addAlwaysRequiredRule(field_index, SpecialInputs.FIELD_TYPE);
-        addOnChangeEvent(field_index, SpecialInputs.FIELD_TYPE, resetFieldDetails);
-    },
-    function (field_index) { //set special onchange handler on allowed values checkboxes group
-        var id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.ALLOWED_MISSINGS, field_index);
-        var id_and_state_selector = id_selector + " :checkbox"; //selector for all checkboxes inside group fieldset
-        $(id_and_state_selector).on("change", {field_index:field_index}, updateDefaultsWithMissings);
-    },
-     function (field_index) { // set onchange handler for radio buttons specifying kind of default
-         var name_selector = "input:radio[name='" + SpecialInputs.DEFAULT_OPTION + SEPARATOR + field_index + "']";
-         $(name_selector).on("change", {field_index:field_index}, enableDisableDefaultSelectsOnDefaultChange);
-    },
-    function (field_index) { //make data_type required and set onchange handler to update type validation of default
-        addAlwaysRequiredRule(field_index, SpecialInputs.DATA_TYPE);
-        addOnChangeEvent(field_index, SpecialInputs.DATA_TYPE, updateTypeValidations);
-    },
-    function (field_index) { //make boolean true value required and set onchange handler to update defaults
-        addAlwaysRequiredRule(field_index, SpecialInputs.TRUE_VALUE);
-        addOnChangeEvent(field_index, SpecialInputs.TRUE_VALUE, updateDefaultsWithBooleanVals);
-    },
-    function (field_index) { //make boolean false value required and set onchange handler to update defaults
-        addAlwaysRequiredRule(field_index, SpecialInputs.FALSE_VALUE);
-        addOnChangeEvent(field_index, SpecialInputs.FALSE_VALUE, updateDefaultsWithBooleanVals);
-    },
-    function (field_index) { //make categorical values required and add onchange handler to update defaults
-        addAlwaysRequiredRule(field_index, SpecialInputs.CATEGORY_VALS);
-        addOnChangeEvent(field_index, SpecialInputs.CATEGORY_VALS, updateDefaultsWithCategories);
-    },
-    function (field_index){ //make minimum comparison required if minimum is filled in
-         addConditionalRequiredRule(field_index, SpecialInputs.MINIMUM, SpecialInputs.MIN_COMPARE);
-    },
-    function (field_index){ //make minimum required if minimum comparison is filled in
-         addConditionalRequiredRule(field_index, SpecialInputs.MIN_COMPARE, SpecialInputs.MINIMUM);
-    },
-    function (field_index){ //make maximum comparison required if maximum is filled in
-         addConditionalRequiredRule(field_index, SpecialInputs.MAXIMUM, SpecialInputs.MAX_COMPARE);
-    },
-    function (field_index){ //make minimum required if minimum comparison is filled in
-         addConditionalRequiredRule(field_index, SpecialInputs.MAX_COMPARE, SpecialInputs.MAXIMUM);
-    },
-    function (field_index) { //make datetime default pass datetime validation
-        addDateTimeValidationRule(field_index, SpecialInputs.DEFAULT_DATETIME);
-    },
-    function (field_index){ //add onclick event handler to remove button for field
-        addEventHandler("click", field_index, SpecialInputs.REMOVE_FIELD, removeField)
-    }
-];
-
-// Code to run as soon code as the document is ready to be manipulated
-$(document).ready(function () {
-    $.ajax({
-        method: "GET",
-        url: g_reserved_word_url,
-        async: false,
-        data: "text",
-        success: function(text) {
-            var raw_reserved_words = jsyaml.load(text);
-            for (var i = 0, len = raw_reserved_words.length; i < len; i++) {
-                var curr_word = raw_reserved_words[i];
-                if (curr_word === null) {
-                    curr_word = "null";
-                } else {
-                    curr_word = curr_word.toString();
-                }
-                g_reserved_words.push(curr_word.toLowerCase())
-            }
-        }
-    });
-
+function setUpDynamicPlusMinusGlyphsOnAccordionSections(){
     // From https://www.tutorialrepublic.com/twitter-bootstrap-tutorial/bootstrap-accordion.php
     // Add minus icon for collapse element which is open by default
     $(".collapse.in").each(function(){
@@ -194,20 +194,45 @@ $(document).ready(function () {
     }).on('hide.bs.collapse', function(){
         $(this).parent().find(".glyphicon").removeClass("glyphicon-minus").addClass("glyphicon-plus");
     });
+}
 
+function makeFileUploadSettings(uploadUrl) {
     // From https://blueimp.github.io/jQuery-File-Upload/basic.html
-    var url = "http://localhost:8898/upload";
-    $('#fileupload').fileupload({
-        url: url,
+    return {
+        url: uploadUrl,
         dataType: 'json',
         done: function (e, data) {
-            $.each(data.result.files, function (index, file) {
-                $('<p/>').text(file.name).appendTo('#files');
-            });
+            for (var curr_index in data.result.files) {
+                var curr_item = data.result.files[curr_index];
+                if (curr_item["error"]) {
+                    // TODO: Figure out how to display as validation failure instead
+                    alert(curr_item["error"]);
+                } else {
+                    g_fields_state.addUploadedFileNames([curr_item])
+                }
+            }
+
+            var uploaded_files = g_fields_state.getUploadedFileNames();
+            if (uploaded_files.length > 0) {
+                // Rewrite the div that says what files have been uploaded
+                // NB: I don't just use the list of files uploaded THIS TIME (i.e., data.result.files)
+                // but rather use getUploadedFileNames because user can upload file(s) more than one time!
+                // TODO: someday: remove hardcoding of div id
+                // TODO: someday: improve/centralize generation of list html?
+                $("#files").html("Uploaded files:<br /><ul><li>" +
+                    g_fields_state.getUploadedFileNames().join("</li><li>") + "</li></ul>");
+            }
 
             // NB: I do NOT care (or require) that the fields go in with the same field indexes they did in the original
             // form that we are recreating.  The only thing I care about is that they go in in the same ORDER.
-            addFields(data.result["fields"]);
+            if (data.result["fields"]){
+                addFields(data.result["fields"]);
+            }
+        },
+        fail: function (ev, data) {
+            if (data.jqXHR) {
+                alert('Server-error:\n\n' + data.jqXHR.responseText);
+            }
         },
         progressall: function (e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
@@ -216,10 +241,11 @@ $(document).ready(function () {
                 progress + '%'
             );
         }
-    }).prop('disabled', !$.support.fileInput).parent().addClass($.support.fileInput ? undefined : 'disabled');
+    };
+}
 
-    var submitted = false;
-    $("#metadata_form").validate({
+function makeValidationSettings(){
+    return {
         ignore: [],
         errorClass: "error_msg",
         rules: {
@@ -250,9 +276,9 @@ $(document).ready(function () {
            $(element).valid();
         },
         showErrors: function(errorMap, errorList) {
-            if (submitted) {
-                submitted = false;
-                // TODO: refactor hard-coding of msg prefix, ul/li creation, class setting
+            if (g_submitted) {
+                g_submitted = false;
+                // TODO: someday: refactor hard-coding of msg prefix, ul/li creation, class setting
                 var summary = "Please correct the following issues:<br /><ul class='error_list'>";
                 for (var curr_index in errorList){
                     // NB: ignore pycharm warning about hasOwnProperty() check per https://stackoverflow.com/a/25724382
@@ -278,7 +304,69 @@ $(document).ready(function () {
             this.defaultShowErrors();
         },
         invalidHandler: function(form, validator) {
-            submitted = true;
+            g_submitted = true;
         }
-    });
+    };
+}
+
+var NEW_ELEMENT_SET_UP_FUNCTIONS = [
+    function(field_index) {  // set onchange handler on field type and make required
+        addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_TYPE);
+        addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_TYPE, resetFieldDetails);
+    },
+    function (field_index) { //set special onchange handler on allowed values checkboxes group
+        var id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.ALLOWED_MISSINGS, field_index);
+        var id_and_state_selector = id_selector + " :checkbox"; //selector for all checkboxes inside group fieldset
+        $(id_and_state_selector).on("change", {field_index:field_index}, updateDefaultsWithMissings);
+    },
+     function (field_index) { // set onchange handler for radio buttons specifying kind of default
+         var name_selector = "input:radio[name='" + g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_OPTION + g_transferred_variables.SEPARATOR + field_index + "']";
+         $(name_selector).on("change", {field_index:field_index}, enableDisableDefaultSelectsOnDefaultChange);
+    },
+    function (field_index) { //make data_type required and set onchange handler to update type validation of default
+        addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.DATA_TYPE);
+        addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.DATA_TYPE, updateTypeValidations);
+    },
+    function (field_index) { //make boolean true value required and set onchange handler to update defaults
+        addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.TRUE_VALUE);
+        addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.TRUE_VALUE, updateDefaultsWithBooleanVals);
+    },
+    function (field_index) { //make boolean false value required and set onchange handler to update defaults
+        addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE);
+        addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE, updateDefaultsWithBooleanVals);
+    },
+    function (field_index) { //make categorical values required and add onchange handler to update defaults
+        addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.CATEGORY_VALS);
+        addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.CATEGORY_VALS, updateDefaultsWithCategories);
+    },
+    function (field_index){ //make minimum comparison required if minimum is filled in
+         addConditionalRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE);
+    },
+    function (field_index){ //make minimum required if minimum comparison is filled in
+         addConditionalRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM);
+    },
+    function (field_index){ //make maximum comparison required if maximum is filled in
+         addConditionalRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE);
+    },
+    function (field_index){ //make minimum required if minimum comparison is filled in
+         addConditionalRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM);
+    },
+    function (field_index) { //make datetime default pass datetime validation
+        addDateTimeValidationRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_DATETIME);
+    },
+    function (field_index){ //add onclick event handler to remove button for field
+        addEventHandler("click", field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.REMOVE_FIELD, removeField)
+    }
+];
+
+// Code to run as soon code as the document is ready to be manipulated
+$(document).ready(function () {
+    setUpDynamicPlusMinusGlyphsOnAccordionSections();
+
+    // From https://blueimp.github.io/jQuery-File-Upload/basic.html
+    $('#fileupload').fileupload(makeFileUploadSettings(g_transferred_variables.UPLOAD_URL)).prop('disabled', !$.support.fileInput).parent().addClass($.support.fileInput ? undefined : 'disabled');
+
+    $("#metadata_form").validate(makeValidationSettings());
+
+    g_fields_state = new Fields();
 });

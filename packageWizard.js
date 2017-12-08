@@ -5,6 +5,7 @@ var HOST_ASSOCIATED_SAMPLE_TYPES = [
 ];
 
 function onModeChange(element){
+    // TODO: someday: remove hardcoding of div names, etc
     var mode_divs = ["power_div", "wizard_div"];
     var selected_mode = element.value;
     var div_to_display_basename = selected_mode.replace("metadata_mode_","");
@@ -98,32 +99,35 @@ function HostSites(sample_type, host, sites_list, has_placeholder, has_other, se
 }
 
 function getPackage(){
-    // TODO: Would be nice to do nothing if they are "changing" the package to what it already is ...
+    var package_key = determinePackageKey();
+
+    // If the user re-chose the SAME package, do nothing
+    if (g_fields_state.package_key === package_key){
+        return;
+    }
+
     // If any custom fields have been added, warn the user they will be cleared by replacing the package
-    if (next_field_num > 0) {
+    if (g_fields_state.getCurrentNextFieldNum() > 0) {
         var confirm_msg = "Changing the package selection will remove all custom fields.  Clear existing custom fields and change package?";
         if (!confirm(confirm_msg)) {
             return; //do nothing if they fail to confirm
         }
     }
 
-    // hide field_details_div, custom_fields_div, show no_package_warning_div
-    $(getIdSelectorFromId(SpecialInputs.EXISTING_FIELDS_DIV)).addClass('hidden');
-    $(getIdSelectorFromId(SpecialInputs.CUSTOM_FIELDS_DIV)).addClass('hidden');
-    $(getIdSelectorFromId(SpecialInputs.NO_PACKAGE_WARNING_DIV)).removeClass('hidden');
+    resetg_fields_stateAndDivs(package_key);
 
-    // clear field_names_sel, field_details_div, which contains the custom fields, and package_details_div
-    $(getIdSelectorFromId(SpecialInputs.FIELD_NAMES_SELECT)).empty();
-    $(getIdSelectorFromId(SpecialInputs.FIELD_DETAILS_DIV)).empty();
-    $(getIdSelectorFromId(SpecialInputs.PACKAGE_DETAILS_DIV)).empty();
+    // Make an ajax call to get the list of field names for this package and the list of reserved words
+    $.ajax({
+        url : '/package',
+        type : 'POST',
+        data : package_key,
+        dataType: 'json',
+        success : ajax_ok,
+        error: ajax_err
+    });
+}
 
-    // TODO: Also need to clear out the list of uploaded files
-
-    // Reset variables tracking package and custom fields
-    package_fields = {};
-    existing_field_names = {};
-    next_field_num = 0;
-
+function determinePackageKey(){
     var package_key = null;
     // get the "power user" value--the precise, organism-specific package to use
     var package_select_id_selector = getIdSelectorFromId("package_select");
@@ -144,15 +148,25 @@ function getPackage(){
         package_key = host + "_" + sample_type;
     }
 
-    var r = {
-        url : '/package',
-        type : 'POST',
-        data : package_key,
-        dataType: 'text',
-        success : ajax_ok,
-        error: ajax_err
-    };
-    $.ajax(r);
+    return package_key;
+}
+
+function resetg_fields_stateAndDivs(package_key){
+    // hide field_details_div, custom_fields_div, show no_package_warning_div
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.EXISTING_FIELDS_DIV)).addClass('hidden');
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.CUSTOM_FIELDS_DIV)).addClass('hidden');
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.NO_PACKAGE_WARNING_DIV)).removeClass('hidden');
+
+    // clear field_names_sel, field_details_div, which contains the custom fields, and package_details_div
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAMES_SELECT)).empty();
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_DETAILS_DIV)).empty();
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.PACKAGE_DETAILS_DIV)).empty();
+    // TODO: someday: remove hardcoding of div name
+    $("#files").empty();
+
+    // Reset variables tracking field information
+    g_fields_state = new Fields();
+    g_fields_state.package_key = package_key;
 }
 
 function ajax_err(request, error) {
@@ -160,19 +174,18 @@ function ajax_err(request, error) {
     console.log(error);
 }
 function ajax_ok(data) {
-    var fields_message = "<br />The following fields will be added to your metadata template: " +  data +
+    // Set the reserved words
+    g_fields_state.setReservedWords(data["reserved_words"]);
+
+    // Set the package field names
+    var package_field_names_list = data["field_names"];
+    g_fields_state.setPackageFields(package_field_names_list);
+
+    var fields_message = "<br />The following fields will be added to your metadata template: " +
+        package_field_names_list.join(", ") +
         ".<br /><strong>Note that none of these names will be available for custom fields.</strong><br /><br />";
     $(getIdSelectorFromId("package_details_div")).html(fields_message);
 
-    var fields_list = data.split(", ");
-    var temp_package_fields = {};
-    for (var i = 0, len = fields_list.length; i < len; i++) {
-        temp_package_fields[fields_list[i]] = true;
-    }
-
-    package_fields = $.extend({}, temp_package_fields);
-    existing_field_names = $.extend({}, package_fields);
-
-    $(getIdSelectorFromId(SpecialInputs.NO_PACKAGE_WARNING_DIV)).addClass('hidden');
-    $(getIdSelectorFromId(SpecialInputs.CUSTOM_FIELDS_DIV)).removeClass('hidden');
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.NO_PACKAGE_WARNING_DIV)).addClass('hidden');
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.CUSTOM_FIELDS_DIV)).removeClass('hidden');
 }

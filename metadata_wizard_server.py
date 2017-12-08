@@ -30,7 +30,7 @@ _packages_by_keys = {
 
 _package_class = None
 _main_url = None
-_full_websocket_url = None
+_full_upload_url = None
 _regex_handler = None
 
 _allowed_min_browser_versions = {
@@ -122,17 +122,25 @@ class PackageHandler(tornado.web.RequestHandler):
         selected_package = _packages_by_keys[package_key]
         package_class = selected_package()
 
-        # TODO: get all the required keys, return them as here, but ALSO
-        # get all the not-required keys and their messages, return them separately; then change interface
-        # to display them as checkboxes.  If they are checked, include them in schema AS REQUIRED
-        return_delimited_str = ", ".join(sorted(package_class.schema.keys()))
+        # TODO: someday: Support optional package fields.
+        # get all the required keys, return them as here, but ALSO get all the not-required keys and
+        # their messages, return them separately; then change interface to display them as checkboxes.
+        # If they are checked, include them in schema and make them required
         _set_package_class(package_key)
-        self.write(return_delimited_str)
+        self.write(json.dumps(
+            {"field_names": sorted(package_class.schema.keys()),
+             "reserved_words": self._get_reserved_words()}))
         self.finish()
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
         pass
+
+    def _get_reserved_words(self):
+        result = []
+        with open("reserved_words.yaml", 'r') as stream:
+            result = yaml.load(stream)
+        return result
 
 
 class UploadHandler(tornado.web.RequestHandler):
@@ -140,9 +148,10 @@ class UploadHandler(tornado.web.RequestHandler):
         raise NotImplementedError("Get not supported for UploadHandler.")
 
     def post(self, *args):
-        # TODO: refactor hard-coding of element name
+        # TODO: someday: refactor hard-coding of element name
         fileinfo_dict = self.request.files["files[]"][0]
         file_name = fileinfo_dict['filename']
+        result_dict = {"files": [{"name": file_name}]}
 
         # The libraries for reading xlsx files don't accept a stream, only a file name, so I HAVE to write this to a
         # file at least temporarily ...
@@ -150,41 +159,20 @@ class UploadHandler(tornado.web.RequestHandler):
         temp_file.write(fileinfo_dict['body'])
         temp_file.close()  # but DON'T delete yet
 
-        # TODO: Add openpyxl reading here
         wb = openpyxl.load_workbook(filename=temp_file.name)
         sheet_names = wb.get_sheet_names()
         if "metadata_form" not in sheet_names:
-            raise ValueError("Spreadsheet '{0}' does not appear to have been produced by the metadata wizard.".format(
-                file_name))
-
-        form_sheet = wb["metadata_form"]
-        form_string = form_sheet['A1'].value
-        form_dict = yaml.load(form_string)
+            error_msg = "Spreadsheet '{0}' does not appear to have been produced by the metadata wizard.".format(file_name)
+            result_dict["files"][0]["error"] = error_msg
+        else:
+            form_sheet = wb["metadata_form"]
+            form_string = form_sheet['A1'].value
+            form_dict = yaml.load(form_string)
+            result_dict["fields"] = form_dict
 
         # send back name of file that was uploaded
-        self.write(json.dumps(
-            {"files": [{"name": file_name}],
-             "fields": form_dict}))
+        self.write(json.dumps(result_dict))
         self.finish()
-
-        #   {
-        #     "name": "picture1.jpg",
-        #     "size": 902604,
-        #     "url": "http:\/\/example.org\/files\/picture1.jpg",
-        #     "thumbnailUrl": "http:\/\/example.org\/files\/thumbnail\/picture1.jpg",
-        #     "deleteUrl": "http:\/\/example.org\/files\/picture1.jpg",
-        #     "deleteType": "DELETE"
-        #   },
-        #   {
-        #     "name": "picture2.jpg",
-        #     "size": 841946,
-        #     "url": "http:\/\/example.org\/files\/picture2.jpg",
-        #     "thumbnailUrl": "http:\/\/example.org\/files\/thumbnail\/picture2.jpg",
-        #     "deleteUrl": "http:\/\/example.org\/files\/picture2.jpg",
-        #     "deleteType": "DELETE"
-        #   }
-        # ]}))
-
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
@@ -193,8 +181,8 @@ class UploadHandler(tornado.web.RequestHandler):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        global _full_websocket_url
-        self.render("metadata_wizard_template.html", websocket_url=_full_websocket_url,
+        global _full_upload_url
+        self.render("metadata_wizard_template.html", upload_url=_full_upload_url,
                     allowed_min_browser_versions=_allowed_min_browser_versions, select_size=10)
 
     def post(self):
@@ -246,7 +234,8 @@ class MainHandler(tornado.web.RequestHandler):
             selected_package = _packages_by_keys[package_key]
             package_class = selected_package()
 
-            # TODO: so, right now I just grab the whole schema.  Need to handle this differently: get everything
+            # TODO: someday: Support optional package fields.
+            # Right now I just grab the whole schema.  Will need to handle this differently: get everything
             # required from this schema.  Then, get back selected optionals from interface (currently not done)
             # and get those from schema--and change them to required.
             dict_of_validation_schema_by_index.update(package_class.schema)
@@ -299,7 +288,7 @@ if __name__ == "__main__":
     static_path, websocket_url, listen_port = _get_config_values(is_deployed)
     if static_path == "": static_path = local_dir
     _main_url = "{0}:{1}".format(websocket_url, listen_port)
-    _full_websocket_url = "ws://{0}/websocket".format(_main_url)
+    _full_upload_url = "http://{0}/upload".format(_main_url)
 
     _regex_handler = regex_handler.RegexHandler(os.path.join(local_dir, 'regex_definitions.yaml'))
 
@@ -308,7 +297,6 @@ if __name__ == "__main__":
     }
     application = tornado.web.Application([
         (r"/", MainHandler),
-        # (r"/websocket", PackageHandler),
         (r"/download/([^/]+)", DownloadHandler),
         (r"/(upload)$", UploadHandler),
         (r"/(package)$", PackageHandler)

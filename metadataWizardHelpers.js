@@ -1,51 +1,30 @@
-function temp_parse_form_round_trip(){
-    // TODO: currently not handling non-field values (default locale, study name, etc) ... should I?
-
-
-
-    // NB: I do NOT care (or require) that the fields go in with the same field indexes they did in the original
-    // form that we are recreating.  The only thing I care about is that they go in in the same ORDER.
-    var text = "0:\n" +
-        "  allowed_missing_default_select: ebi_not_provided\n" +
-        "  allowed_missing_vals[]:\n" +
-        "  - ebi_not_collected\n" +
-        "  - ebi_not_provided\n" +
-        "  categorical_values: \"kiw\\r\\nned\\r\\ngugg\"\n" +
-        "  default_value: allowed_missing_default\n" +
-        "  field_name: phenotype\n" +
-        "  field_type: categorical\n" +
-        "1:\n" +
-        "  default_value: text_default\n" +
-        "  field_desc: a lot of fun\n" +
-        "  field_name: is_patient\n" +
-        "  field_type: string\n" +
-        "  text_default: green";
-    var round_trip_form_vals_dict = jsyaml.load(text);
-    addFields(round_trip_form_vals_dict);
-}
-
 function addFields(input_field_names_or_dicts){
     var new_field_nums_and_names = [];
     var is_dicts = !Array.isArray(input_field_names_or_dicts);
+
+    // If the input is a list and the list has nothing in it, bail out without doing anything
+    if ((!is_dicts) && (input_field_names_or_dicts.length === 0)){
+        return;
+    }
 
     for (var curr_item in input_field_names_or_dicts) {
         var curr_field_dict = null;
         var curr_field_name = input_field_names_or_dicts[curr_item];
         if (is_dicts) {
             curr_field_dict = curr_field_name;
-            curr_field_name = curr_field_dict[SpecialInputs.FIELD_NAME];
+            curr_field_name = curr_field_dict[g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAME];
         }
 
-        // TODO: Should I run the usual validations here instead of when adding from form?
+        // TODO: someday: Should I run the usual validations here instead of when adding from form?
         // Basically, question is: do I trust that fields coming in from an existing spreadsheet will be valid?
-        if ((curr_field_name !== "") && (!existing_field_names[curr_field_name])) {
-            existing_field_names[curr_field_name] = true;
+        if ((curr_field_name !== "") && (!g_fields_state.hasExistingField(curr_field_name))) {
+            g_fields_state.addExistingField(curr_field_name);
 
             var new_html = generateFieldHtml(curr_field_name);
-            $('<div/>', {html: new_html}).appendTo(getIdSelectorFromId(SpecialInputs.FIELD_DETAILS_DIV));
+            $('<div/>', {html: new_html}).appendTo(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_DETAILS_DIV));
 
             // once the new elements exist, set up events/etc
-            decorateNewElements(next_field_num);
+            decorateNewElements(g_fields_state.getCurrentNextFieldNum());
 
             if (curr_field_dict !== null) {
                 // Ugh, allowed_missing_vals[] is a terrible PITA that needs to be set FIRST because otherwise the
@@ -61,27 +40,27 @@ function addFields(input_field_names_or_dicts){
                 }
             }
 
-            new_field_nums_and_names.push([next_field_num, curr_field_name]);
-            next_field_num++;
+            new_field_nums_and_names.push([g_fields_state.getCurrentNextFieldNum(), curr_field_name]);
+            g_fields_state.incrementNextFieldNum();
         }
     }
 
     // add new values to the select list for field_names_sel
-    var field_names_sel_id_selector = getIdSelectorFromId(SpecialInputs.FIELD_NAMES_SELECT);
+    var field_names_sel_id_selector = getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAMES_SELECT);
     updateSelectWithNewCategories(field_names_sel_id_selector, new_field_nums_and_names, null, false,
         true, true, true);
 
     // show the div with the field names and details
-    $(getIdSelectorFromId(SpecialInputs.EXISTING_FIELDS_DIV)).removeClass('hidden');
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.EXISTING_FIELDS_DIV)).removeClass('hidden');
 }
 
 function readInAndResetFormField(curr_field_dict, curr_field_key) {
     var input_value = curr_field_dict[curr_field_key];
-    var input_name= getIdentifierFromBaseNameAndFieldIndex(curr_field_key, next_field_num);
+    var input_name= getIdentifierFromBaseNameAndFieldIndex(curr_field_key, g_fields_state.getCurrentNextFieldNum());
 
-    // TODO: refactor hard-coded square brackets
+    // TODO: someday: refactor hard-coded square brackets
     if (curr_field_key.endsWith("[]")) {
-        // TODO: must find better way to place brackets ... also icky in template.html
+        // TODO: someday: must find better way to place brackets ... also icky in template.html
         input_name = input_name.replace("[]", "");
         input_name = input_name + "[]";
         // assume we're dealing with values from a checkbox fieldset
@@ -109,7 +88,7 @@ function setFormValue(input_name, input_value, trigger_onchange){
     var input_element = $(input_name_selector);
     var input_type = getElementType(input_element);
 
-    // TODO: refactor out option selector generation?
+    // TODO: someday: refactor out option selector generation?
     switch(input_type) {
         case "checkbox":
             // NB: INTENTIONAL FALL-THROUGH to text case!  Do NOT add break here.
@@ -130,7 +109,7 @@ function setFormValue(input_name, input_value, trigger_onchange){
             $(input_name_selector).attr("value", input_value);
             break;
         default:
-            // TODO: add error handling
+            throw "Unsupported input type '" + input_type + "'";
     }
 
     if (trigger_onchange) {
@@ -146,7 +125,7 @@ function getElementType(element){
 
 function findFieldIndexFromNameOrId(field_identifier){
     var result = null;  // default: assume field has no index (like "study_name")
-    var id_pieces = field_identifier.split(SEPARATOR);
+    var id_pieces = field_identifier.split(g_transferred_variables.SEPARATOR);
     var field_num_str = id_pieces[id_pieces.length-1];
     // Check if string contains a valid integer, per https://stackoverflow.com/a/35759874
     if (!isNaN(field_num_str) && !isNaN(parseFloat(field_num_str))){
@@ -156,7 +135,7 @@ function findFieldIndexFromNameOrId(field_identifier){
 }
 
 function getFieldNameValueByIndex(field_index) {
-    var field_name_input_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.FIELD_NAME, field_index);
+    var field_name_input_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAME, field_index);
     var field_name_input = $(field_name_input_id_selector)[0];
     return field_name_input.value;
 }
@@ -174,7 +153,7 @@ function validatePutativeFieldName(putative_field_name){
 function validateNameIsNotReserved(putative_field_name) {
     var result = null;
     // if the value in the name element appears in the list of reserved words, then it is invalid
-    if (g_reserved_words.indexOf(putative_field_name) > -1) {
+    if (g_fields_state.getReservedWords().indexOf(putative_field_name) > -1) {
         result = "'" + putative_field_name + "' is not an allowed field name because it is a reserved word.";
     }
     return result;
@@ -182,7 +161,7 @@ function validateNameIsNotReserved(putative_field_name) {
 
 function validateNameMatchesPattern(putative_field_name) {
     var result = null;
-    if (!field_name_regex.test(putative_field_name)) {
+    if (!g_transferred_variables.FIELD_NAME_REGEX.test(putative_field_name)) {
         result = "Only lower-case letters, numbers, and underscores are permitted, and must not start with a number.";
     }
     return result;
@@ -190,7 +169,7 @@ function validateNameMatchesPattern(putative_field_name) {
 
 function validateNameIsUnique(putative_field_name) {
     var result = null; // default: assume unique
-    if (existing_field_names[putative_field_name]){
+    if (g_fields_state.hasExistingField(putative_field_name)){
         result = "Field name must be unique."
     }
     return result;
@@ -319,16 +298,16 @@ function updateSelectWithNewCategories(select_id_selector, values_list, selected
 // num_options is optional.  If you want the select box to be the minimum of the number of options or the max size,
 // include this argument.  If you want the select box to always be the max size, just pass null for this argument.
 function setSelectSize(select_id_selector, num_options){
-    var size = max_selectbox_size;
+    var size = g_transferred_variables.MAX_SELECTBOX_SIZE;
     if (num_options !== null) {
         // set the size of the select box to be the number of categories or the max
-        size = Math.min(num_options, max_selectbox_size)
+        size = Math.min(num_options, g_transferred_variables.MAX_SELECTBOX_SIZE)
     }
     $(select_id_selector).attr('size', size)
 }
 
 function getTemplateFromBaseIdentifier(base_name){
-    return base_name + TEMPLATE_SUFFIX;
+    return base_name + g_transferred_variables.TEMPLATE_SUFFIX;
 }
 
 function getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index) {
@@ -346,5 +325,5 @@ function getIdSelectorFromId(id_str) {
 }
 
 function getNewIdentifierFromTemplateAndIndex(full_template_name, field_index) {
-    return full_template_name.replace(TEMPLATE_SUFFIX, SEPARATOR + field_index.toString());
+    return full_template_name.replace(g_transferred_variables.TEMPLATE_SUFFIX, g_transferred_variables.SEPARATOR + field_index.toString());
 }

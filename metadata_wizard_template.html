@@ -103,17 +103,15 @@
 
 
     <script type="text/javascript">
-        g_reserved_word_url = "{{ static_url("reserved_words.yaml") }}";
-
-        max_selectbox_size = {{select_size}}
-        text_type_value = "{{metadata_package_schema_builder.CerberusDataTypes.Text.value}}";
-        no_default_radio_value = "{{schema_builder.DefaultTypes.no_default.name}}";
-        SEPARATOR = "{{schema_builder.SEPARATOR}}";
-        TEMPLATE_SUFFIX = "{{schema_builder.TEMPLATE_SUFFIX}}";
-        field_name_regex = /{{ metadata_package_schema_builder.PerSamplePackage.FIELD_NAME_REGEX }}/
+        g_transferred_variables.UPLOAD_URL = "{{upload_url}}";
+        g_transferred_variables.MAX_SELECTBOX_SIZE = {{select_size}};
+        g_transferred_variables.NO_DEFAULT_RADIO_VALUE = "{{schema_builder.DefaultTypes.no_default.name}}";
+        g_transferred_variables.SEPARATOR = "{{schema_builder.SEPARATOR}}";
+        g_transferred_variables.TEMPLATE_SUFFIX = "{{schema_builder.TEMPLATE_SUFFIX}}";
+        g_transferred_variables.FIELD_NAME_REGEX = /{{ metadata_package_schema_builder.PerSamplePackage.FIELD_NAME_REGEX }}/;
 
         // Note that these are to be the bases (without template suffix or separator)
-        SpecialInputs = {
+        g_transferred_variables.ELEMENT_IDENTIFIERS = {
             FIELD_NAME: "{{schema_builder.InputNames.field_name.value}}",
             FIELD_TYPE: "{{schema_builder.InputNames.field_type.value}}",
             ALLOWED_MISSINGS: "allowed_missing_vals_fieldset",
@@ -142,7 +140,7 @@
             EXISTING_FIELDS_DIV: "existing_fields"
         };
 
-        fields_to_show_by_field_type = {
+        g_transferred_variables.SHOWN_ELEMENTS_BY_FIELD_TYPE = {
             "":[],
             "{{schema_builder.FieldTypes.Text.value}}":["text_default_div"],
             "{{schema_builder.FieldTypes.Boolean.value}}": ["boolean_div", "allowed_missing_vals_div",
@@ -221,15 +219,15 @@
         }
 
         function enableDisableDefaultSelects(field_index, curr_val){
-            enableOrDisableByValue(SpecialInputs.DEFAULT_MISSINGS, field_index, curr_val,
+            enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_MISSINGS, field_index, curr_val,
                     "{{schema_builder.DefaultTypes.allowed_missing_default.value}}");
-            enableOrDisableByValue(SpecialInputs.DEFAULT_CATEGORICAL, field_index, curr_val,
+            enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CATEGORICAL, field_index, curr_val,
                     "{{schema_builder.DefaultTypes.categorical_default.value}}");
-            enableOrDisableByValue(SpecialInputs.DEFAULT_BOOLEAN, field_index, curr_val,
+            enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_BOOLEAN, field_index, curr_val,
                     "{{schema_builder.DefaultTypes.boolean_default.value}}");
-            enableOrDisableByValue(SpecialInputs.DEFAULT_CONTINUOUS, field_index, curr_val,
+            enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CONTINUOUS, field_index, curr_val,
                     "{{schema_builder.DefaultTypes.continuous_default.value}}");
-            enableOrDisableByValue(SpecialInputs.DEFAULT_TEXT, field_index, curr_val,
+            enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_TEXT, field_index, curr_val,
                     "{{schema_builder.DefaultTypes.text_default.value}}");
         };
     </script>
@@ -364,6 +362,9 @@
                             <div id="custom_fields_div" class="hidden">
                                 <div class="row">
                                     <div class="col-sm-12">
+                                        <p>
+                                            Enter custom fields by typing their names into the box below and/or uploading them from a previously created Metadata Wizard file:
+                                        </p>
                                         <label class="hidden" id="label_field_names" for="field_names">Custom Fields:</label>
                                         <textarea rows="5" cols="25" name="field_names" id="field_names" placeholder="e.g., phenotype&#10;timepoint&#10;disease_state"></textarea><br />
                                         <br />&nbsp;
@@ -374,7 +375,8 @@
                                     <div id="existing_div" class="col-sm-12">
                                         <!-- from https://blueimp.github.io/jQuery-File-Upload/basic.html -->
                                         <div class="col=sm-12">
-                                            <label id = "label_upload_file_name" for="upload_file_name">TODO implement upload:</label>
+                                            and/or<br />
+                                            <label class="hidden" id = "label_upload_file_name" for="upload_file_name">Existing Metadata Wizard Spreadsheet:</label>
                                             <input id="fileupload" type="file" name="files[]" disabled style="color:transparent;">
                                             <!-- The global progress bar -->
                                             <div id="progress">

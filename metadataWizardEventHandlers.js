@@ -9,7 +9,7 @@ function resetFieldDetails(event) {
 
 // Show/hide appropriate interface elements when field type is changed
 function displayFieldDetails(selected_field_type, field_index) {
-    var elements_to_show = fields_to_show_by_field_type[selected_field_type];
+    var elements_to_show = g_transferred_variables.SHOWN_ELEMENTS_BY_FIELD_TYPE[selected_field_type];
 
     // find all elements for the current field that were initially hidden
     var conditional_settings = $('[id$=_' + field_index + '].initially_hidden');
@@ -38,13 +38,13 @@ function displayFieldDetails(selected_field_type, field_index) {
 }
 
 function enableDisableDefaultSelectsOnFieldTypeChange(field_index){
-    var default_radio_name = getIdentifierFromBaseNameAndFieldIndex(SpecialInputs.DEFAULT_OPTION, field_index);
+    var default_radio_name = getIdentifierFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_OPTION, field_index);
     var curr_checked_option_selector = "input[name='"+ default_radio_name + "']:checked";
 
     // if the selected default option for the default radio button set for this index has been disabled by the field
     // change, then reset the selected option to "no default" and show/hide default-option-specific fields as needed
     if ($(curr_checked_option_selector).attr('disabled')) {
-        $("input[name='" + default_radio_name +"'][value='" + no_default_radio_value +"']").prop("checked",true);
+        $("input[name='" + default_radio_name +"'][value='" + g_transferred_variables.NO_DEFAULT_RADIO_VALUE +"']").prop("checked",true);
     }
 
     var curr_val = $(curr_checked_option_selector).val();
@@ -67,7 +67,7 @@ function updateDefaultsWithMissings(event){
     var checkbox_value = the_target.val();
     var checkbox_ischecked = the_target.is(":checked");
 
-    var default_missings_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DEFAULT_MISSINGS,
+    var default_missings_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_MISSINGS,
         field_index);
     var select_option_for_checked_val_selector = default_missings_id_selector +
         " option[value='" + checkbox_value + "']";
@@ -78,7 +78,7 @@ function updateDefaultsWithMissings(event){
 // Refresh select box options for categorical default when category items text area is changed
 function updateDefaultsWithCategories(event) {
     var field_index = event.data.field_index;
-    var default_categorical_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DEFAULT_CATEGORICAL,
+    var default_categorical_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CATEGORICAL,
         field_index);
     var lines = getValuesFromMultilineTextArea($(this).val());
 
@@ -102,14 +102,14 @@ function getValuesFromMultilineTextArea(textarea_val) {
 function updateDefaultsWithBooleanVals(event){
     var field_index = event.data.field_index;
     var new_options = [];
-    var base_names = [SpecialInputs.TRUE_VALUE, SpecialInputs.FALSE_VALUE];
+    var base_names = [g_transferred_variables.ELEMENT_IDENTIFIERS.TRUE_VALUE, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE];
     for (i = 0; i < base_names.length; i++) {
         var val_id_selector = getIdSelectorFromBaseNameAndFieldIndex(base_names[i], field_index);
         var found_val = $(val_id_selector).val();
         if (found_val) {new_options.push(found_val);}
     }
 
-    var default_boolean_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.DEFAULT_BOOLEAN,
+    var default_boolean_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_BOOLEAN,
         field_index);
     updateSelectWithNewCategories(default_boolean_id_selector, new_options);
 }
@@ -120,9 +120,9 @@ function updateTypeValidations(event){
     var field_index = event.data.field_index;
     var data_type_value = $(event.target).val();
 
-    updateTypeValidation(SpecialInputs.MINIMUM, field_index, data_type_value);
-    updateTypeValidation(SpecialInputs.MAXIMUM, field_index, data_type_value);
-    updateTypeValidation(SpecialInputs.DEFAULT_CONTINUOUS, field_index, data_type_value);
+    updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, field_index, data_type_value);
+    updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, field_index, data_type_value);
+    updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CONTINUOUS, field_index, data_type_value);
 }
 
 function removeField(event){
@@ -134,17 +134,17 @@ function removeField(event){
     }
 
     //find and remove row div for this field
-    var button_id_selector = getIdSelectorFromBaseNameAndFieldIndex(SpecialInputs.REMOVE_FIELD, field_index);
+    var button_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.REMOVE_FIELD, field_index);
     var field_div_element = $(button_id_selector).closest('.row.field');
     field_div_element.remove();
 
     // remove field from field_names selectbox
-    var select_option_id_string = SpecialInputs.FIELD_NAMES_SELECT + " option[value='" + field_index + "']";
+    var select_option_id_string = g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAMES_SELECT + " option[value='" + field_index + "']";
     var select_option_id_selector = getIdSelectorFromId(select_option_id_string);
     $(select_option_id_selector).remove();
 
-    // remove field from existing_field_names dict
-    delete existing_field_names[field_name];
+    // remove field from list of existing field names
+    g_fields_state.removeExistingField(field_name);
 }
 
 // NB: This function doesn't enable or disable ANYTHING--all it does is show and hide.  This is because hidden inputs
@@ -155,7 +155,8 @@ function onSelectedFieldNameChange(element) {
     var selected_field_num = element.value;
 
     // Loop over each potential field number
-    for (var i = 0; i < next_field_num; i++) {
+    var max_field_num = g_fields_state.getCurrentNextFieldNum();
+    for (var i = 0; i < max_field_num; i++) {
         // make the selector for this field_details_#
         var curr_field_details_id_selector = getIdSelectorFromId(getIdentifierFromBaseNameAndFieldIndex("field_details", i));
         // if this is the selected field number
@@ -174,7 +175,7 @@ function onSelectedFieldNameChange(element) {
 // when someone clicks to add a field, a new set of elements
 // is added to represent that new field and *its* events are set up
 function clickAddField(element) {
-    var field_names_id_selector = getIdSelectorFromId(SpecialInputs.FIELD_NAMES);
+    var field_names_id_selector = getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAMES);
     if (!$(field_names_id_selector).valid()) {
         // if the field names list is NOT valid, quit without making any new fields
         return
