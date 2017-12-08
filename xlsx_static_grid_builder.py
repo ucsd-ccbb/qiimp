@@ -164,7 +164,7 @@ def _write_static_name_col(val_sheet, col_index, index_and_range_tuple_by_header
     :type val_sheet: ValidationWorksheet
     """
     # write sample_name column: e.g., =IF(metadata!B2:B11="","",metadata!B2:B11)
-    # TODO: +1 is a hack to get it to show name rather than sample id ... think of less fragile way
+    # TODO: someday: +1 is a hack to get it to show name rather than sample id ... think of less fragile way
     metadata_name_data_range = xlsx_basics.format_single_col_range(val_sheet, val_sheet.sample_id_col_index + 1,
                                                                    sheet_name=val_sheet.metadata_sheet_name)
     return xlsx_basics.format_and_write_array_formula(val_sheet, col_index, "IF({cell}=\"\",\"\",{cell})",

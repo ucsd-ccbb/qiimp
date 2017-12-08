@@ -80,7 +80,7 @@ def get_validation_schema(curr_field_from_form, a_regex_handler):
     field_name = curr_field_from_form[InputNames.field_name.value]
     validation_schema = _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler)
 
-    # TODO: OMG how I hate this [] syntax ... need to figure out how to clean up ...
+    # TODO: someday: OMG how I hate this [] syntax ... need to figure out how to clean up ...
     allowed_missing_val_key = InputNames.allowed_missing_vals.value + "[]"
     if allowed_missing_val_key in curr_field_from_form:
         # NB: allowed_missing_vals is a fieldset of checkboxes, so it is indicated by its name plus a set of brackets
@@ -184,7 +184,7 @@ def _generate_schema_by_data_type(curr_field_from_form, a_regex_handler, overrid
 
     data_type = overriding_datatype if overriding_datatype else curr_field_from_form[InputNames.data_type.value]
 
-    # TODO: The is_phi handling here is a bit half-a**ed; would like to come back and refactor so not mixing
+    # TODO: someday: The is_phi handling here is a bit half-a**ed; would like to come back and refactor so not mixing
     # ValidationKeys and InputNames enums, etc.
     if curr_field_from_form:
         phi_val = InputNames.is_phi.value in curr_field_from_form
