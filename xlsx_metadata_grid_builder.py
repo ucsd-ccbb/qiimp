@@ -40,7 +40,13 @@ def write_metadata_grid(data_worksheet, schema_dict):
                     cell=starting_cell_name, col_range=col_range)
                 validation_dict[value_key] = formatted_validation_formula
 
-            data_worksheet.worksheet.data_validation(whole_col_range, validation_dict)
+            validation_return_code = data_worksheet.worksheet.data_validation(whole_col_range, validation_dict)
+            # NB: xlsxwriter's data_validation docstring *claims* it returns 0 if it succeeds, but in fact if it
+            # succeeds it doesn't return an error code at all, hence the then None check ...
+            if validation_return_code is not None and validation_return_code < 0:
+                raise ValueError("Worksheet validation failed with return code '{0}'; check user warnings.".format(
+                    validation_return_code
+                ))
 
         _add_default_if_any(data_worksheet, field_specs_dict, curr_col_index)
 
@@ -95,12 +101,18 @@ def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler
 
     if allowed_onlies is not None and len(allowed_onlies) > 0:
         allowed_onlies_as_strs = [str(x) for x in allowed_onlies]
-        message = 'The value must be one of the following: {1}'.format(field_name, ", ".join(allowed_onlies_as_strs))
-        result = _make_base_validate_dict(field_name, message)
-        result.update({
-            'validate': 'list',
-            'source': allowed_onlies
-        })
+
+        # See line 1810 in xlsxwriter's worksheet.py: the comma-delimited list of options for a list validation can
+        # be no more than 255 characters long, per an Excel limitation :(  If list is longer than that, have to fall
+        # back and use a formula validation.
+        joined_allowed_str = ','.join(allowed_onlies_as_strs)
+        if len(joined_allowed_str) <= 255:
+            message = 'The value must be one of the following: {1}'.format(field_name, ", ".join(allowed_onlies_as_strs))
+            result = _make_base_validate_dict(field_name, message)
+            result.update({
+                'validate': 'list',
+                'source': allowed_onlies
+            })
 
     return result
 
