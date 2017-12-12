@@ -134,9 +134,12 @@ function removeField(event){
     }
 
     //find and remove row div for this field
-    var button_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.REMOVE_FIELD, field_index);
-    var field_div_element = $(button_id_selector).closest('.row.field');
-    field_div_element.remove();
+    //var button_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.REMOVE_FIELD, field_index);
+    //var field_div_element = $(button_id_selector).closest('.row.field');
+    // TODO: someday: refactor hard-code of field_details prefix
+    // TODO: handle case where there is no item matching the selector?
+    var curr_field_details_id_selector = getIdSelectorFromId(getIdentifierFromBaseNameAndFieldIndex("field_details", field_index));
+    $(curr_field_details_id_selector).remove();
 
     // remove field from field_names selectbox
     var select_option_id_string = g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAMES_SELECT + " option[value='" + field_index + "']";
@@ -158,6 +161,7 @@ function onSelectedFieldNameChange(element) {
     var max_field_num = g_fields_state.getCurrentNextFieldNum();
     for (var i = 0; i < max_field_num; i++) {
         // make the selector for this field_details_#
+        // TODO: someday: refactor hard-code of field_details prefix
         var curr_field_details_id_selector = getIdSelectorFromId(getIdentifierFromBaseNameAndFieldIndex("field_details", i));
         // if this is the selected field number
         // NB: ignore pycharm lint complaint here!
