@@ -12,7 +12,7 @@ class InputNames(Enum):
     field_name = "field_name"
     field_type = "field_type"
     field_desc = "field_desc"
-    allowed_missing_vals = "allowed_missing_vals"
+    allowed_missing_vals = "allowed_missing_vals[]"
     default_value = "default_value"
     allowed_missing_default_select = "allowed_missing_default_select"
     categorical_default_select = "categorical_default_select"
@@ -80,8 +80,7 @@ def get_validation_schema(curr_field_from_form, a_regex_handler):
     field_name = curr_field_from_form[InputNames.field_name.value]
     validation_schema = _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler)
 
-    # TODO: someday: OMG how I hate this [] syntax ... need to figure out how to clean up ...
-    allowed_missing_val_key = InputNames.allowed_missing_vals.value + "[]"
+    allowed_missing_val_key = InputNames.allowed_missing_vals.value
     if allowed_missing_val_key in curr_field_from_form:
         # NB: allowed_missing_vals is a fieldset of checkboxes, so it is indicated by its name plus a set of brackets
         allowed_missing_vals_from_form = curr_field_from_form[allowed_missing_val_key]
