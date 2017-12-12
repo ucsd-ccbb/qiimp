@@ -161,6 +161,7 @@ class UploadHandler(tornado.web.RequestHandler):
 
         wb = openpyxl.load_workbook(filename=temp_file.name)
         sheet_names = wb.get_sheet_names()
+        # TODO: someday: refactor hard-coding of sheet name
         if "metadata_form" not in sheet_names:
             error_msg = "Spreadsheet '{0}' does not appear to have been produced by the metadata wizard.".format(file_name)
             result_dict["files"][0]["error"] = error_msg
