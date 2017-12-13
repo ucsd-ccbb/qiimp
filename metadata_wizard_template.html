@@ -88,6 +88,10 @@
             width: 100%;
             border-collapse: collapse;
         }
+        .NarrowTable {
+            display: table;
+            border-collapse: collapse;
+        }
         .Row {
             display: table-row;
             width: 100%;
@@ -105,6 +109,9 @@
         }
         .field-type {
             width: 125px;
+        }
+        .padded-cell {
+            padding-left: 10px;
         }
     </style>
 
@@ -328,39 +335,30 @@
                                     <div class="col-sm-10">
                                         <div id="power_div" class="hidden">
                                             <label id="label_package_select" for="package_select"> Metadata Packages:</label><br />
-                                            <select name="package_select" id="package_select" size="{{select_size}}" disabled required>
-                                                <!-- TODO: refactor to pull from back end! -->
-                                                <!-- TODO: After Austin is done making packages, take out setting Generic to selected by default -->
-                                                <option value="other" selected="selected">Generic</option>
+                                            <select class = "error-below" name="package_select" id="package_select" size="{{select_size}}" disabled required>
+                                                        {% for curr_item in combinations_list %}
+                                                        <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
+                                                        {% end %}
                                             </select>
                                         </div>
-                                        <div id="wizard_div" class="hidden">
-                                            <div class="row" id="sample_type_div">
-                                                <div class="col-sm-12">
+                                        <div id="wizard_div" class="NarrowTable hidden">
+                                            <div class="Row">
+                                                <div class="Cell padded-cell" id="sample_type_div">
                                                     <label id="label_sample_type" for="sample_type_select"> Sample Type:</label><br />
-                                                    <select name="sample_type_select" id="sample_type_select" onchange="onSampleTypeChange(this)" size="{{select_size}}" disabled required>
-                                                        <!-- TODO: refactor to pull from back end! -->
-                                                        <option value="other">Other</option>
+                                                    <select class = "error-below" name="sample_type_select" id="sample_type_select" size="{{select_size}}" disabled required>
+                                                        {% for curr_item in sample_types_list %}
+                                                        <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
+                                                        {% end %}
                                                     </select>
                                                 </div>
-                                            </div>
-                                            <div id="environmental_div" class="hidden"></div>
-                                            <div id="host_associated_div" class="hidden">
-                                                <div class="row" id="host_div">
-                                                    <div class="col-sm-12">
-                                                        <label id="label_host_select" for="host_select"> Host Organism:</label>
-                                                        <select name="host_select" id="host_select" onchange="checkSampleTypePlusHostImplications(this)" size="{{select_size}}" disabled required>
-                                                            <!-- TODO: refactor to pull from back end! -->
-                                                            <option value="other">Other</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="row" id="host_specific_sample_type_div" >
-                                                    <div class="col-sm-12">
-                                                        <label id="label_host_sample_site_select" for="host_sample_site_select"> Host Sample Site:</label>
-                                                        <select name="host_sample_site_select" id="host_sample_site_select" size="{{select_size}}" disabled required>
-                                                        </select>
-                                                    </div>
+                                                <!-- TODO: someday: eventualy the host div will NOT be shown all the time, because eventually we will support non-host packages.  But not for alpha release. -->
+                                                <div class="Cell padded-cell" id="host_div">
+                                                    <label id="label_host_select" for="host_select"> Host Organism:</label><br />
+                                                    <select class = "error-below" name="host_select" id="host_select" size="{{select_size}}" disabled required>
+                                                        {% for curr_item in hosts_list %}
+                                                        <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
+                                                        {% end %}
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -369,7 +367,7 @@
                                 <div class="row" id="select_package_button_div">
                                     <div class="col-sm-12">
                                         <button name="select_package_button" id="select_package_button" type="button"
-                                                onclick="getPackage()" disabled>Select Package</button>
+                                                onclick="onSelectPackage()" disabled>Select Package</button>
                                     </div>
                                 </div>
                                 <div class="row" id="package_details_div">

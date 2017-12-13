@@ -305,7 +305,15 @@ function makeValidationSettings(){
         },
         invalidHandler: function(form, validator) {
             g_submitted = true;
-        }
+        },
+        errorPlacement: function(error, element) {
+            if (element.hasClass('error-below')) {
+                var linebreak_element = $("<br />").insertAfter(element);
+                error.insertAfter(linebreak_element)
+            } else {
+                error.insertAfter(element);
+            }
+          }
     };
 }
 

@@ -10,7 +10,6 @@ import yaml
 
 from urllib.parse import quote
 
-import openpyxl
 import tornado.escape
 import tornado.ioloop  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.web  # Note: Pycharm thinks this import isn't used, but it is
@@ -22,13 +21,8 @@ import schema_builder
 import xlsx_builder
 import regex_handler
 
-# TODO: Refactor to dynamically pull from files
-# TODO: Refactor to share definition of "other" key between back and front ends
-_packages_by_keys = {
-    "other": metadata_package_schema_builder.PerSamplePackage
-}
-
-_package_class = None
+_packages_dir_path = None
+_package_schema = None
 _main_url = None
 _full_upload_url = None
 _regex_handler = None
@@ -61,16 +55,6 @@ def _get_config_values(is_deployed):
     return static_path, websocket_url, listen_port
 
 
-def _set_package_class(new_class):
-    global _package_class
-    _package_class = new_class
-
-
-def _get_package_class():
-    global _package_class
-    return _package_class
-
-
 def _parse_form_value(curr_value, retain_list=False):
     revised_values = [x.decode('ascii') for x in curr_value]  # everything comes through as a list of binary string
     if not retain_list:
@@ -87,60 +71,26 @@ class PackageHandler(tornado.web.RequestHandler):
         raise NotImplementedError("Get not supported for PackageHandler.")
 
     def post(self, *args):
-        global _packages_by_keys
+        global _packages_dir_path
+        global _package_schema
 
-        message = self.request.body.decode('ascii')
-
-        # default package, if all else fails, is "other"
-        package_key = "other"
-
-        if message in _packages_by_keys:
-            # if there is an exact match to the package the user is trying to find in the package_keys, use that!
-            package_key = message
-        else:
-            # if there is no exact match to the package the user is looking for, split it on its separator; assume it
-            # will have at least one piece.
-            message_split = message.split("_")
-            message_start = message_split[0]
-            if message_start in _packages_by_keys:
-                # if the first piece of the package name is in the package_keys, use that
-                package_key = message_start
-            else:
-                # NB: Right now assuming the package can only have two parts--host organism and sample type.
-                # This is generated in packageWizard.js getPackage() .
-                if len(message_split) == 2:
-                    message_end = message_split[1]
-                    if message_end in _packages_by_keys:
-                        # if the package name has two pieces, and the second piece is in the package_keys even though
-                        # the first piece isn't, use the second piece
-                        package_key = message_end
-                    # end if
-                # end if
-            # end if
-        # end if
-
-        selected_package = _packages_by_keys[package_key]
-        package_class = selected_package()
+        package_key = self.request.body.decode('ascii')
+        _package_schema = metadata_package_schema_builder.load_schemas_for_package_key(_packages_dir_path, package_key)
+        reserved_words = metadata_package_schema_builder.load_yaml_from_fp("reserved_words.yaml")
 
         # TODO: someday: Support optional package fields.
         # get all the required keys, return them as here, but ALSO get all the not-required keys and
         # their messages, return them separately; then change interface to display them as checkboxes.
         # If they are checked, include them in schema and make them required
-        _set_package_class(package_key)
+
         self.write(json.dumps(
-            {"field_names": sorted(package_class.schema.keys()),
-             "reserved_words": self._get_reserved_words()}))
+            {"field_names": sorted(_package_schema.keys()),
+             "reserved_words": reserved_words}))
         self.finish()
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
         pass
-
-    def _get_reserved_words(self):
-        result = []
-        with open("reserved_words.yaml", 'r') as stream:
-            result = yaml.load(stream)
-        return result
 
 
 class UploadHandler(tornado.web.RequestHandler):
@@ -159,17 +109,15 @@ class UploadHandler(tornado.web.RequestHandler):
         temp_file.write(fileinfo_dict['body'])
         temp_file.close()  # but DON'T delete yet
 
-        wb = openpyxl.load_workbook(filename=temp_file.name)
-        sheet_names = wb.get_sheet_names()
-        # TODO: someday: refactor hard-coding of sheet name
-        if "metadata_form" not in sheet_names:
-            error_msg = "Spreadsheet '{0}' does not appear to have been produced by the metadata wizard.".format(file_name)
-            result_dict["files"][0]["error"] = error_msg
-        else:
-            form_sheet = wb["metadata_form"]
-            form_string = form_sheet['A1'].value
-            form_dict = yaml.load(form_string)
+        try:
+            # TODO: someday: refactor hardcoding of spreadsheet name
+            form_dict = metadata_package_schema_builder.load_yaml_from_wizard_xlsx(temp_file.name, "metadata_form")
             result_dict["fields"] = form_dict
+        except ValueError as e:
+            if str(e).startswith(metadata_package_schema_builder.NON_WIZARD_XLSX_ERROR_PREFIX):
+                result_dict["files"][0]["error"] = str(e)
+            else:
+                raise e
 
         # send back name of file that was uploaded
         self.write(json.dumps(result_dict))
@@ -183,11 +131,21 @@ class UploadHandler(tornado.web.RequestHandler):
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         global _full_upload_url
+        global _packages_dir_path
+
+        # get the package info
+        sampletype_dicts_list, host_dicts_list, combination_dicts_list = \
+            metadata_package_schema_builder.get_package_info(_packages_dir_path)
+
         self.render("metadata_wizard_template.html", upload_url=_full_upload_url,
-                    allowed_min_browser_versions=_allowed_min_browser_versions, select_size=10)
+                    allowed_min_browser_versions=_allowed_min_browser_versions, select_size=10,
+                    combinations_list=combination_dicts_list, sample_types_list=sampletype_dicts_list,
+                    hosts_list=host_dicts_list)
 
     def post(self):
         global _regex_handler
+        global _package_schema
+
         try:
             study_name = None
             dict_of_field_schemas_by_index = defaultdict(dict)
@@ -231,15 +189,11 @@ class MainHandler(tornado.web.RequestHandler):
                 field_name, curr_validation_schema = schema_builder.get_validation_schema(curr_schema, _regex_handler)
                 dict_of_validation_schema_by_index[field_name] = curr_validation_schema
 
-            package_key = _get_package_class()
-            selected_package = _packages_by_keys[package_key]
-            package_class = selected_package()
-
             # TODO: someday: Support optional package fields.
             # Right now I just grab the whole schema.  Will need to handle this differently: get everything
             # required from this schema.  Then, get back selected optionals from interface (currently not done)
             # and get those from schema--and change them to required.
-            dict_of_validation_schema_by_index.update(package_class.schema)
+            dict_of_validation_schema_by_index.update(_package_schema)
             file_name = xlsx_builder.write_workbook(study_name, dict_of_validation_schema_by_index, _regex_handler,
                                                     dict_of_field_schemas_by_index)
 
@@ -285,6 +239,7 @@ class DownloadHandler(tornado.web.RequestHandler):
 if __name__ == "__main__":
     is_deployed = _parse_cmd_line_args()
     local_dir = os.path.dirname(__file__)
+    _packages_dir_path = os.path.join(local_dir, "packages")
 
     static_path, websocket_url, listen_port = _get_config_values(is_deployed)
     if static_path == "": static_path = local_dir
