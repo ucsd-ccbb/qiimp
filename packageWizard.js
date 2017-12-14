@@ -113,9 +113,17 @@ function ajax_ok(data) {
     var package_field_names_list = data["field_names"];
     g_fields_state.setPackageFields(package_field_names_list);
 
-    var fields_message = "<br />The following fields will be added to your metadata template: " +
-        package_field_names_list.join(", ") +
-        ".<br /><strong>Note that none of these names will be available for custom fields.</strong><br /><br />";
+    var field_desc_dicts_list = data["field_descriptions"];
+    var field_descs_html_pieces = [];
+    for (var i = 0; i < field_desc_dicts_list.length; i++) {
+        var curr_desc_dict = field_desc_dicts_list[i];
+        var curr_desc_html = "<tr><td class='description-cell'>" + curr_desc_dict["name"]+
+            "</td><td class='description-cell'>" + curr_desc_dict["description"] + "</td></tr>";
+        field_descs_html_pieces.push(curr_desc_html);
+    }
+    var fields_message = "<br /><p>The following fields will be added to your metadata template:</p><table>" +
+        field_descs_html_pieces.join("") +
+        "</table><br /><strong>Note that none of these fields' names will be available for custom fields.</strong><br /><br />";
     $(getIdSelectorFromId("package_details_div")).html(fields_message);
 
     $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.NO_PACKAGE_WARNING_DIV)).addClass('hidden');

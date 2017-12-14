@@ -91,11 +91,6 @@ def get_default_formula(field_schema_dict, trigger_col_letter, make_text=False):
 def get_field_constraint_description(field_schema_dict, a_regex_handler):
     text_pieces = []
 
-    # get the description
-    if schema_builder.InputNames.field_desc.value in field_schema_dict:
-        field_desc = field_schema_dict[schema_builder.InputNames.field_desc.value]
-        if field_desc: text_pieces.append(field_desc + ".")
-
     # append the generated description of the constraint
     constraint_desc = get_formula_constraint(field_schema_dict, a_regex_handler, make_text=True)
     if constraint_desc: text_pieces.append(constraint_desc + ".")
@@ -105,11 +100,24 @@ def get_field_constraint_description(field_schema_dict, a_regex_handler):
     if default_desc: text_pieces.append(default_desc + ".")
 
     result = " ".join(text_pieces)
-    # This capitalizes the first letter.  Not using capitalize() or title() because those capitalize the first letter
-    # *and* lower-case all the other letters, but I want to touch nothing except the first letter.
-    result = result[0].upper() + result[1:]
+    result = _uppercase_first_letter(result)
+
+    # prepend the description, if one exists
+    if schema_builder.InputNames.field_desc.value in field_schema_dict:
+        field_desc = field_schema_dict[schema_builder.InputNames.field_desc.value]
+        if field_desc:
+            if not field_desc.endswith("."):
+                field_desc += "."
+            field_desc = _uppercase_first_letter(field_desc)
+            result = field_desc + " " + result
+
     return result
 
+
+def _uppercase_first_letter(a_string):
+    # This capitalizes the first letter.  Not using capitalize() or title() because those capitalize the first letter
+    # *and* lower-case all the other letters, but I want to touch nothing except the first letter.
+    return a_string[0].upper() + a_string[1:]
 
 def _make_type_constraint(field_schema_dict, make_text):
     result = None

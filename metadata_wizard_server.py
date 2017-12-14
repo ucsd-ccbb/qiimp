@@ -6,20 +6,18 @@ import os
 import sys
 import traceback
 import tempfile
-import yaml
 
 from urllib.parse import quote
 
-import tornado.escape
 import tornado.ioloop  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.web  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.websocket
 
-
 import metadata_package_schema_builder
+import regex_handler
 import schema_builder
 import xlsx_builder
-import regex_handler
+import xlsx_validation_builder
 
 _packages_dir_path = None
 _package_schema = None
@@ -73,10 +71,17 @@ class PackageHandler(tornado.web.RequestHandler):
     def post(self, *args):
         global _packages_dir_path
         global _package_schema
+        global _regex_handler
 
         package_key = self.request.body.decode('ascii')
         _package_schema = metadata_package_schema_builder.load_schemas_for_package_key(_packages_dir_path, package_key)
         reserved_words = metadata_package_schema_builder.load_yaml_from_fp("reserved_words.yaml")
+
+        field_descriptions = []
+        for curr_field_name, curr_field_dict in _package_schema.items():
+            curr_desc = xlsx_validation_builder.get_field_constraint_description(curr_field_dict, _regex_handler)
+            field_descriptions.append({"name": curr_field_name,
+                                       "description": curr_desc})
 
         # TODO: someday: Support optional package fields.
         # get all the required keys, return them as here, but ALSO get all the not-required keys and
@@ -85,7 +90,8 @@ class PackageHandler(tornado.web.RequestHandler):
 
         self.write(json.dumps(
             {"field_names": sorted(_package_schema.keys()),
-             "reserved_words": reserved_words}))
+             "reserved_words": reserved_words,
+             "field_descriptions": field_descriptions}))
         self.finish()
 
     def data_received(self, chunk):
