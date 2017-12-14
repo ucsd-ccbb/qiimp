@@ -68,6 +68,16 @@ def _get_default_types_to_input_fields():
     }
 
 
+def _get_special_handling_fields():
+    return [InputNames.field_name.value, InputNames.field_type.value, InputNames.allowed_missing_vals.value,
+            InputNames.default_value.value, InputNames.allowed_missing_default_select.value,
+            InputNames.categorical_default_select.value, InputNames.continuous_default.value,
+            InputNames.boolean_default_select.value, InputNames.text_default.value,
+            InputNames.datetime_default.value, InputNames.true_value.value, InputNames.false_value.value,
+            InputNames.data_type.value, InputNames.categorical_values.value, InputNames.minimum_comparison.value,
+            InputNames.minimum_value.value, InputNames.maximum_comparison.value, InputNames.maximum_value.value,
+            InputNames.is_phi.value]
+
 # def _get_cast_func_by_data_type():
 #     return {metadata_package_schema_builder.CerberusDataTypes.Text.value: str,
 #             metadata_package_schema_builder.CerberusDataTypes.Decimal.value: float,
@@ -78,6 +88,7 @@ def _get_default_types_to_input_fields():
 
 def get_validation_schema(curr_field_from_form, a_regex_handler):
     field_name = curr_field_from_form[InputNames.field_name.value]
+    top_level_schema = _build_top_level_schema_dict(curr_field_from_form)
     validation_schema = _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler)
 
     allowed_missing_val_key = InputNames.allowed_missing_vals.value
@@ -89,20 +100,32 @@ def get_validation_schema(curr_field_from_form, a_regex_handler):
         # my jquery selectors.  Thus, it is necessary to convert them from name to value before use in validation schema
         allowed_missing_vals = [_convert_ebi_missing_name_to_ebi_missing_value(x) for x in
                                 allowed_missing_vals_from_form]
-        curr_schema = {}
         missings_schema = _generate_text_schema(None, a_regex_handler)
         missings_schema.update({
             metadata_package_schema_builder.ValidationKeys.allowed.value: allowed_missing_vals
         })
 
         missings_schema = _set_default_keyval_if_any(curr_field_from_form, missings_schema)
-        curr_schema[metadata_package_schema_builder.ValidationKeys.anyof.value] = [missings_schema, validation_schema]
+        top_level_schema[metadata_package_schema_builder.ValidationKeys.anyof.value] = \
+            [missings_schema, validation_schema]
     else:
-        curr_schema = validation_schema
-        curr_schema = _set_default_keyval_if_any(curr_field_from_form, curr_schema)
+        top_level_schema.update(validation_schema)
+        top_level_schema = _set_default_keyval_if_any(curr_field_from_form, top_level_schema)
     # end if any allowed missing vals
 
-    return field_name, curr_schema
+    return field_name, top_level_schema
+
+
+def _build_top_level_schema_dict(curr_field_from_form):
+    top_level_schema = {metadata_package_schema_builder.ValidationKeys.empty.value: False,
+                        metadata_package_schema_builder.ValidationKeys.required.value: True,
+                        InputNames.is_phi.value: InputNames.is_phi.value in curr_field_from_form}
+
+    for curr_key, curr_value in curr_field_from_form.items():
+        if curr_key not in _get_special_handling_fields():
+            top_level_schema.update({curr_key: curr_value})
+
+    return top_level_schema
 
 
 def _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler):
@@ -110,12 +133,6 @@ def _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler):
     field_type = curr_field_from_form[InputNames.field_type.value]
     schema_generator_func = generator_funcs_by_type[field_type]
     result = schema_generator_func(curr_field_from_form, a_regex_handler)
-
-    fixed_use_input_names = [e.value for e in InputNames]
-    for curr_key, curr_value in curr_field_from_form.items():
-        if curr_key not in fixed_use_input_names:
-            result.update({curr_key: curr_value})
-
     return result
 
 
@@ -182,20 +199,7 @@ def _generate_schema_by_data_type(curr_field_from_form, a_regex_handler, overrid
     """
 
     data_type = overriding_datatype if overriding_datatype else curr_field_from_form[InputNames.data_type.value]
-
-    # TODO: someday: The is_phi handling here is a bit half-a**ed; would like to come back and refactor so not mixing
-    # ValidationKeys and InputNames enums, etc.
-    if curr_field_from_form:
-        phi_val = InputNames.is_phi.value in curr_field_from_form
-    else:
-        phi_val = False
-
-    curr_schema = {
-        metadata_package_schema_builder.ValidationKeys.empty.value: False,
-        metadata_package_schema_builder.ValidationKeys.required.value: True,
-        metadata_package_schema_builder.ValidationKeys.type.value: data_type,
-        InputNames.is_phi.value: phi_val
-    }
+    curr_schema = {metadata_package_schema_builder.ValidationKeys.type.value: data_type}
 
     regex_for_data_type = a_regex_handler.get_regex_val_by_name(data_type)
     if regex_for_data_type:
