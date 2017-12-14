@@ -107,7 +107,8 @@ def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler
         # back and use a formula validation.
         joined_allowed_str = ','.join(allowed_onlies_as_strs)
         if len(joined_allowed_str) <= 255:
-            message = 'The value must be one of the following: {1}'.format(field_name, ", ".join(allowed_onlies_as_strs))
+            message = xlsx_validation_builder.get_field_constraint_description(field_schema_dict, a_regex_handler)
+            # 'The value must be one of the following: {1}'.format(field_name, ", ".join(allowed_onlies_as_strs))
             result = _make_base_validate_dict(field_name, message)
             result.update({
                 'validate': 'list',
