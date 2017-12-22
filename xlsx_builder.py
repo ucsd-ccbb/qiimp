@@ -1,5 +1,4 @@
 import collections
-import os
 import re
 import unicodedata
 import xlsxwriter
@@ -10,14 +9,13 @@ import xlsx_metadata_grid_builder
 import xlsx_validation_builder
 import xlsx_static_grid_builder
 import xlsx_dynamic_grid_builder
-import regex_handler
 
 # Ensures defaultdicts are represented as nice yaml rather than nasty (see https://stackoverflow.com/a/19323121 )
 from yaml.representer import Representer
 yaml.add_representer(collections.defaultdict, Representer.represent_dict)
 
 
-def write_workbook(study_name, schema_dict, a_regex_handler, form_dict):
+def write_workbook(study_name, schema_dict, a_regex_handler, form_dict, readme_text):
     num_allowable_samples = 1000
     # TODO: someday: either expand code to use num_samples and add real code to get in from interface, or take out unused hook
     num_samples = 0
@@ -62,6 +60,10 @@ def write_workbook(study_name, schema_dict, a_regex_handler, form_dict):
     # write form worksheet
     form_worksheet = xlsx_basics.create_worksheet(workbook, "metadata_form")
     form_worksheet.write_string("A1", yaml.dump(form_dict, default_flow_style=False))
+
+    # write readme worksheet
+    form_worksheet = xlsx_basics.create_worksheet(workbook, "readme")
+    form_worksheet.write_string("A1", readme_text)
 
     # close workbook
     workbook.close()
