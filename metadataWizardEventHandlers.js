@@ -51,14 +51,13 @@ function enableDisableDefaultSelectsOnFieldTypeChange(field_index){
     enableDisableDefaultSelects(field_index, curr_val);
 }
 
-
 // Enable/disable appropriate subordinate input elements when type of default setting is changed
 function enableDisableDefaultSelectsOnDefaultChange(event) {
     var field_index = event.data.field_index;
     var curr_val = this.value;
-    enableDisableDefaultSelects(field_index, curr_val)
+    enableDisableDefaultSelects(field_index, curr_val);
+    validateFormIfSubmitted();
 }
-
 
 // Enable/disable select box options for allowed missing default when allowed missing checkbox(es) are changed
 function updateDefaultsWithMissings(event){
@@ -73,6 +72,7 @@ function updateDefaultsWithMissings(event){
         " option[value='" + checkbox_value + "']";
     enableOrDisableBySelectorAndValue(select_option_for_checked_val_selector, checkbox_ischecked, true);
     resetSelectedOptionIfDisabled(default_missings_id_selector);
+    validateFormIfSubmitted();
 }
 
 // Refresh select box options for categorical default when category items text area is changed
