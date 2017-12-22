@@ -1,6 +1,8 @@
 import argparse
 from collections import defaultdict
 import configparser
+import copy
+import datetime
 import json
 import os
 import sys
@@ -19,12 +21,6 @@ import schema_builder
 import xlsx_builder
 import xlsx_validation_builder
 
-_packages_dir_path = None
-_package_schema = None
-_main_url = None
-_full_upload_url = None
-_regex_handler = None
-
 _allowed_min_browser_versions = {
     'chrome': 49,
     'firefox': 48,
@@ -39,20 +35,6 @@ def _parse_cmd_line_args():
     return args.deployed
 
 
-def _get_config_values(is_deployed):
-    local_dir = os.path.dirname(__file__)
-    section_name = "DEPLOYED" if is_deployed else "LOCAL"
-
-    config_parser = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-    config_parser.read_file(open(os.path.join(local_dir, 'config.txt')))
-
-    static_path = os.path.expanduser(config_parser.get(section_name, "static_path"))
-    listen_port = os.path.expanduser(config_parser.get(section_name, "listen_port"))
-    websocket_url = os.path.expanduser(config_parser.get(section_name, "websocket_url"))
-
-    return static_path, websocket_url, listen_port
-
-
 def _parse_form_value(curr_value, retain_list=False):
     revised_values = [x.decode('ascii') for x in curr_value]  # everything comes through as a list of binary string
     if not retain_list:
@@ -64,33 +46,89 @@ def _parse_form_value(curr_value, retain_list=False):
     return revised_values
 
 
+class MetadataWizardState(object):
+    @staticmethod
+    def _get_config_values(is_deployed):
+        local_dir = os.path.dirname(__file__)
+        section_name = "DEPLOYED" if is_deployed else "LOCAL"
+
+        config_parser = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+        config_parser.read_file(open(os.path.join(local_dir, 'config.txt')))
+
+        static_path = os.path.expanduser(config_parser.get(section_name, "static_path"))
+        listen_port = os.path.expanduser(config_parser.get(section_name, "listen_port"))
+        websocket_url = os.path.expanduser(config_parser.get(section_name, "websocket_url"))
+
+        return static_path, websocket_url, listen_port
+
+    def __init__(self):
+        # I think this should NOT be in the config; new versions SHOULD involve changing code.
+        self.VERSION = "v0.3"
+
+        # TODO: someday: these file path definitions should move into the config
+        self.RESERVED_WORDS_YAML_PATH = "reserved_words.yaml"
+        self.REGEX_YAML_PATH = 'regex_definitions.yaml'
+        self.README_TEXT_PATH = "readme_template.txt"
+        self.DEFAULT_LOCALES_YAML_PATH = "default_locales.yaml"
+        self.ENVIRONMENTS_YAML_PATH = "environments.yaml"
+        self.SAMPLETYPES_YAML_PATH = "sampletypes.yaml"
+        self.local_dir = os.path.dirname(__file__)
+        self.static_path = None
+        self.packages_dir_path = None
+        self.package_schema = None
+        self.main_url = None
+        self.full_upload_url = None
+        self.websocket_url = None
+        self.listen_port = None
+        self.regex_handler = None
+        self.parent_stack_by_env_name = None
+        self.env_schemas = None
+        self.default_locales_list = None
+        self.reserved_words_list = None
+
+    def set_up(self, is_deployed):
+        self.packages_dir_path = os.path.join(self.local_dir, "packages")
+
+        self.static_path, self.websocket_url, self.listen_port = self._get_config_values(is_deployed)
+        if self.static_path == "": self.static_path = self.local_dir
+        self.main_url = "{0}:{1}".format(self.websocket_url, self.listen_port)
+        self.full_upload_url = "http://{0}/upload".format(self.main_url)
+
+        self.regex_handler = regex_handler.RegexHandler(os.path.join(self.local_dir, self.REGEX_YAML_PATH))
+        self.reserved_words_list = metadata_package_schema_builder.load_yaml_from_fp(self.RESERVED_WORDS_YAML_PATH)
+        self.default_locales_list = metadata_package_schema_builder.load_yaml_from_fp(self.DEFAULT_LOCALES_YAML_PATH)
+
+    def make_readme_text(self):
+        with open(self.README_TEXT_PATH, 'r') as f:
+            readme_text = f.read()
+
+        now = datetime.datetime.now()
+        readme_text = readme_text.replace("VERSION", self.VERSION)
+        readme_text = readme_text.replace("GENERATION_TIMESTAMP", now.strftime("%Y-%m-%d %H:%M:%S"))
+        return readme_text
+
+
 class PackageHandler(tornado.web.RequestHandler):
     def get(self, *args, **kwargs):
         raise NotImplementedError("Get not supported for PackageHandler.")
 
     def post(self, *args):
-        global _packages_dir_path
-        global _package_schema
-        global _regex_handler
+        wiz_state = self.application.settings["wizard_state"]
 
-        package_key = self.request.body.decode('ascii')
-        _package_schema = metadata_package_schema_builder.load_schemas_for_package_key(_packages_dir_path, package_key)
-        reserved_words = metadata_package_schema_builder.load_yaml_from_fp("reserved_words.yaml")
+        env_value = _parse_form_value(self.request.arguments["env"])
+        sampletype_value = _parse_form_value(self.request.arguments["sample_type"])
+        wiz_state.package_schema = metadata_package_schema_builder.load_schemas_for_package_key(
+            env_value, sampletype_value, wiz_state.parent_stack_by_env_name, wiz_state.env_schemas)
 
         field_descriptions = []
-        for curr_field_name, curr_field_dict in _package_schema.items():
-            curr_desc = xlsx_validation_builder.get_field_constraint_description(curr_field_dict, _regex_handler)
+        for curr_field_name, curr_field_dict in wiz_state.package_schema.items():
+            curr_desc = xlsx_validation_builder.get_field_constraint_description(curr_field_dict, wiz_state.regex_handler)
             field_descriptions.append({"name": curr_field_name,
                                        "description": curr_desc})
 
-        # TODO: someday: Support optional package fields.
-        # get all the required keys, return them as here, but ALSO get all the not-required keys and
-        # their messages, return them separately; then change interface to display them as checkboxes.
-        # If they are checked, include them in schema and make them required
-
         self.write(json.dumps(
-            {"field_names": sorted(_package_schema.keys()),
-             "reserved_words": reserved_words,
+            {"field_names": sorted(wiz_state.package_schema.keys()),
+             "reserved_words": wiz_state.reserved_words_list,
              "field_descriptions": field_descriptions}))
         self.finish()
 
@@ -136,24 +174,27 @@ class UploadHandler(tornado.web.RequestHandler):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        global _full_upload_url
-        global _packages_dir_path
+        wiz_state = self.application.settings["wizard_state"]
+        global _allowed_min_browser_versions
 
         # get the package info
-        sampletype_dicts_list, host_dicts_list, combination_dicts_list = \
-            metadata_package_schema_builder.get_package_info(_packages_dir_path)
+        combination_dicts_list, host_dicts_list, sampletype_dicts_list, wiz_state.parent_stack_by_env_name, \
+        wiz_state.env_schemas = metadata_package_schema_builder.load_environment_and_sampletype_info(
+            wiz_state.ENVIRONMENTS_YAML_PATH, wiz_state.SAMPLETYPES_YAML_PATH, wiz_state.packages_dir_path)
 
-        self.render("metadata_wizard_template.html", upload_url=_full_upload_url,
+        sampletypes_by_env_json = json.dumps(sampletype_dicts_list)
+
+        self.render("metadata_wizard_template.html", upload_url=wiz_state.full_upload_url,
                     allowed_min_browser_versions=_allowed_min_browser_versions, select_size=10,
-                    combinations_list=combination_dicts_list, sample_types_list=sampletype_dicts_list,
+                    combinations_list=combination_dicts_list, sampletypes_by_env_json=sampletypes_by_env_json,
                     hosts_list=host_dicts_list)
 
     def post(self):
-        global _regex_handler
-        global _package_schema
+        wiz_state = self.application.settings["wizard_state"]
 
         try:
             study_name = None
+            study_default_locale = None
             dict_of_field_schemas_by_index = defaultdict(dict)
             for curr_key, curr_value in self.request.arguments.items():
                 # per issue #53, all user-provided fields must be lower-cased
@@ -163,9 +204,10 @@ class MainHandler(tornado.web.RequestHandler):
                 if not curr_key.endswith(schema_builder.TEMPLATE_SUFFIX):
                     if curr_key == schema_builder.InputNames.study_name.value:
                         study_name = _parse_form_value(curr_value)
-                    elif curr_key == "study_location_select":
+                    # TODO: Get rid of hardcode of field name
+                    elif curr_key == "default_study_location_select":
                         # TODO: Add handling for study_location_select
-                        pass
+                        study_default_locale = _parse_form_value(curr_value)
                     else:
                         retain_list = False
                         # slice off the field index at the end
@@ -192,23 +234,24 @@ class MainHandler(tornado.web.RequestHandler):
             dict_of_validation_schema_by_index = {}
             for curr_key in dict_of_field_schemas_by_index:
                 curr_schema = dict_of_field_schemas_by_index[curr_key]
-                field_name, curr_validation_schema = schema_builder.get_validation_schema(curr_schema, _regex_handler)
+                field_name, curr_validation_schema = schema_builder.get_validation_schema(curr_schema, wiz_state.regex_handler)
                 dict_of_validation_schema_by_index[field_name] = curr_validation_schema
 
-            # TODO: someday: Support optional package fields.
-            # Right now I just grab the whole schema.  Will need to handle this differently: get everything
-            # required from this schema.  Then, get back selected optionals from interface (currently not done)
-            # and get those from schema--and change them to required.
-            dict_of_validation_schema_by_index.update(_package_schema)
-            file_name = xlsx_builder.write_workbook(study_name, dict_of_validation_schema_by_index, _regex_handler,
-                                                    dict_of_field_schemas_by_index)
+            mutable_package_schema = copy.deepcopy(wiz_state.package_schema)
+            mutable_package_schema = self._update_package_with_locale_defaults(mutable_package_schema,
+                                                                               study_default_locale)
+            mutable_package_schema.update(dict_of_validation_schema_by_index)
+
+            file_name = xlsx_builder.write_workbook(study_name, mutable_package_schema, wiz_state.regex_handler,
+                                                    dict_of_field_schemas_by_index, wiz_state.make_readme_text())
 
             self.redirect("/download/{0}".format(file_name))
         except Exception as e:
             self.send_error(exc_info=sys.exc_info())
 
     def write_error(self, status_code, **kwargs):
-        global _main_url
+        wiz_state = self.application.settings["wizard_state"]
+
         error_details_list = []
         exc_info_key = "exc_info"
         if exc_info_key in kwargs:
@@ -225,17 +268,34 @@ class MainHandler(tornado.web.RequestHandler):
         mailto_url = "mailto:{0}?subject={1}&body={2}".format(email_addr, quote(subject), quote(error_details))
 
         self.render("metadata_error_template.html", mailto_url=mailto_url, error_trace=error_details,
-                    main_url=_main_url)
+                    main_url=wiz_state.main_url)
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
         pass
 
+    def _update_package_with_locale_defaults(self, package_schema, study_default_locale):
+        wiz_state = self.application.settings["wizard_state"]
+
+        locale_fields_to_modify = None
+        for curr_locale_dict in wiz_state.default_locales_list:
+            curr_locale, curr_locale_subdict = metadata_package_schema_builder.get_single_key_and_subdict(curr_locale_dict)
+            if study_default_locale == curr_locale:
+                locale_fields_to_modify = curr_locale_subdict
+                break
+
+        if locale_fields_to_modify is None:
+            raise ValueError("Default study locale '{0}' was not found among known default locales.".format(
+                study_default_locale))
+
+        package_schema = metadata_package_schema_builder.update_schema(package_schema, locale_fields_to_modify)
+        return package_schema
+
 
 class DownloadHandler(tornado.web.RequestHandler):
     def get(self, slug):
-        global _main_url
-        self.render("metadata_download_template.html", template_file_name=slug, main_url=_main_url)
+        wiz_state = self.application.settings["wizard_state"]
+        self.render("metadata_download_template.html", template_file_name=slug, main_url=wiz_state.main_url)
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
@@ -243,19 +303,13 @@ class DownloadHandler(tornado.web.RequestHandler):
 
 
 if __name__ == "__main__":
+    wizard_state = MetadataWizardState()
     is_deployed = _parse_cmd_line_args()
-    local_dir = os.path.dirname(__file__)
-    _packages_dir_path = os.path.join(local_dir, "packages")
-
-    static_path, websocket_url, listen_port = _get_config_values(is_deployed)
-    if static_path == "": static_path = local_dir
-    _main_url = "{0}:{1}".format(websocket_url, listen_port)
-    _full_upload_url = "http://{0}/upload".format(_main_url)
-
-    _regex_handler = regex_handler.RegexHandler(os.path.join(local_dir, 'regex_definitions.yaml'))
+    wizard_state.set_up(is_deployed)
 
     settings = {
-        "static_path": static_path
+        "static_path": wizard_state.static_path,
+        "wizard_state": wizard_state
     }
     application = tornado.web.Application([
         (r"/", MainHandler),
@@ -264,6 +318,6 @@ if __name__ == "__main__":
         (r"/(package)$", PackageHandler)
     ], **settings)
 
-    application.listen(listen_port)
+    application.listen(wizard_state.listen_port)
     tornado.ioloop.IOLoop.instance().start()
 
