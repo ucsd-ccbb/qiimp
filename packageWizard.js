@@ -1,9 +1,3 @@
-// TODO: Refactor to pull from back-end
-var HOST_ASSOCIATED_SAMPLE_TYPES = [
-    "stool",
-    "mucus"
-];
-
 function onModeChange(element){
     // TODO: someday: remove hardcoding of div names, etc
     var mode_divs = ["power_div", "wizard_div"];
@@ -11,28 +5,55 @@ function onModeChange(element){
     var div_to_display_basename = selected_mode.replace("metadata_mode_","");
     var div_to_display = div_to_display_basename + "_div";
 
+    if (g_fields_state.package_info !== null){
+        var confirm_msg = "Changing the package selection method will remove all package fields and any custom fields. Go ahead?";
+        if (!confirm(confirm_msg)){
+            return;
+        }
+    }
+
+    resetFieldsAndDivs(null);
+
     for (var i = 0, len = mode_divs.length; i < len; i++){
         var curr_mode_div = mode_divs[i];
         var curr_mode_div_selector = getIdSelectorFromId(curr_mode_div);
         var do_show = false; // default to false
         if (curr_mode_div === div_to_display){
           do_show = true;
+        } else {
+            // if this is NOT the div to display, unselect any selected values for any selectboxes in this div
+            var selectboxes_selector = curr_mode_div_selector + " select";
+            $(selectboxes_selector).each(function() {
+                $(this).val("");
+            });
         }
         showEnableOrHideDisable(curr_mode_div_selector, do_show);
     }
 
     // once user has picked a route, enable the select package button
-    enableOrDisableBySelectorAndValue(getIdSelectorFromId("select_package_button"), true, true)
+    enableOrDisableBySelectorAndValue(getIdSelectorFromId("select_package_button"), true, true);
+    validateFormIfSubmitted();
+}
+
+function onHostChange(event){
+    var selected_host = $(event.target).val();
+    // TODO: flesh out with getting two-value list
+    var values_list = g_transferred_variables.SAMPLETYPES_BY_ENV[selected_host];
+    updateSelectWithNewCategories("#sample_type_select", values_list, null, false,
+                                       true, false, true);
+
+    // show the sampletype div
+    showEnableOrHideDisable(getIdSelectorFromId("sample_type_div"), true);
 }
 
 function onSelectPackage(){
-    var package_key = determinePackageKey();
-    if (package_key === null) {
+    var package_info = determinePackageInfo();
+    if (package_info === null) {
         return false;
     }
 
     // If the user re-chose the SAME package, do nothing
-    if (g_fields_state.package_key === package_key){
+    if (g_fields_state.package_info === package_info){
         return;
     }
 
@@ -44,21 +65,21 @@ function onSelectPackage(){
         }
     }
 
-    resetFieldsAndDivs(package_key);
+    resetFieldsAndDivs(package_info);
 
     // Make an ajax call to get the list of field names for this package and the list of reserved words
     $.ajax({
         url : '/package',
         type : 'POST',
-        data : package_key,
+        data : package_info,
         dataType: 'json',
         success : ajax_ok,
         error: ajax_err
     });
 }
 
-function determinePackageKey(){
-    var package_key = null;
+function determinePackageInfo(){
+    var package_info = null;
     var package_select_id_selector = getIdSelectorFromId("package_select");
     var sampletype_select_id_selector = getIdSelectorFromId("sample_type_select");
     var host_select_id_selector = getIdSelectorFromId("host_select");
@@ -67,23 +88,30 @@ function determinePackageKey(){
     if (!$(package_select_id_selector).is(':disabled')) {
         var valid_pkg = $(package_select_id_selector).valid();
         if (valid_pkg) {
-            package_key = $(package_select_id_selector).val();
+            var combination_str = $(package_select_id_selector).val();
+            var package_info_pieces = combination_str.split(" ");
+            package_info = makePackageInfoDict(package_info_pieces[0], package_info_pieces[1])
         }
     } else {
         var valid_sampletype = $(sampletype_select_id_selector).valid();
         var valid_host = $(host_select_id_selector).valid();
         if (valid_sampletype && valid_host) {
             // get the host type and the sample type and paste them together to get the package name to look for
-            var host = $(host_select_id_selector).val();
+            var env = $(host_select_id_selector).val();
             var sample_type = $(sampletype_select_id_selector).val();
-            package_key = sample_type + "+" + host;
+            package_info = makePackageInfoDict(env, sample_type);
         }
     }
 
-    return package_key;
+    return package_info;
 }
 
-function resetFieldsAndDivs(package_key){
+function makePackageInfoDict(env, sample_type){
+    // TODO: someday: explicitly share keys between front and back end
+    return {"env":env, "sample_type": sample_type};
+}
+
+function resetFieldsAndDivs(package_info){
     // hide field_details_div, custom_fields_div, show no_package_warning_div
     $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.EXISTING_FIELDS_DIV)).addClass('hidden');
     $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.CUSTOM_FIELDS_DIV)).addClass('hidden');
@@ -98,8 +126,9 @@ function resetFieldsAndDivs(package_key){
 
     // Reset variables tracking field information
     g_fields_state = new Fields();
-    g_fields_state.package_key = package_key;
+    g_fields_state.package_info = package_info;
 }
+
 
 function ajax_err(request, error) {
     console.log(request);
