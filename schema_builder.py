@@ -5,6 +5,8 @@ import regex_handler
 
 SEPARATOR = "_"
 TEMPLATE_SUFFIX = SEPARATOR + "template"
+# TODO: someday: move this into the config
+UNITS_SUFFIX = SEPARATOR + "units"
 
 
 class InputNames(Enum):
@@ -86,7 +88,22 @@ def _get_special_handling_fields():
 #             }
 
 
-def get_validation_schema(curr_field_from_form, a_regex_handler):
+def get_validation_schemas(curr_field_from_form, a_regex_handler):
+    field_name_and_schema_tuples_list = []
+    field_name, field_schema = _get_field_validation_schema(curr_field_from_form, a_regex_handler)
+
+    mock_unit_field_form_dict = _mock_a_units_field_if_relevant(curr_field_from_form)
+    if mock_unit_field_form_dict is not None:
+        mock_unit_field_name, mock_unit_field_schema = _get_field_validation_schema(mock_unit_field_form_dict,
+                                                                                    a_regex_handler)
+        field_name_and_schema_tuples_list.append((mock_unit_field_name, mock_unit_field_schema))
+        field_schema[InputNames.units.value] = mock_unit_field_name
+
+    field_name_and_schema_tuples_list.append((field_name, field_schema))
+    return field_name_and_schema_tuples_list
+
+
+def _get_field_validation_schema(curr_field_from_form, a_regex_handler):
     field_name = curr_field_from_form[InputNames.field_name.value]
     top_level_schema = _build_top_level_schema_dict(curr_field_from_form)
     validation_schema = _build_single_validation_schema_dict(curr_field_from_form, a_regex_handler)
@@ -113,6 +130,24 @@ def get_validation_schema(curr_field_from_form, a_regex_handler):
 
     top_level_schema = _set_default_keyval_if_any(curr_field_from_form, top_level_schema)
     return field_name, top_level_schema
+
+
+def _mock_a_units_field_if_relevant(curr_field_from_form):
+    result = None
+    if InputNames.units.value in curr_field_from_form:
+        base_field_name = curr_field_from_form[InputNames.field_name.value]
+        units_string = curr_field_from_form[InputNames.units.value]
+        mock_field_name = base_field_name + UNITS_SUFFIX
+
+        result = {
+            InputNames.categorical_default_select.value: units_string,
+            InputNames.categorical_values.value: units_string,
+            InputNames.default_value.value: DefaultTypes.categorical_default.value,
+            InputNames.field_name.value: mock_field_name,
+            InputNames.field_type.value: FieldTypes.Categorical.value
+        }
+
+    return result
 
 
 def _build_top_level_schema_dict(curr_field_from_form):
@@ -159,17 +194,11 @@ def _generate_datetime_schema(curr_field_from_form, a_regex_handler):
 
 
 def _generate_categorical_schema(curr_field_from_form, a_regex_handler):
-    # data_type = curr_field_from_form[InputNames.data_type.value]
-    # cast_funcs_by_type = _get_cast_func_by_data_type()
-    # cast_func = cast_funcs_by_type[data_type]
-    # curr_schema = _generate_schema_by_data_type(curr_field_from_form, a_regex_handler)
     curr_schema = _generate_text_schema(curr_field_from_form, a_regex_handler)
 
     categorical_vals_str = curr_field_from_form[InputNames.categorical_values.value]
     split_categorical_vals = categorical_vals_str.split("\r\n")
     split_categorical_vals = [x.strip() for x in split_categorical_vals]
-
-    # typed_categorical_vals = [cast_func(x) for x in split_categorical_vals]
 
     curr_schema.update({
         metadata_package_schema_builder.ValidationKeys.allowed.value: split_categorical_vals

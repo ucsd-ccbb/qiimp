@@ -206,7 +206,6 @@ class MainHandler(tornado.web.RequestHandler):
                         study_name = _parse_form_value(curr_value)
                     # TODO: Get rid of hardcode of field name
                     elif curr_key == "default_study_location_select":
-                        # TODO: Add handling for study_location_select
                         study_default_locale = _parse_form_value(curr_value)
                     else:
                         retain_list = False
@@ -234,8 +233,12 @@ class MainHandler(tornado.web.RequestHandler):
             dict_of_validation_schema_by_index = {}
             for curr_key in dict_of_field_schemas_by_index:
                 curr_schema = dict_of_field_schemas_by_index[curr_key]
-                field_name, curr_validation_schema = schema_builder.get_validation_schema(curr_schema, wiz_state.regex_handler)
-                dict_of_validation_schema_by_index[field_name] = curr_validation_schema
+                # The only time when multiple fields come back is when the input is a continuous field, in which
+                # case the units for that field are split out and put in *another* field that always has the same
+                # value (ugh, but this is the customer requirement).
+                field_name_and_schema_tuples_list = schema_builder.get_validation_schemas(curr_schema, wiz_state.regex_handler)
+                for field_name, curr_validation_schema in field_name_and_schema_tuples_list:
+                    dict_of_validation_schema_by_index[field_name] = curr_validation_schema
 
             mutable_package_schema = copy.deepcopy(wiz_state.package_schema)
             mutable_package_schema = self._update_package_with_locale_defaults(mutable_package_schema,
