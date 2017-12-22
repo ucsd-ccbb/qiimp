@@ -118,6 +118,9 @@
             vertical-align: top;
             padding: 5px;
         }
+        .fully-padded-cell {
+            padding: 10px;
+        }
     </style>
 
     <!-- jquery -->
@@ -126,9 +129,6 @@
     <!-- jquery validation plugin -->
     <script src={{ static_url("third-party/jquery_validation/jquery.validate.min.js") }}></script>
     <script src={{ static_url("third-party/jquery_validation/additional-methods.min.js") }}></script>
-
-    <!-- js-yaml -->
-    <script src={{ static_url("third-party/js-yaml.min.js") }}></script>
 
     <!-- moment (for date/time validation) -->
     <script src={{ static_url("third-party/moment.min.js") }}></script>
@@ -152,7 +152,8 @@
         g_transferred_variables.NO_DEFAULT_RADIO_VALUE = "{{schema_builder.DefaultTypes.no_default.name}}";
         g_transferred_variables.SEPARATOR = "{{schema_builder.SEPARATOR}}";
         g_transferred_variables.TEMPLATE_SUFFIX = "{{schema_builder.TEMPLATE_SUFFIX}}";
-        g_transferred_variables.FIELD_NAME_REGEX = /{{ metadata_package_schema_builder.PerSamplePackage.FIELD_NAME_REGEX }}/;
+        g_transferred_variables.FIELD_NAME_REGEX = /{{ metadata_package_schema_builder.FIELD_NAME_REGEX }}/;
+        g_transferred_variables.SAMPLETYPES_BY_ENV = JSON.parse('{% raw sampletypes_by_env_json %}');
 
         // Note that these are to be the bases (without template suffix or separator)
         g_transferred_variables.ELEMENT_IDENTIFIERS = {
@@ -300,21 +301,29 @@
                         <div class="panel-body">
                             <div class="row">
                                 <div class="col-sm-12">
-                                    <label id = "label_{{schema_builder.InputNames.study_name.value}}" for="{{schema_builder.InputNames.study_name.value}}"> Study Name:</label>
-                                    <input id="{{schema_builder.InputNames.study_name.value}}" name = "{{schema_builder.InputNames.study_name.value}}" type="text" placeholder="Study name" />
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-12">
-                                    <!-- TODO: Locale is temporarily removed because it isn't implemented yet and isn't relevant to
-                                    Austin's set-up of supported packages
-                                    <label for="study_location_select">Study City/Locale:</label>
-                                    <select name="study_location_select" id="study_location_select" required>
-                                        <option value="">--Select One--</option>
-                                        <option value="san_diego">San Diego, CA, USA</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                    -->
+                                    <div class="NarrowTable">
+                                        <div class="Row">
+                                            <div class="Cell fully-padded-cell">
+                                                <label id = "label_{{schema_builder.InputNames.study_name.value}}" for="{{schema_builder.InputNames.study_name.value}}"> Study Name:</label>
+                                            </div>
+                                            <div class="Cell fully-padded-cell">
+                                                <input id="{{schema_builder.InputNames.study_name.value}}" name = "{{schema_builder.InputNames.study_name.value}}" type="text" placeholder="Study name" />
+                                            </div>
+                                        </div>
+                                        <div class="Row">
+                                            <div class="Cell fully-padded-cell">
+                                                <label id="label_default_study_location_select" for="default_study_location_select">Default Study City/Locale:</label>
+                                            </div>
+                                            <div class="Cell fully-padded-cell">
+                                                <!-- TODO: Modify to pull from back end yaml; remember to update size setting -->
+                                                <select name="default_study_location_select" id="default_study_location_select" size = "3" required>
+                                                    <option value="None">None</option>
+                                                    <option value="San Diego standard">San Diego standard</option>
+                                                    <option value="San Diego phi-compliant">San Diego phi-compliant</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -331,39 +340,56 @@
                         <div class="panel-body">
                             <div id="package_div">
                                 <div class="row" id="mode_div">
-                                    <div class="col-sm-2">
-                                        <input type="radio" name="metadata_mode" id = "metadata_mode_wizard" value="wizard" onchange="onModeChange(this)" required>&nbsp;
-                                        <label id="label_metadata_mode_wizard" for="metadata_mode_wizard">Use Wizard</label><br />
-                                        <input type="radio" name="metadata_mode" id = "metadata_mode_power" value="power" onchange="onModeChange(this)">&nbsp;
-                                        <label id="label_metadata_mode_power" for="metadata_mode_power">Select Manually</label><br />
-                                    </div>
-                                    <div class="col-sm-10">
-                                        <div id="power_div" class="hidden">
-                                            <label id="label_package_select" for="package_select"> Metadata Packages:</label><br />
-                                            <select class = "error-below" name="package_select" id="package_select" size="{{select_size}}" disabled required>
-                                                        {% for curr_item in combinations_list %}
-                                                        <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
-                                                        {% end %}
-                                            </select>
-                                        </div>
-                                        <div id="wizard_div" class="NarrowTable hidden">
+                                    <div class="col-sm-12">
+                                        <div class="NarrowTable">
                                             <div class="Row">
-                                                <div class="Cell padded-cell" id="sample_type_div">
-                                                    <label id="label_sample_type" for="sample_type_select"> Sample Type:</label><br />
-                                                    <select class = "error-below" name="sample_type_select" id="sample_type_select" size="{{select_size}}" disabled required>
-                                                        {% for curr_item in sample_types_list %}
-                                                        <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
-                                                        {% end %}
-                                                    </select>
+                                                <div class="Cell">
+                                                    <div class="NarrowTable">
+                                                        <div class="Row">
+                                                            <div class="Cell fully-padded-cell">
+                                                                <label id="label_metadata_mode_wizard" for="metadata_mode_wizard">Use Wizard</label>
+                                                            </div>
+                                                            <div class="Cell fully-padded-cell">
+                                                                <input type="radio" name="metadata_mode" id = "metadata_mode_wizard" value="wizard" onchange="onModeChange(this)">&nbsp;
+                                                            </div>
+                                                        </div>
+                                                        <div class="Row">
+                                                            <div class="Cell fully-padded-cell">
+                                                                <label id="label_metadata_mode_power" for="metadata_mode_power">Select Manually</label>
+                                                            </div>
+                                                            <div class="Cell fully-padded-cell">
+                                                                <input type="radio" name="metadata_mode" id = "metadata_mode_power" value="power" onchange="onModeChange(this)">&nbsp;
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <!-- TODO: someday: eventualy the host div will NOT be shown all the time, because eventually we will support non-host packages.  But not for alpha release. -->
-                                                <div class="Cell padded-cell" id="host_div">
-                                                    <label id="label_host_select" for="host_select"> Host Organism:</label><br />
-                                                    <select class = "error-below" name="host_select" id="host_select" size="{{select_size}}" disabled required>
-                                                        {% for curr_item in hosts_list %}
-                                                        <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
-                                                        {% end %}
-                                                    </select>
+                                                <div class="Cell fully-padded-cell">
+                                                    <div id="power_div" class="hidden">
+                                                        <label id="label_package_select" for="package_select"> Metadata Packages:</label><br />
+                                                        <select class = "error-below" name="package_select" id="package_select" size="{{select_size}}" disabled required>
+                                                                    {% for curr_item in combinations_list %}
+                                                                    <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
+                                                                    {% end %}
+                                                        </select>
+                                                    </div>
+                                                    <div id="wizard_div" class="NarrowTable hidden">
+                                                        <div class="Row">
+                                                            <div class="Cell padded-cell" id="host_div">
+                                                                <label id="label_host_select" for="host_select"> Host/Environment:</label><br />
+                                                                <select class = "error-below" name="host_select" id="host_select" size="{{select_size}}" onchange="onHostChange(event);" disabled required>
+                                                                    {% for curr_item in hosts_list %}
+                                                                    <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
+                                                                    {% end %}
+                                                                </select>
+                                                            </div>
+                                                            <div class="Cell padded-cell hidden" id="sample_type_div">
+                                                                <label id="label_sample_type_select" for="sample_type_select"> Sample Type:</label><br />
+                                                                <select class = "error-below" name="sample_type_select" id="sample_type_select" size="{{select_size}}" disabled required>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -372,7 +398,7 @@
                                 <div class="row" id="select_package_button_div">
                                     <div class="col-sm-12">
                                         <button name="select_package_button" id="select_package_button" type="button"
-                                                onclick="onSelectPackage()" disabled>Select Package</button>
+                                                onclick="onSelectPackage();validateFormIfSubmitted();" disabled>Select Package</button>
                                     </div>
                                 </div>
                                 <div class="row" id="package_details_div">
@@ -404,7 +430,7 @@
                                         <label class="hidden" id="label_field_names" for="field_names">Custom Fields:</label>
                                         <textarea rows="5" cols="25" name="field_names" id="field_names" placeholder="e.g., phenotype&#10;timepoint&#10;disease_state"></textarea><br />
                                         <br />&nbsp;
-                                        <input type="button" value="Add Field" id="addField" onclick="clickAddField(this)">
+                                        <input type="button" value="Add Field" id="addField" onclick="clickAddField(this);validateFormIfSubmitted();">
                                     </div>
                                 </div>
                                 <div class="row">
@@ -541,7 +567,8 @@
                                                                         <label id="label_{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Minimum</span> Comparison</label>
                                                                     </div>
                                                                     <div class="Cell interior-cell">
-                                                                        <select name="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.minimum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled>
+                                                                        <select name="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.minimum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled required>
+                                                                            <option value="no_comparison" selected="selected">None</option>
                                                                             <option value="{{metadata_package_schema_builder.ValidationKeys.min_exclusive.value}}">Greater Than</option>
                                                                             <option value="{{metadata_package_schema_builder.ValidationKeys.min_inclusive.value}}">Greater Than Or Equal To</option>
                                                                         </select>
@@ -565,7 +592,8 @@
                                                                         <label id="label_{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Maximum</span> Comparison</label>
                                                                     </div>
                                                                     <div class="Cell interior-cell">
-                                                                        <select name="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.maximum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled>
+                                                                        <select name="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.maximum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled required>
+                                                                            <option value="no_comparison" selected="selected">None</option>
                                                                             <option value="{{metadata_package_schema_builder.ValidationKeys.max_exclusive.value}}">Less Than</option>
                                                                             <option value="{{metadata_package_schema_builder.ValidationKeys.max_inclusive.value}}">Less Than Or Equal To</option>
                                                                         </select>
