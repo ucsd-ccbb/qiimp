@@ -12,10 +12,11 @@ function TranferredVariables(){
     this.NO_DEFAULT_RADIO_VALUE = null;
     this.MAX_SELECTBOX_SIZE = null;
     this.UPLOAD_URL = null;
+    this.SAMPLETYPES_BY_ENV = {};
 }
 
 function Fields(){
-    this.package_key = null;
+    this.package_info = null;
     this._reserved_words = [];
     this._package_fields = {};
     this._existing_field_names = {};
@@ -182,6 +183,10 @@ $.validator.addMethod("isValidFieldNamesList", function(value, element){
   return $(element).data('error_msg');
 });
 
+$.validator.addMethod("isNotNone", function(value, element){
+    return (value !== "no_comparison");
+}, "Must not be None if a threshold value has been provided.");
+
 function setUpDynamicPlusMinusGlyphsOnAccordionSections(){
     // From https://www.tutorialrepublic.com/twitter-bootstrap-tutorial/bootstrap-accordion.php
     // Add minus icon for collapse element which is open by default
@@ -255,6 +260,9 @@ function makeValidationSettings(){
                 minlength: 2,
                 maxlength: 400
             },
+            "metadata_mode": {
+                required: true
+            },
             "field_names": {
                 isValidFieldNamesList: true
             },
@@ -268,18 +276,70 @@ function makeValidationSettings(){
                 pattern: "Only letters, numbers, and spaces are permitted.",
                 maxlength: "This field must be 400 characters or fewer."
             },
+            "metadata_mode": {
+                required: "Either 'Use Wizard' or 'Select Manually' must be selected."
+            },
             "files[]": {
                 extension: "Only .xlsx files produced by the metadata wizard may be uploaded."
             }
         },
-        onfocusout: function(element) {
-           $(element).valid();
-        },
+		onfocusout: function( element ) {
+            if (g_submitted){
+                $('#metadata_form').valid();
+            } else {
+                if ( !this.checkable( element ) && ( element.name in this.submitted || !this.optional( element ) ) ) {
+                    this.element( element );
+                }
+            }
+		},
+		onkeyup: function( element, event ) {
+
+			// Avoid revalidate the field when pressing one of the following keys
+			// Shift       => 16
+			// Ctrl        => 17
+			// Alt         => 18
+			// Caps lock   => 20
+			// End         => 35
+			// Home        => 36
+			// Left arrow  => 37
+			// Up arrow    => 38
+			// Right arrow => 39
+			// Down arrow  => 40
+			// Insert      => 45
+			// Num lock    => 144
+			// AltGr key   => 225
+			var excludedKeys = [
+				16, 17, 18, 20, 35, 36, 37,
+				38, 39, 40, 45, 144, 225
+			];
+
+			if ( event.which === 9 && this.elementValue( element ) === "" || $.inArray( event.keyCode, excludedKeys ) !== -1 ) {
+				return;
+			} else if (g_submitted){
+                $('#metadata_form').valid();
+            } else if ( element.name in this.submitted || element.name in this.invalid ) {
+				this.element( element );
+			}
+		},
+        onclick: function( element ) {
+            if (g_submitted){
+                $('#metadata_form').valid();
+            } else {
+                // Click on selects, radiobuttons and checkboxes
+                if (element.name in this.submitted) {
+                    this.element(element);
+
+                    // Or option elements, check parent select in that case
+                } else if (element.parentNode.name in this.submitted) {
+                    this.element(element.parentNode);
+                }
+            }
+		},
         showErrors: function(errorMap, errorList) {
+            var summary = "";
             if (g_submitted) {
-                g_submitted = false;
+                //g_submitted = false;
                 // TODO: someday: refactor hard-coding of msg prefix, ul/li creation, class setting
-                var summary = "Please correct the following issues:<br /><ul class='error_list'>";
                 for (var curr_index in errorList){
                     // NB: ignore pycharm warning about hasOwnProperty() check per https://stackoverflow.com/a/25724382
                     var curr_item = errorList[curr_index];
@@ -297,10 +357,14 @@ function makeValidationSettings(){
                     summary += new_msg_pieces.join(" ")
                 }
 
-                summary += "</ul>";
-                $("#error_summary_div").html(summary);
+                if (summary !== ""){
+                    summary = "Please correct the following issues:<br /><ul class='error_list'>" + summary + "</ul>";
+                } else {
+                    var temp = 1;
+                }
             }
 
+            $("#error_summary_div").html(summary);
             this.defaultShowErrors();
         },
         invalidHandler: function(form, validator) {
@@ -315,6 +379,12 @@ function makeValidationSettings(){
             }
           }
     };
+}
+
+function validateFormIfSubmitted(){
+    if (g_submitted) {
+        $('#metadata_form').valid();
+    }
 }
 
 var NEW_ELEMENT_SET_UP_FUNCTIONS = [
@@ -347,17 +417,17 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
         addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.CATEGORY_VALS);
         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.CATEGORY_VALS, updateDefaultsWithCategories);
     },
-    function (field_index){ //make minimum comparison required if minimum is filled in
-         addConditionalRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE);
+    function (field_index){ //make minimum required if minimum comparison is not none
+         addRequiredIfNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE);
     },
-    function (field_index){ //make minimum required if minimum comparison is filled in
-         addConditionalRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM);
+    function (field_index){ //force minimum comparison to be something other than none if minimum is filled in
+         addConditionalIsNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM);
     },
-    function (field_index){ //make maximum comparison required if maximum is filled in
-         addConditionalRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE);
+    function (field_index){ //make maximum required if maximum comparison is not none
+         addRequiredIfNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE);
     },
-    function (field_index){ //make minimum required if minimum comparison is filled in
-         addConditionalRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM);
+    function (field_index){ //force maximum comparison to be something other than none if maximum is filled in
+         addConditionalIsNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM);
     },
     function (field_index) { //make datetime default pass datetime validation
         addDateTimeValidationRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_DATETIME);
