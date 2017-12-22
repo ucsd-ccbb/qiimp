@@ -1,6 +1,6 @@
 from enum import Enum
-import glob
 import os
+import warnings
 import yaml
 
 import openpyxl
@@ -15,18 +15,19 @@ import openpyxl
 SAMPLE_NAME_HEADER = "sample_name"
 NAME_KEY = "name"
 DISPLAY_NAME_KEY = "display_name"
-HOST_ASSOCIATED_KEY = "host_associated"
+_FILE_NAME_KEY = "filename"
+_PARENT_KEY = "parent"
+_FILENAME_BY_SAMPLETYPES_LIST_KEY = "filename_by_sampletypes_list"
+_ENV_SCHEMA_KEY = "env_schema"
+_SAMPLE_TYPES_KEY = "sampletypes"
+_REQUIRED_EXTENSION = ".xlsx"
+
+# All field names should be lowercase and contain only alphanumeric and underscores.
+# No field name can start with a number
+FIELD_NAME_REGEX = "^[a-z][a-z0-9_]*$"
 NON_WIZARD_XLSX_ERROR_PREFIX = "Spreadsheet does not appear to have been produced by the metadata wizard: "
 # TODO: someday: this duplicates a definition in xlsx_builder, which would be a circular reference here; refactor!
 METADATA_SCHEMA_SHEET_NAME = "metadata_schema"
-_REQUIRED_EXTENSION = ".xlsx"
-_BASE_PACKAGE_NAME = "base"
-_CROSS_SYMBOL = "+"
-_BASE_HOST_NAME = "other"
-_HOST_PREFIX = "host_"
-_SAMPLETYPE_PREFIX = "sampletype_"
-_CROSS_PREFIX = "cross" + _CROSS_SYMBOL
-_HAS_HOST_SUFFIX = "_hashost"
 
 
 class ValidationKeys(Enum):
@@ -60,54 +61,6 @@ class EbiMissingValues(Enum):
     ebi_restricted = "missing: restricted access"
 
 
-class SampleTypes(Enum):
-    mucus = 'mucus'
-    stool = 'stool'
-
-
-class UnitTypes(Enum):
-    kilograms = "kg"
-    grams = "g"
-
-
-class Location(object):
-    geo_loc_name = None
-    elevation = None
-    latitude = None
-    longitude = None
-
-
-class SanDiego(Location):
-    geo_loc_name = "USA:CA:San Diego"
-    elevation = 193
-    latitude = 32.842
-    longitude = -117.258
-
-
-class PerSamplePackage(object):
-    # All field names should be lowercase and contain only alphanumeric and underscores.
-    # No field name can start with a number
-    FIELD_NAME_REGEX = "^[a-z][a-z0-9_]*$"
-
-    SAMPLE_NAME_REGEX = "^[a-zA-Z0-9\.]+$"  # alphanumeric and period only,
-
-    @staticmethod
-    def get_base_schema():
-        return {
-            SAMPLE_NAME_HEADER: {  # note that sample name should be unique within a study
-                ValidationKeys.type.value: CerberusDataTypes.Text.value,
-                ValidationKeys.regex.value: PerSamplePackage.SAMPLE_NAME_REGEX,
-                ValidationKeys.empty.value: False,
-                ValidationKeys.required.value: True,
-                ValidationKeys.unique.value: True,
-                # TODO: someday: This is_phi value shouldn't be hardcoded here.  Then again, my understanding is that eventually
-                # this entire per-sample package will no longer be hardcoded here but will be in yaml, so not bothering
-                # to refactor unless that understanding changes.
-                "is_phi": False
-            }
-        }
-
-
 def load_yaml_from_fp(filepath):
     with open(filepath, 'r') as stream:
         result = yaml.load(stream)
@@ -128,113 +81,155 @@ def load_yaml_from_wizard_xlsx(filepath, yaml_sheetname):
     return yaml_dict
 
 
-def load_schemas_for_package_key(packages_dir_path, package_key):
-    cross_schema = {}  # by default, assume there will not be a cross-schema
-    result = PerSamplePackage.get_base_schema()
+def get_single_key_and_subdict(a_dict):
+    if len(a_dict.keys()) != 1:
+        raise ValueError(
+            "Dictionary '{0}' is mis-structured; must have only one top-level key.".format(a_dict))
 
-    if package_key != _BASE_PACKAGE_NAME:
-        cross_pieces = package_key.split(_CROSS_SYMBOL)
-        if len(cross_pieces) > 2:
-            raise ValueError("package_key '{0}' split into more than two values on '{1}'".format(
-                package_key, _CROSS_SYMBOL))
-
-        sampletype_basename = _SAMPLETYPE_PREFIX + cross_pieces[0]
-        if len(cross_pieces) == 2:
-            # if it has a second piece, it must be host-associated, so load basic host info
-            _, base_host_fp = _make_host_filename_and_path(packages_dir_path, _BASE_HOST_NAME)
-            base_host_schema = load_yaml_from_wizard_xlsx(base_host_fp, METADATA_SCHEMA_SHEET_NAME)
-            result.update(base_host_schema)
-
-            # now load the specifics for this particular host, if different from base host
-            specific_host_name = cross_pieces[1]
-            if specific_host_name != _BASE_HOST_NAME:
-                specific_host_filename, specific_host_fp = _make_host_filename_and_path(packages_dir_path,
-                                                                                        specific_host_name)
-                specific_host_schema = load_yaml_from_wizard_xlsx(specific_host_fp, METADATA_SCHEMA_SHEET_NAME)
-                result.update(specific_host_schema)
-
-                # generate the cross file path, so can check if one exists
-                cross_filename = _CROSS_PREFIX + sampletype_basename + _CROSS_SYMBOL + specific_host_filename
-                cross_fp = os.path.join(packages_dir_path, cross_filename)
-                # IF there is a cross, load that into a schema to be used *later*
-                try:
-                    cross_schema = load_yaml_from_wizard_xlsx(cross_fp, METADATA_SCHEMA_SHEET_NAME)
-                except:
-                    pass
-            # end if there is a specific host or just the basic one
-
-            sampletype_basename = sampletype_basename + _HAS_HOST_SUFFIX
-        # end if this package is host-associated
-
-        # everything should have a sampletype, so get that now
-        _, sampletype_fp = _make_filename_and_path_from_base(packages_dir_path, sampletype_basename)
-        sampletype_schema = load_yaml_from_wizard_xlsx(sampletype_fp, METADATA_SCHEMA_SHEET_NAME)
-        result.update(sampletype_schema)
-        result.update(cross_schema)
-    # end if the package is something other than just the generic base
-
-    return result
+    single_key = list(a_dict.keys())[0]
+    return single_key, a_dict[single_key]
 
 
-def get_package_info(packages_dir_path):
-    sampletype_dicts_list = _get_sampletypes(packages_dir_path)
-    host_dicts_list = _get_hosts(packages_dir_path)
-    combination_dicts_list = _get_all_valid_package_combinations(sampletype_dicts_list, host_dicts_list)
-    return sampletype_dicts_list, host_dicts_list, combination_dicts_list
-
-
-def _get_sampletypes(packages_dir_path):
-    result = []
-    basename_generator = _get_trimmed_file_basenames_by_pattern(packages_dir_path, _SAMPLETYPE_PREFIX, _REQUIRED_EXTENSION)
-
-    for curr_basename in basename_generator:
-        curr_sampletype_name = curr_basename.replace(_HAS_HOST_SUFFIX, "")
-        curr_sampletype_dict = _make_name_and_display_name_dict(curr_sampletype_name,
-                                                                 curr_sampletype_name.replace("-", " "))
-        curr_sampletype_dict[HOST_ASSOCIATED_KEY] = curr_basename.endswith(_HAS_HOST_SUFFIX)
-        result.append(curr_sampletype_dict)
-
-    return result
-
-
-def _get_hosts(packages_dir_path):
-    result = []
-    basename_generator = _get_trimmed_file_basenames_by_pattern(packages_dir_path, _HOST_PREFIX, _REQUIRED_EXTENSION)
-    for curr_host_name in basename_generator:
-        result.append(_make_name_and_display_name_dict(curr_host_name, curr_host_name))
-
-    return result
-
-
-def _get_all_valid_package_combinations(sampletypes_dicts_list, host_dicts_list):
-    result = []
-    for curr_sampletype_dict in sampletypes_dicts_list:
-        curr_sampletype_name, curr_sampletype_display_name =_get_name_and_display_name(curr_sampletype_dict)
-        if curr_sampletype_dict[HOST_ASSOCIATED_KEY]:
-            for curr_host_dict in host_dicts_list:
-                curr_host_name, curr_host_display_name = _get_name_and_display_name(curr_host_dict)
-                combination_dict = _make_name_and_display_name_dict(
-                    "{0}{1}{2}".format(curr_sampletype_name, _CROSS_SYMBOL, curr_host_name),
-                    "{0} {1}".format(curr_sampletype_display_name, curr_host_display_name)
-                )
-                result.append(combination_dict)
+def update_schema(base_schema, fields_to_modify_schemas, add_silently=False):
+    for curr_field_name, curr_schema_modifications in fields_to_modify_schemas.items():
+        if curr_field_name in base_schema:
+            base_schema[curr_field_name].update(curr_schema_modifications)
         else:
-            result.append(curr_sampletype_dict)
+            if add_silently:
+                base_schema[curr_field_name] = curr_schema_modifications
+            else:
+                warnings.warn("Field '{0}' could not be modified as it does not exist in the base schema '{1}'.".format(
+                    curr_field_name, base_schema
+                ))
 
-    # add the base package
-    result.append(_make_name_and_display_name_dict(_BASE_PACKAGE_NAME, "generic"))
+    return base_schema
+
+
+def load_schemas_for_package_key(env_key, sampletype_key, parent_stack_by_env_name, env_schemas):
+    result = {}
+
+    env_parent_stack = parent_stack_by_env_name[env_key]
+    for curr_parent_env_name in env_parent_stack:
+        curr_parent_env_schemas = env_schemas[curr_parent_env_name]
+
+        # First, add any environment-specific info to the result schema
+        env_level_schema_changes = curr_parent_env_schemas[_ENV_SCHEMA_KEY]
+        update_schema(result, env_level_schema_changes, add_silently=True)
+
+        # Then check if this env has any schema updates for the chosen sample type
+        env_sampletype_schemas = curr_parent_env_schemas[_SAMPLE_TYPES_KEY]
+        if sampletype_key in env_sampletype_schemas:
+            env_sampletype_schema = env_sampletype_schemas[sampletype_key]
+            update_schema(result, env_sampletype_schema, add_silently=True)
+
     return result
 
 
-def _get_trimmed_file_basenames_by_pattern(dir_path, prefix, extension):
-    # get a list of the files in the dirpath that start with prefix and end with extension
-    wildcard_pattern = os.path.join(dir_path, prefix + '*' + extension)
-    matching_fps = glob.glob(wildcard_pattern)
+def load_environment_and_sampletype_info(environments_yaml_path, sampletypes_yaml_path, package_dir_path):
+    # TODO: someday: this giant function would be much clearer if broken up some!
+    displayname_by_sampletypes_list = load_yaml_from_fp(sampletypes_yaml_path)
+    sampletypes_display_dicts_list = _make_sampletypes_display_dicts_list(displayname_by_sampletypes_list)
 
-    for curr_fp in matching_fps:
-        curr_file_basename = os.path.splitext(os.path.basename(curr_fp))[0]
-        curr_trimmed_basename = curr_file_basename.replace(prefix, "")
-        yield curr_trimmed_basename
+    all_env_names_list = []
+    display_envs_dicts_list = []
+    parent_env_name_by_env_name = {}
+    env_schemas = {}
+
+    envs_definitions = load_yaml_from_fp(environments_yaml_path)
+    for curr_env in envs_definitions:
+        curr_env_name, curr_env_dict = get_single_key_and_subdict(curr_env)
+        all_env_names_list.append(curr_env_name)
+        curr_env_display_name = curr_env_dict[DISPLAY_NAME_KEY]
+        if curr_env_display_name is not None:
+            display_envs_dicts_list.append(_make_name_and_display_name_dict(curr_env_name, curr_env_display_name))
+
+        curr_env_parent_name = curr_env_dict[_PARENT_KEY]
+        if curr_env_parent_name is not None:
+            parent_env_name_by_env_name[curr_env_name] = curr_env_parent_name
+
+        curr_env_schemas = {_ENV_SCHEMA_KEY: _load_schema_from_filename_val(package_dir_path, curr_env_dict)}
+
+        curr_env_sampletype_schemas_by_name = {}
+        curr_env_sampletype_dicts_list = curr_env_dict[_FILENAME_BY_SAMPLETYPES_LIST_KEY]
+        for curr_env_sampletype in curr_env_sampletype_dicts_list:
+            curr_env_sampletype_name, curr_env_sampletype_filename = get_single_key_and_subdict(curr_env_sampletype)
+
+            curr_env_sampletype_schema = _load_schema_from_filename_val(package_dir_path, curr_env_sampletype_filename)
+            curr_env_sampletype_schemas_by_name[curr_env_sampletype_name] = curr_env_sampletype_schema
+
+        curr_env_schemas[_SAMPLE_TYPES_KEY] = curr_env_sampletype_schemas_by_name
+        env_schemas[curr_env_name] = curr_env_schemas
+
+    parent_stack_by_env_name = {}
+    for curr_env_name in all_env_names_list:
+        parent_stack_by_env_name = _make_parent_stack_by_env_name(curr_env_name, parent_env_name_by_env_name, parent_stack_by_env_name)
+
+    combinations_display_dicts_list = []
+    sampletype_display_info_by_env = {}
+    display_name_by_env_name = {x[NAME_KEY]: x[DISPLAY_NAME_KEY] for x in display_envs_dicts_list if DISPLAY_NAME_KEY in x}
+    # NB: loop over all envs, not just the displayable ones, because the power users get to see everything
+    for curr_env_name in all_env_names_list:
+        curr_env_sampletype_names = set()
+        curr_parent_stack = parent_stack_by_env_name[curr_env_name]
+        for curr_stack_env_name in curr_parent_stack:
+            curr_stack_env_schemas = env_schemas[curr_stack_env_name]
+            curr_env_sampletype_names.update(curr_stack_env_schemas[_SAMPLE_TYPES_KEY].keys())
+
+        curr_env_sampletype_display_info_list = []
+        curr_env_display_name = display_name_by_env_name[curr_env_name] if curr_env_name in display_name_by_env_name else None
+        for curr_sampletype_dict in sampletypes_display_dicts_list:
+            curr_sampletype_name, curr_sampletype_display_name = _get_name_and_display_name(curr_sampletype_dict)
+            if curr_sampletype_name in curr_env_sampletype_names:
+                if curr_env_display_name is not None:
+                    curr_sampletype_display_info_list = [curr_sampletype_name, curr_sampletype_display_name]
+                    curr_env_sampletype_display_info_list.append(curr_sampletype_display_info_list)
+
+                new_combination_name = curr_env_name + " " + curr_sampletype_name
+                new_combination = _make_name_and_display_name_dict(new_combination_name, new_combination_name)
+                combinations_display_dicts_list.append(new_combination)
+
+        sampletype_display_info_by_env[curr_env_name] = curr_env_sampletype_display_info_list
+
+    return combinations_display_dicts_list, display_envs_dicts_list, sampletype_display_info_by_env, \
+           parent_stack_by_env_name, env_schemas
+
+
+def _load_schema_from_filename_val(base_dir, a_dict):
+    a_schema = {}
+    a_filename = a_dict
+    try:
+        a_filename = a_dict[_FILE_NAME_KEY]
+    except:
+        pass
+
+    if a_filename is None:
+        warnings.warn("No filename specified for '{0}'.".format(a_dict))
+    else:
+        a_filepath = os.path.join(base_dir, a_filename)
+        a_schema = load_yaml_from_wizard_xlsx(a_filepath, METADATA_SCHEMA_SHEET_NAME)
+    return a_schema
+
+# TODO: someday: rename as the product isn't really stack-like: it starts with most general, not least general
+def _make_parent_stack_by_env_name(env_name, parent_env_name_by_env_name, parent_stack_by_env_name):
+    if env_name not in parent_stack_by_env_name:
+        curr_stack = []
+        if env_name in parent_env_name_by_env_name:
+            parent_env_name = parent_env_name_by_env_name[env_name]
+            parent_stack_by_env_name = _make_parent_stack_by_env_name(parent_env_name, parent_env_name_by_env_name, parent_stack_by_env_name)
+            curr_stack = list(parent_stack_by_env_name[parent_env_name])
+
+        curr_stack.append(env_name)
+        parent_stack_by_env_name[env_name] = curr_stack
+
+    return parent_stack_by_env_name
+
+
+def _make_sampletypes_display_dicts_list(displayname_by_sampletypes_list):
+    result = []
+    for curr_sampletype in displayname_by_sampletypes_list:
+        curr_sampletype_name, curr_sampletype_display_name = get_single_key_and_subdict(curr_sampletype)
+        result.append(_make_name_and_display_name_dict(curr_sampletype_name, curr_sampletype_display_name))
+    return result
 
 
 def _make_name_and_display_name_dict(name, display_name):
@@ -243,14 +238,3 @@ def _make_name_and_display_name_dict(name, display_name):
 
 def _get_name_and_display_name(names_dict):
     return names_dict[NAME_KEY], names_dict[DISPLAY_NAME_KEY]
-
-
-def _make_host_filename_and_path(dir_path, host_name):
-    host_basename = _HOST_PREFIX + host_name
-    return _make_filename_and_path_from_base(dir_path, host_basename)
-
-
-def _make_filename_and_path_from_base(dir_path, basename):
-    filename = basename + _REQUIRED_EXTENSION
-    fp = os.path.join(dir_path, filename)
-    return filename, fp
