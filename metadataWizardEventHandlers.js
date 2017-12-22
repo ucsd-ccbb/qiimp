@@ -54,7 +54,7 @@ function enableDisableDefaultSelectsOnFieldTypeChange(field_index){
 // Enable/disable appropriate subordinate input elements when type of default setting is changed
 function enableDisableDefaultSelectsOnDefaultChange(event) {
     var field_index = event.data.field_index;
-    var curr_val = this.value;
+    var curr_val = event.target.value;
     enableDisableDefaultSelects(field_index, curr_val);
     validateFormIfSubmitted();
 }
@@ -80,7 +80,7 @@ function updateDefaultsWithCategories(event) {
     var field_index = event.data.field_index;
     var default_categorical_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CATEGORICAL,
         field_index);
-    var lines = getValuesFromMultilineTextArea($(this).val());
+    var lines = getValuesFromMultilineTextArea($(event.target).val());
 
     updateSelectWithNewCategories(default_categorical_id_selector, lines);
 }
