@@ -105,14 +105,13 @@ def get_validation_schema(curr_field_from_form, a_regex_handler):
             metadata_package_schema_builder.ValidationKeys.allowed.value: allowed_missing_vals
         })
 
-        missings_schema = _set_default_keyval_if_any(curr_field_from_form, missings_schema)
         top_level_schema[metadata_package_schema_builder.ValidationKeys.anyof.value] = \
             [missings_schema, validation_schema]
     else:
         top_level_schema.update(validation_schema)
-        top_level_schema = _set_default_keyval_if_any(curr_field_from_form, top_level_schema)
     # end if any allowed missing vals
 
+    top_level_schema = _set_default_keyval_if_any(curr_field_from_form, top_level_schema)
     return field_name, top_level_schema
 
 

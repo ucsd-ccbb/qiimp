@@ -68,8 +68,18 @@ def get_default_formula(field_schema_dict, trigger_col_letter, make_text=False):
             # for example, a field with the data type integer could nonetheless have a *string* default of
             # missing: not provided, and that value would need to be written in as a string with quotes around it.
 
-            # Here I am *assuming* that the sub-dict the default is in has a data type key; I think it always should
-            data_type_of_default = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
+            data_type_of_default = None
+            # NB: Per check in _get_data_types_and_allowed_vals, there may not be more than 2 options in this list.
+            # Also, code currently just takes LAST data type option in list unless the default value happens to
+            # correspond to a specific allowed value associated with one of the data types.
+            data_type_and_allowed_vals_tuples_list = _get_data_types_and_allowed_vals(field_schema_dict)
+            for curr_tuple in data_type_and_allowed_vals_tuples_list:
+                data_type_of_default = curr_tuple[0]
+                curr_allowed_vals = curr_tuple[1]
+                if curr_allowed_vals is not None:
+                    if default_val in curr_allowed_vals:
+                        break
+
             if data_type_of_default == metadata_package_schema_builder.CerberusDataTypes.Text.value or \
                             data_type_of_default == metadata_package_schema_builder.CerberusDataTypes.DateTime.value:
                 default_val = '"{0}"'.format(default_val)
@@ -114,10 +124,45 @@ def get_field_constraint_description(field_schema_dict, a_regex_handler):
     return result
 
 
+def _get_data_types_and_allowed_vals(field_schema_dict):
+    result = []
+    if metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
+        anyof_subschemas = field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]
+        if len(anyof_subschemas) > 2:
+            raise ValueError("Current schema includes more than two anyof options, "
+                             "which is not supported: '{0}'".format(field_schema_dict))
+
+        for curr_anyof_subschema in anyof_subschemas:
+            # NB: NOT recursive: goes down ONLY ONE LEVEL
+            result.append(_get_single_level_data_type_and_allowed_vals(curr_anyof_subschema))
+        # next subschema
+    else:
+        result.append(_get_single_level_data_type_and_allowed_vals(field_schema_dict))
+    # end if there are subschemas
+
+    data_types_detected = [x[0] for x in result]
+    if len(data_types_detected) > 1:
+        if metadata_package_schema_builder.CerberusDataTypes.Text.value not in data_types_detected:
+            raise ValueError("Two data types for a field are supported "
+                             "only if one of them is text; instead, found {0}'.".format(data_types_detected))
+
+    return result
+
+
+def _get_single_level_data_type_and_allowed_vals(field_schema_dict):
+    curr_allowed_vals = None
+    if metadata_package_schema_builder.ValidationKeys.allowed.value in field_schema_dict:
+        curr_allowed_vals = field_schema_dict[metadata_package_schema_builder.ValidationKeys.allowed.value]
+    curr_data_type = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
+
+    return curr_data_type, curr_allowed_vals
+
+
 def _uppercase_first_letter(a_string):
     # This capitalizes the first letter.  Not using capitalize() or title() because those capitalize the first letter
     # *and* lower-case all the other letters, but I want to touch nothing except the first letter.
     return a_string[0].upper() + a_string[1:]
+
 
 def _make_type_constraint(field_schema_dict, make_text):
     result = None
