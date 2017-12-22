@@ -1,0 +1,15 @@
+# Note that this is a list rather than a dictionary because this data structure is 
+# used, among other things, to populate the default locale select box in the interface
+# and I anticipate wanting to be able to explicitly control the order in which 
+# items appear in that box.
+- None: {}
+- San Diego standard:
+    elevation: {default: 193}
+    geo_loc_name: {default: 'USA:CA: San Diego'}
+    latitude: {default: 32.842}
+    longitude: {default: -117.258}
+- San Diego phi-compliant:
+    elevation: {default: 'missing: restricted access'}
+    geo_loc_name: {default: 'USA:CA'}
+    latitude: {default: 'missing: restricted access'}
+    longitude: {default: 'missing: restricted access'}

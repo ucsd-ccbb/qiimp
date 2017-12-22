@@ -1,0 +1,30 @@
+- base:
+    display_name: null
+    filename: base.xlsx
+    filename_by_sampletypes_list:
+    - {other: null}
+    parent: null
+- ebi_submittable:
+    display_name: Other EBI-Submittable Environment
+    filename: null
+    filename_by_sampletypes_list:
+    - {other: null}
+    parent: base
+- free-living:
+    display_name: null
+    filename: null
+    filename_by_sampletypes_list: []
+    parent: ebi_submittable
+- other_env:
+    display_name: Other Free-Living Environment
+    filename: null
+    filename_by_sampletypes_list:
+    - {beer: null}
+    - {cheese: null}
+    - {fresh_water: null}
+    parent: free-living
+- host_associated:
+    display_name: Other Host
+    filename: host_associated.xlsx
+    filename_by_sampletypes_list: []
+    parent: ebi_submittable
