@@ -182,14 +182,33 @@ function addAlwaysRequiredRule(field_index, required_base_name) {
     });
 }
 
-function addConditionalRequiredRule(field_index, condition_base_name, required_base_name) {
+function addConditionalIsNotNoneRule(field_index, condition_base_name, required_base_name) {
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(condition_base_name, field_index);
 
     // For JQuery validation plugin, custom validator functions always have
     // first argument: the current value of the validated element. Second argument: the element to be validated
     $(id_selector).rules("add", {
-        required: function(value, element) {
-            return doesElementHaveValue(required_base_name, field_index);
+        isNotNone: {
+            depends: function (value, element) {
+                return doesElementHaveValue(required_base_name, field_index);
+            }
+        }
+    });
+}
+
+function addRequiredIfNotNoneRule(field_index, condition_base_name, required_base_name) {
+    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(condition_base_name, field_index);
+
+    // For JQuery validation plugin, custom validator functions always have
+    // first argument: the current value of the validated element. Second argument: the element to be validated
+    $(id_selector).rules("add", {
+        required:  {
+            depends: function() {
+                var selectbox_id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
+                // TODO: someday: replace hardcoding of none-value
+                // The comparison value is required only if the comparison type is not none
+                return ($(selectbox_id_selector).val() !== "no_comparison");
+            }
         }
     });
 }
@@ -201,8 +220,13 @@ function addDateTimeValidationRule(field_index, required_base_name){
     });
 }
 
-function addOnChangeEvent(field_index, base_name, onChangeFunc){
-    addEventHandler("change", field_index, base_name, onChangeFunc);
+function addOnChangeEvent(field_index, base_name, onChangeFunc) {
+    var new_func = function (event) {
+        var result = onChangeFunc(event);
+        validateFormIfSubmitted();
+        return result;
+    };
+    addEventHandler("change", field_index, base_name, new_func);
 }
 
 function addEventHandler(event_name, field_index, base_name, onEventFunc){
