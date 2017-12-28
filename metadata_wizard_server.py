@@ -75,9 +75,9 @@ class MetadataWizardState(object):
         self.local_dir = os.path.dirname(__file__)
         self.static_path = None
         self.packages_dir_path = None
-        self.package_schema = None
         self.main_url = None
         self.full_upload_url = None
+        self.full_merge_url = None
         self.websocket_url = None
         self.listen_port = None
         self.regex_handler = None
@@ -86,6 +86,10 @@ class MetadataWizardState(object):
         self.default_locales_list = None
         self.reserved_words_list = None
 
+        self.package_schema = None
+        self.merge_info_by_merge_id = {}
+
+
     def set_up(self, is_deployed):
         self.packages_dir_path = os.path.join(self.local_dir, "packages")
 
@@ -93,6 +97,7 @@ class MetadataWizardState(object):
         if self.static_path == "": self.static_path = self.local_dir
         self.main_url = "{0}:{1}".format(self.websocket_url, self.listen_port)
         self.full_upload_url = "http://{0}/upload".format(self.main_url)
+        self.full_merge_url = "http://{0}/merge".format(self.main_url)
 
         self.regex_handler = regex_handler.RegexHandler(os.path.join(self.local_dir, self.REGEX_YAML_PATH))
         self.reserved_words_list = metadata_package_schema_builder.load_yaml_from_fp(self.RESERVED_WORDS_YAML_PATH)
@@ -166,6 +171,57 @@ class UploadHandler(tornado.web.RequestHandler):
         # send back name of file that was uploaded
         self.write(json.dumps(result_dict))
         self.finish()
+
+    def data_received(self, chunk):
+        # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
+        pass
+
+
+class MergeHandler(tornado.web.RequestHandler):
+    def get(self, *args, **kwargs):
+        wiz_state = self.application.settings["wizard_state"]
+        self.render("metadata_merge_template.html", merge_url=wiz_state.full_merge_url)
+
+    def post(self, *args):
+        wiz_state = self.application.settings["wizard_state"]
+
+        # TODO: someday: refactor hard-coding of element names
+        files_element_name = "files[]"
+        merge_id_element_name = "merge_id"
+        filename_key = "filename"
+
+        merge_id = _parse_form_value(self.request.arguments[merge_id_element_name])
+
+        # if there is a files element in the submit
+        if files_element_name in self.request.files:
+            # get the files, save them under the merge_id
+            file_names_dict_list = []
+            fileinfo_dicts_list = self.request.files[files_element_name]
+            for curr_fileinfo_dict in fileinfo_dicts_list:
+                # store the uploaded file(s) for use when we know all have been submitted, at which point we will merge
+                if not merge_id in wiz_state.merge_info_by_merge_id:
+                    wiz_state.merge_info_by_merge_id[merge_id] = []
+                wiz_state.merge_info_by_merge_id[merge_id].append(curr_fileinfo_dict)
+
+                # build up a list of the file name(s) uploaded to send back to the front-end
+                file_names_dict_list.append({"name": curr_fileinfo_dict[filename_key]})
+
+            # send back name(s) of file(s) uploaded
+            self.write(json.dumps({"files": file_names_dict_list}))
+            self.finish()
+        else:
+            # all file uploads are done; do the actual merge and redirect to the download page;
+
+            # start by getting all the files that were uploaded
+            file_info_dicts_list = wiz_state.merge_info_by_merge_id[merge_id]
+
+            # TODO: replace below with Austin's code to merge the files
+
+            # delete the info/files stored in wiz_state.merge_info_by_merge_id under this merge id, since merge is done
+            wiz_state.merge_info_by_merge_id.pop(merge_id)
+
+            pretend_filename = "_".join([x[filename_key] for x in file_info_dicts_list])
+            self.redirect("/download/{0}".format(pretend_filename))
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
@@ -318,7 +374,8 @@ if __name__ == "__main__":
         (r"/", MainHandler),
         (r"/download/([^/]+)", DownloadHandler),
         (r"/(upload)$", UploadHandler),
-        (r"/(package)$", PackageHandler)
+        (r"/(package)$", PackageHandler),
+        (r"/(merge)$", MergeHandler)
     ], **settings)
 
     application.listen(wizard_state.listen_port)
