@@ -1,9 +1,7 @@
-from enum import Enum
 import os
 import warnings
-import yaml
 
-import openpyxl
+import scripts_server.metadata_wizard_settings as mws
 
 # NOTE: The xlsx_validation_builder.py module's handling of allowed values requires that the
 # data type of a schema NOT be defined outside of an anyof, EVEN IF the type of all of the anyof options are the same.
@@ -12,82 +10,12 @@ import openpyxl
 # as valid], even when required is set to True. If you don’t want to accept empty values, see the empty rule [i.e.,
 # add an "empty": False rule to the schema]." (http://docs.python-cerberus.org/en/stable/validation-rules.html#required)
 
-SAMPLE_NAME_HEADER = "sample_name"
-NAME_KEY = "name"
-DISPLAY_NAME_KEY = "display_name"
 _FILE_NAME_KEY = "filename"
 _PARENT_KEY = "parent"
 _FILENAME_BY_SAMPLETYPES_LIST_KEY = "filename_by_sampletypes_list"
 _ENV_SCHEMA_KEY = "env_schema"
 _SAMPLE_TYPES_KEY = "sampletypes"
 _REQUIRED_EXTENSION = ".xlsx"
-
-# All field names should be lowercase and contain only alphanumeric and underscores.
-# No field name can start with a number
-FIELD_NAME_REGEX = "^[a-z][a-z0-9_]*$"
-NON_WIZARD_XLSX_ERROR_PREFIX = "Spreadsheet does not appear to have been produced by the metadata wizard: "
-# TODO: someday: this duplicates a definition in xlsx_builder, which would be a circular reference here; refactor!
-METADATA_SCHEMA_SHEET_NAME = "metadata_schema"
-
-
-class ValidationKeys(Enum):
-    type = "type"
-    required = "required"
-    allowed = "allowed"
-    default = "default"
-    empty = "empty"
-    anyof = "anyof"
-    min_inclusive = "min"
-    min_exclusive = "min_exclusive"
-    max_inclusive = "max"
-    max_exclusive = "max_exclusive"
-    forbidden = "forbidden"
-    regex = "regex"
-    unique = "unique"
-
-
-class CerberusDataTypes(Enum):
-    Text = "string"
-    Integer = "integer"
-    Decimal = "number"
-    DateTime = "datetime"
-
-
-class EbiMissingValues(Enum):
-    # values from https://www.ebi.ac.uk/ena/about/missing-values-reporting
-    ebi_not_applicable = "not applicable"
-    ebi_not_collected = "missing: not collected"
-    ebi_not_provided = "missing: not provided"
-    ebi_restricted = "missing: restricted access"
-
-
-def load_yaml_from_fp(filepath):
-    with open(filepath, 'r') as stream:
-        result = yaml.load(stream)
-    return result
-
-
-def load_yaml_from_wizard_xlsx(filepath, yaml_sheetname):
-    assumed_cell = "A1"
-    wb = openpyxl.load_workbook(filename=filepath)
-    sheet_names = wb.get_sheet_names()
-    if yaml_sheetname not in sheet_names:
-        error_msg = "{0}'{1}' .".format(NON_WIZARD_XLSX_ERROR_PREFIX, filepath)
-        raise ValueError(error_msg)
-
-    yaml_sheet = wb[yaml_sheetname]
-    yaml_string = yaml_sheet[assumed_cell].value
-    yaml_dict = yaml.load(yaml_string)
-    return yaml_dict
-
-
-def get_single_key_and_subdict(a_dict):
-    if len(a_dict.keys()) != 1:
-        raise ValueError(
-            "Dictionary '{0}' is mis-structured; must have only one top-level key.".format(a_dict))
-
-    single_key = list(a_dict.keys())[0]
-    return single_key, a_dict[single_key]
 
 
 def update_schema(base_schema, fields_to_modify_schemas, add_silently=False):
@@ -125,9 +53,8 @@ def load_schemas_for_package_key(env_key, sampletype_key, parent_stack_by_env_na
     return result
 
 
-def load_environment_and_sampletype_info(environments_yaml_path, sampletypes_yaml_path, package_dir_path):
+def load_environment_and_sampletype_info(envs_definitions, displayname_by_sampletypes_list, package_dir_path):
     # TODO: someday: this giant function would be much clearer if broken up some!
-    displayname_by_sampletypes_list = load_yaml_from_fp(sampletypes_yaml_path)
     sampletypes_display_dicts_list = _make_sampletypes_display_dicts_list(displayname_by_sampletypes_list)
 
     all_env_names_list = []
@@ -135,11 +62,10 @@ def load_environment_and_sampletype_info(environments_yaml_path, sampletypes_yam
     parent_env_name_by_env_name = {}
     env_schemas = {}
 
-    envs_definitions = load_yaml_from_fp(environments_yaml_path)
     for curr_env in envs_definitions:
-        curr_env_name, curr_env_dict = get_single_key_and_subdict(curr_env)
+        curr_env_name, curr_env_dict = mws.get_single_key_and_subdict(curr_env)
         all_env_names_list.append(curr_env_name)
-        curr_env_display_name = curr_env_dict[DISPLAY_NAME_KEY]
+        curr_env_display_name = curr_env_dict[mws.DISPLAY_NAME_KEY]
         if curr_env_display_name is not None:
             display_envs_dicts_list.append(_make_name_and_display_name_dict(curr_env_name, curr_env_display_name))
 
@@ -152,7 +78,7 @@ def load_environment_and_sampletype_info(environments_yaml_path, sampletypes_yam
         curr_env_sampletype_schemas_by_name = {}
         curr_env_sampletype_dicts_list = curr_env_dict[_FILENAME_BY_SAMPLETYPES_LIST_KEY]
         for curr_env_sampletype in curr_env_sampletype_dicts_list:
-            curr_env_sampletype_name, curr_env_sampletype_filename = get_single_key_and_subdict(curr_env_sampletype)
+            curr_env_sampletype_name, curr_env_sampletype_filename = mws.get_single_key_and_subdict(curr_env_sampletype)
 
             curr_env_sampletype_schema = _load_schema_from_filename_val(package_dir_path, curr_env_sampletype_filename)
             curr_env_sampletype_schemas_by_name[curr_env_sampletype_name] = curr_env_sampletype_schema
@@ -166,7 +92,7 @@ def load_environment_and_sampletype_info(environments_yaml_path, sampletypes_yam
 
     combinations_display_dicts_list = []
     sampletype_display_info_by_env = {}
-    display_name_by_env_name = {x[NAME_KEY]: x[DISPLAY_NAME_KEY] for x in display_envs_dicts_list if DISPLAY_NAME_KEY in x}
+    display_name_by_env_name = {x[mws.NAME_KEY]: x[mws.DISPLAY_NAME_KEY] for x in display_envs_dicts_list if mws.DISPLAY_NAME_KEY in x}
     # NB: loop over all envs, not just the displayable ones, because the power users get to see everything
     for curr_env_name in all_env_names_list:
         curr_env_sampletype_names = set()
@@ -206,8 +132,9 @@ def _load_schema_from_filename_val(base_dir, a_dict):
         warnings.warn("No filename specified for '{0}'.".format(a_dict))
     else:
         a_filepath = os.path.join(base_dir, a_filename)
-        a_schema = load_yaml_from_wizard_xlsx(a_filepath, METADATA_SCHEMA_SHEET_NAME)
+        a_schema = mws.load_yaml_from_wizard_xlsx(a_filepath, mws.METADATA_SCHEMA_SHEET_NAME)
     return a_schema
+
 
 # TODO: someday: rename as the product isn't really stack-like: it starts with most general, not least general
 def _make_parent_stack_by_env_name(env_name, parent_env_name_by_env_name, parent_stack_by_env_name):
@@ -227,14 +154,14 @@ def _make_parent_stack_by_env_name(env_name, parent_env_name_by_env_name, parent
 def _make_sampletypes_display_dicts_list(displayname_by_sampletypes_list):
     result = []
     for curr_sampletype in displayname_by_sampletypes_list:
-        curr_sampletype_name, curr_sampletype_display_name = get_single_key_and_subdict(curr_sampletype)
+        curr_sampletype_name, curr_sampletype_display_name = mws.get_single_key_and_subdict(curr_sampletype)
         result.append(_make_name_and_display_name_dict(curr_sampletype_name, curr_sampletype_display_name))
     return result
 
 
 def _make_name_and_display_name_dict(name, display_name):
-    return {NAME_KEY: name, DISPLAY_NAME_KEY: display_name}
+    return {mws.NAME_KEY: name, mws.DISPLAY_NAME_KEY: display_name}
 
 
 def _get_name_and_display_name(names_dict):
-    return names_dict[NAME_KEY], names_dict[DISPLAY_NAME_KEY]
+    return names_dict[mws.NAME_KEY], names_dict[mws.DISPLAY_NAME_KEY]

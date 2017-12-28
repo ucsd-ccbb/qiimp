@@ -1,5 +1,4 @@
-{% import schema_builder %}
-{% import metadata_package_schema_builder %}
+{% import scripts_server.metadata_wizard_settings as mws %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -140,41 +139,41 @@
 
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
-    <script src={{ static_url("metadataWizardHelpers.js") }}></script>
-    <script src={{ static_url("metadataWizardEventHandlers.js") }}></script>
-    <script src={{ static_url("packageWizard.js") }}></script>
-    <script src={{ static_url("metadataWizard.js") }}></script>
+    <script src={{ static_url("scripts_client/metadataWizardHelpers.js") }}></script>
+    <script src={{ static_url("scripts_client/metadataWizardEventHandlers.js") }}></script>
+    <script src={{ static_url("scripts_client/packageWizard.js") }}></script>
+    <script src={{ static_url("scripts_client/metadataWizard.js") }}></script>
 
 
     <script type="text/javascript">
-        g_transferred_variables.UPLOAD_URL = "{{upload_url}}";
+        g_transferred_variables.UPLOAD_URL = "{{ wiz_state.full_upload_url }}";
         g_transferred_variables.MAX_SELECTBOX_SIZE = {{select_size}};
-        g_transferred_variables.NO_DEFAULT_RADIO_VALUE = "{{schema_builder.DefaultTypes.no_default.name}}";
-        g_transferred_variables.SEPARATOR = "{{schema_builder.SEPARATOR}}";
-        g_transferred_variables.TEMPLATE_SUFFIX = "{{schema_builder.TEMPLATE_SUFFIX}}";
-        g_transferred_variables.FIELD_NAME_REGEX = /{{ metadata_package_schema_builder.FIELD_NAME_REGEX }}/;
+        g_transferred_variables.NO_DEFAULT_RADIO_VALUE = "{{mws.DefaultTypes.no_default.name}}";
+        g_transferred_variables.SEPARATOR = "{{mws.SEPARATOR}}";
+        g_transferred_variables.TEMPLATE_SUFFIX = "{{mws.TEMPLATE_SUFFIX}}";
+        g_transferred_variables.FIELD_NAME_REGEX = /{{ mws.FIELD_NAME_REGEX }}/;
         g_transferred_variables.SAMPLETYPES_BY_ENV = JSON.parse('{% raw sampletypes_by_env_json %}');
 
         // Note that these are to be the bases (without template suffix or separator)
         g_transferred_variables.ELEMENT_IDENTIFIERS = {
-            FIELD_NAME: "{{schema_builder.InputNames.field_name.value}}",
-            FIELD_TYPE: "{{schema_builder.InputNames.field_type.value}}",
+            FIELD_NAME: "{{mws.InputNames.field_name.value}}",
+            FIELD_TYPE: "{{mws.InputNames.field_type.value}}",
             ALLOWED_MISSINGS: "allowed_missing_vals_fieldset",
-            DATA_TYPE: "{{schema_builder.InputNames.data_type.value}}",
-            TRUE_VALUE: "{{schema_builder.InputNames.true_value.value}}",
-            FALSE_VALUE: "{{schema_builder.InputNames.false_value.value}}",
-            MINIMUM: "{{schema_builder.InputNames.minimum_value.value}}",
-            MIN_COMPARE: "{{schema_builder.InputNames.minimum_comparison.value}}",
-            MAXIMUM: "{{schema_builder.InputNames.maximum_value.value}}",
-            MAX_COMPARE: "{{schema_builder.InputNames.maximum_comparison.value}}",
-            CATEGORY_VALS: "{{schema_builder.InputNames.categorical_values.value}}",
-            DEFAULT_MISSINGS: "{{schema_builder.InputNames.allowed_missing_default_select.value}}",
-            DEFAULT_OPTION: "{{schema_builder.InputNames.default_value.value}}",
-            DEFAULT_CATEGORICAL: "{{schema_builder.InputNames.categorical_default_select.value}}",
-            DEFAULT_BOOLEAN: "{{schema_builder.InputNames.boolean_default_select.value}}",
-            DEFAULT_CONTINUOUS: "{{schema_builder.InputNames.continuous_default.value}}",
-            DEFAULT_TEXT: "{{schema_builder.InputNames.text_default.value}}",
-            DEFAULT_DATETIME: "{{schema_builder.InputNames.datetime_default.value}}",
+            DATA_TYPE: "{{mws.InputNames.data_type.value}}",
+            TRUE_VALUE: "{{mws.InputNames.true_value.value}}",
+            FALSE_VALUE: "{{mws.InputNames.false_value.value}}",
+            MINIMUM: "{{mws.InputNames.minimum_value.value}}",
+            MIN_COMPARE: "{{mws.InputNames.minimum_comparison.value}}",
+            MAXIMUM: "{{mws.InputNames.maximum_value.value}}",
+            MAX_COMPARE: "{{mws.InputNames.maximum_comparison.value}}",
+            CATEGORY_VALS: "{{mws.InputNames.categorical_values.value}}",
+            DEFAULT_MISSINGS: "{{mws.InputNames.allowed_missing_default_select.value}}",
+            DEFAULT_OPTION: "{{mws.InputNames.default_value.value}}",
+            DEFAULT_CATEGORICAL: "{{mws.InputNames.categorical_default_select.value}}",
+            DEFAULT_BOOLEAN: "{{mws.InputNames.boolean_default_select.value}}",
+            DEFAULT_CONTINUOUS: "{{mws.InputNames.continuous_default.value}}",
+            DEFAULT_TEXT: "{{mws.InputNames.text_default.value}}",
+            DEFAULT_DATETIME: "{{mws.InputNames.datetime_default.value}}",
             REMOVE_FIELD: "remove_field",
             FIELD_NAMES: "field_names",  //NB: totally distinct from singular FIELD_NAME
             FIELD_NAMES_SELECT: "field_names_sel",
@@ -183,19 +182,19 @@
             FIELD_DETAILS_DIV: "field_details_div",
             PACKAGE_DETAILS_DIV: "package_details_div",
             EXISTING_FIELDS_DIV: "existing_fields",
-            ENV_FIELD: "{{schema_builder.InputNames.environment.value}}",
-            SAMPLE_TYPE_FIELD: "{{schema_builder.InputNames.sample_type.value}}"
+            ENV_FIELD: "{{mws.InputNames.environment.value}}",
+            SAMPLE_TYPE_FIELD: "{{mws.InputNames.sample_type.value}}"
         };
 
         g_transferred_variables.SHOWN_ELEMENTS_BY_FIELD_TYPE = {
             "":[],
-            "{{schema_builder.FieldTypes.Text.value}}":["text_default_div"],
-            "{{schema_builder.FieldTypes.Boolean.value}}": ["boolean_div", "allowed_missing_vals_div",
+            "{{mws.FieldTypes.Text.value}}":["text_default_div"],
+            "{{mws.FieldTypes.Boolean.value}}": ["boolean_div", "allowed_missing_vals_div",
                 "allowed_missing_default_div", "boolean_default_div"],
-            "{{schema_builder.FieldTypes.Continuous.value}}": ["continuous_datatype_units_div",
+            "{{mws.FieldTypes.Continuous.value}}": ["continuous_datatype_units_div",
                 "continuous_min_max_div", "allowed_missing_vals_div",
                 "allowed_missing_default_div", "continuous_default_div"],
-            "{{schema_builder.FieldTypes.Categorical.value}}": ["categorical_div", "allowed_missing_vals_div",
+            "{{mws.FieldTypes.Categorical.value}}": ["categorical_div", "allowed_missing_vals_div",
                 "allowed_missing_default_div", "categorical_default_div"]
         };
 
@@ -249,16 +248,16 @@
 
             // add back any required data type validation rule
             switch (data_type_value) {
-                case "{{metadata_package_schema_builder.CerberusDataTypes.Integer.value}}":
+                case "{{mws.CerberusDataTypes.Integer.value}}":
                     $(input_id_selector).rules("add", {digits: true});
                     break;
-                case "{{metadata_package_schema_builder.CerberusDataTypes.Decimal.value}}":
+                case "{{mws.CerberusDataTypes.Decimal.value}}":
                     $(input_id_selector).rules("add", {number: true});
                     break;
-                case "{{metadata_package_schema_builder.CerberusDataTypes.DateTime.value}}":
+                case "{{mws.CerberusDataTypes.DateTime.value}}":
                     $(input_id_selector).rules("add", {isValidDateTime: true});
                     break;
-                case "{{metadata_package_schema_builder.CerberusDataTypes.Text.value}}":
+                case "{{mws.CerberusDataTypes.Text.value}}":
                     // no known validation required for text; perhaps length?
                     break;
                 default:
@@ -268,15 +267,15 @@
 
         function enableDisableDefaultSelects(field_index, curr_val){
             enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_MISSINGS, field_index, curr_val,
-                    "{{schema_builder.DefaultTypes.allowed_missing_default.value}}");
+                    "{{mws.DefaultTypes.allowed_missing_default.value}}");
             enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CATEGORICAL, field_index, curr_val,
-                    "{{schema_builder.DefaultTypes.categorical_default.value}}");
+                    "{{mws.DefaultTypes.categorical_default.value}}");
             enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_BOOLEAN, field_index, curr_val,
-                    "{{schema_builder.DefaultTypes.boolean_default.value}}");
+                    "{{mws.DefaultTypes.boolean_default.value}}");
             enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CONTINUOUS, field_index, curr_val,
-                    "{{schema_builder.DefaultTypes.continuous_default.value}}");
+                    "{{mws.DefaultTypes.continuous_default.value}}");
             enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_TEXT, field_index, curr_val,
-                    "{{schema_builder.DefaultTypes.text_default.value}}");
+                    "{{mws.DefaultTypes.text_default.value}}");
         };
     </script>
 </head>
@@ -306,10 +305,10 @@
                                     <div class="NarrowTable">
                                         <div class="Row">
                                             <div class="Cell fully-padded-cell">
-                                                <label id = "label_{{schema_builder.InputNames.study_name.value}}" for="{{schema_builder.InputNames.study_name.value}}"> Study Name:</label>
+                                                <label id = "label_{{mws.InputNames.study_name.value}}" for="{{mws.InputNames.study_name.value}}"> Study Name:</label>
                                             </div>
                                             <div class="Cell fully-padded-cell">
-                                                <input id="{{schema_builder.InputNames.study_name.value}}" name = "{{schema_builder.InputNames.study_name.value}}" type="text" placeholder="Study name" />
+                                                <input id="{{mws.InputNames.study_name.value}}" name = "{{mws.InputNames.study_name.value}}" type="text" placeholder="Study name" />
                                             </div>
                                         </div>
                                         <div class="Row">
@@ -317,11 +316,11 @@
                                                 <label id="label_default_study_location_select" for="default_study_location_select">Default Study City/Locale:</label>
                                             </div>
                                             <div class="Cell fully-padded-cell">
-                                                <!-- TODO: Modify to pull from back end yaml; remember to update size setting -->
-                                                <select name="default_study_location_select" id="default_study_location_select" size = "3" required>
-                                                    <option value="None">None</option>
-                                                    <option value="San Diego standard">San Diego standard</option>
-                                                    <option value="San Diego phi-compliant">San Diego phi-compliant</option>
+                                                <select name="default_study_location_select" id="default_study_location_select" size={{len(wiz_state.default_locales_list)}} required>
+                                                    {% for curr_locale_dict in wiz_state.default_locales_list %}
+                                                    {% set curr_key, _ = mws.get_single_key_and_subdict(curr_locale_dict) %}
+                                                    <option value="{{ curr_key }}">{{ curr_key }}</option>
+                                                    {% end %}
                                                 </select>
                                             </div>
                                         </div>
@@ -371,7 +370,7 @@
                                                         <label id="label_package_select" for="package_select"> Metadata Packages:</label><br />
                                                         <select class = "error-below" name="package_select" id="package_select" size="{{select_size}}" disabled required>
                                                                     {% for curr_item in combinations_list %}
-                                                                    <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
+                                                                    <option value="{{curr_item[mws.NAME_KEY]}}">{{curr_item[mws.DISPLAY_NAME_KEY]}}</option>
                                                                     {% end %}
                                                         </select>
                                                     </div>
@@ -381,7 +380,7 @@
                                                                 <label id="label_host_select" for="host_select"> Host/Environment:</label><br />
                                                                 <select class = "error-below" name="host_select" id="host_select" size="{{select_size}}" onchange="onHostChange(event);" disabled required>
                                                                     {% for curr_item in hosts_list %}
-                                                                    <option value="{{curr_item[metadata_package_schema_builder.NAME_KEY]}}">{{curr_item[metadata_package_schema_builder.DISPLAY_NAME_KEY]}}</option>
+                                                                    <option value="{{curr_item[mws.NAME_KEY]}}">{{curr_item[mws.DISPLAY_NAME_KEY]}}</option>
                                                                     {% end %}
                                                                 </select>
                                                             </div>
@@ -472,12 +471,12 @@
                                         </div>
                                     </div>
                                     <div class="fieldTemplate hidden">
-                                        <div class="Row field hidden" id="field_details{{schema_builder.TEMPLATE_SUFFIX}}">
+                                        <div class="Row field hidden" id="field_details{{mws.TEMPLATE_SUFFIX}}">
                                             <div class="Cell detail-cell-no-bottom-border field-type">
-                                                <input type="hidden" name="{{schema_builder.InputNames.field_name.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.field_name.name}}{{schema_builder.TEMPLATE_SUFFIX}}">
-                                                <label class="hidden" id="label_{{schema_builder.InputNames.field_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.field_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Field Type</label>
-                                                <select name="{{schema_builder.InputNames.field_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.field_type.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size={{len(schema_builder.FieldTypes)}} >
-                                                    {% for curr_enum in schema_builder.FieldTypes %}
+                                                <input type="hidden" name="{{mws.InputNames.field_name.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.field_name.name}}{{mws.TEMPLATE_SUFFIX}}">
+                                                <label class="hidden" id="label_{{mws.InputNames.field_type.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.field_type.value}}{{mws.TEMPLATE_SUFFIX}}">Field Type</label>
+                                                <select name="{{mws.InputNames.field_type.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.field_type.name}}{{mws.TEMPLATE_SUFFIX}}" size={{len(mws.FieldTypes)}} >
+                                                    {% for curr_enum in mws.FieldTypes %}
                                                     <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
                                                     {% end %}
                                                 </select>
@@ -488,62 +487,62 @@
                                                         <div class="Cell left-cell detail-cell">
                                                             <div class="Row">
                                                                 <div class="Cell interior-cell">
-                                                                    <label id="label_{{schema_builder.InputNames.field_desc.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.field_desc.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Description:</label>
+                                                                    <label id="label_{{mws.InputNames.field_desc.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.field_desc.value}}{{mws.TEMPLATE_SUFFIX}}">Description:</label>
                                                                 </div>
                                                                 <div class="Cell interior-cell">
-                                                                    <textarea rows=4 placeholder="e.g., the age of the subject in years" name="{{schema_builder.InputNames.field_desc.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.field_desc.name}}{{schema_builder.TEMPLATE_SUFFIX}}" ></textarea>
+                                                                    <textarea rows=4 placeholder="e.g., the age of the subject in years" name="{{mws.InputNames.field_desc.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.field_desc.name}}{{mws.TEMPLATE_SUFFIX}}" ></textarea>
                                                                 </div>
                                                             </div>
                                                             <div class="Row">
                                                                 <div class="Cell interior-cell">
-                                                                    <label id="label_{{schema_builder.InputNames.is_phi.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.is_phi.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Protected Health Info:</label>
+                                                                    <label id="label_{{mws.InputNames.is_phi.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.is_phi.value}}{{mws.TEMPLATE_SUFFIX}}">Protected Health Info:</label>
                                                                 </div>
                                                                 <div class="Cell interior-cell">
-                                                                    <input type="checkbox" name="{{schema_builder.InputNames.is_phi.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.is_phi.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="True">
+                                                                    <input type="checkbox" name="{{mws.InputNames.is_phi.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.is_phi.name}}{{mws.TEMPLATE_SUFFIX}}" value="True">
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="Cell initially_hidden hidden right-cell detail-cell" id="allowed_missing_vals_div{{schema_builder.TEMPLATE_SUFFIX}}">
-                                                            <fieldset name="allowed_missing_vals_fieldset{{schema_builder.TEMPLATE_SUFFIX}}" id="allowed_missing_vals_fieldset{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                        <div class="Cell initially_hidden hidden right-cell detail-cell" id="allowed_missing_vals_div{{mws.TEMPLATE_SUFFIX}}">
+                                                            <fieldset name="allowed_missing_vals_fieldset{{mws.TEMPLATE_SUFFIX}}" id="allowed_missing_vals_fieldset{{mws.TEMPLATE_SUFFIX}}">
                                                                 <legend>Allowed Missing Values (Optional)</legend>
-                                                                {% for curr_enum in metadata_package_schema_builder.EbiMissingValues %}
-                                                                <input type="checkbox" name="{{schema_builder.InputNames.allowed_missing_vals.name}}{{schema_builder.TEMPLATE_SUFFIX}}[]" id="{{schema_builder.InputNames.allowed_missing_vals.name}}_{{curr_enum.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="{{curr_enum.name}}" disabled /> {{curr_enum.value}}<br />
+                                                                {% for curr_enum in mws.EbiMissingValues %}
+                                                                <input type="checkbox" name="{{mws.InputNames.allowed_missing_vals.name}}{{mws.TEMPLATE_SUFFIX}}[]" id="{{mws.InputNames.allowed_missing_vals.name}}_{{curr_enum.name}}{{mws.TEMPLATE_SUFFIX}}" value="{{curr_enum.name}}" disabled /> {{curr_enum.value}}<br />
                                                                 {% end %}
                                                             </fieldset>
                                                         </div>
                                                     </div>
-                                                    <div class="initially_hidden hidden Row detail-row" id="boolean_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="initially_hidden hidden Row detail-row" id="boolean_div{{mws.TEMPLATE_SUFFIX}}">
                                                         <div class="Cell left-detail-block left-cell detail-cell">
                                                             <div class="Row">
                                                                 <div class="Cell interior-cell">
-                                                                    <label id="label_{{schema_builder.InputNames.true_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.true_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}">True Value:</label>
+                                                                    <label id="label_{{mws.InputNames.true_value.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.true_value.value}}{{mws.TEMPLATE_SUFFIX}}">True Value:</label>
                                                                 </div>
                                                                 <div class="Cell interior-cell">
-                                                                    <input type ="text" name="{{schema_builder.InputNames.true_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.true_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., Yes" disabled required/><br />
+                                                                    <input type ="text" name="{{mws.InputNames.true_value.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.true_value.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g., Yes" disabled required/><br />
                                                                 </div>
                                                             </div>
                                                         </div>
                                                         <div class="Cell right-cell detail-cell">
                                                             <div class="Row">
                                                                 <div class="Cell interior-cell">
-                                                                    <label id="label_{{schema_builder.InputNames.false_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.false_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}">False Value:</label>
+                                                                    <label id="label_{{mws.InputNames.false_value.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.false_value.value}}{{mws.TEMPLATE_SUFFIX}}">False Value:</label>
                                                                 </div>
                                                                 <div class="Cell interior-cell">
-                                                                    <input type ="text" name="{{schema_builder.InputNames.false_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.false_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., No" disabled required/><br />
+                                                                    <input type ="text" name="{{mws.InputNames.false_value.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.false_value.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g., No" disabled required/><br />
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="initially_hidden hidden Row detail-row" id="continuous_datatype_units_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="initially_hidden hidden Row detail-row" id="continuous_datatype_units_div{{mws.TEMPLATE_SUFFIX}}">
                                                         <div class="Cell left-detail-block left-cell detail-cell">
                                                             <div class="Row">
                                                                 <div class = "Cell interior-cell">
-                                                                    <label id="label_{{schema_builder.InputNames.data_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.data_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Data Type:</label>
+                                                                    <label id="label_{{mws.InputNames.data_type.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.data_type.value}}{{mws.TEMPLATE_SUFFIX}}">Data Type:</label>
                                                                 </div>
                                                                 <div class="Cell interior-cell">
-                                                                    <select name="{{schema_builder.InputNames.data_type.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.data_type.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="{{len(metadata_package_schema_builder.CerberusDataTypes)-1}}" disabled required>
-                                                                        {% for curr_enum in metadata_package_schema_builder.CerberusDataTypes %}
-                                                                            {% if curr_enum is not metadata_package_schema_builder.CerberusDataTypes.Text %}
+                                                                    <select name="{{mws.InputNames.data_type.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.data_type.name}}{{mws.TEMPLATE_SUFFIX}}" size="{{len(mws.CerberusDataTypes)-1}}" disabled required>
+                                                                        {% for curr_enum in mws.CerberusDataTypes %}
+                                                                            {% if curr_enum is not mws.CerberusDataTypes.Text %}
                                                                                 <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
                                                                             {% end %}
                                                                         {% end %}
@@ -554,109 +553,109 @@
                                                         <div class="Cell right-cell detail-cell">
                                                             <div class="Row">
                                                                 <div class = "Cell interior-cell">
-                                                                    <label id="label_{{schema_builder.InputNames.units.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.units.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Units:</label>
+                                                                    <label id="label_{{mws.InputNames.units.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.units.value}}{{mws.TEMPLATE_SUFFIX}}">Units:</label>
                                                                 </div>
                                                                 <div class="Cell interior-cell">
-                                                                    <input name="{{schema_builder.InputNames.units.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.units.name}}{{schema_builder.TEMPLATE_SUFFIX}}" type="text" placeholder="e.g., years"  disabled required/>
+                                                                    <input name="{{mws.InputNames.units.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.units.name}}{{mws.TEMPLATE_SUFFIX}}" type="text" placeholder="e.g., years"  disabled required/>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div class="initially_hidden hidden Row detail-row" id="continuous_min_max_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="initially_hidden hidden Row detail-row" id="continuous_min_max_div{{mws.TEMPLATE_SUFFIX}}">
                                                         <div class = "Cell left-detail-block left-cell detail-cell">
-                                                            <fieldset name="minimum_{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                            <fieldset name="minimum_{{mws.TEMPLATE_SUFFIX}}">
                                                                 <legend>Minimum (Optional)</legend>
                                                                 <div class="Row">
                                                                     <div class="Cell interior-cell">
-                                                                        <label id="label_{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Minimum</span> Comparison</label>
+                                                                        <label id="label_{{mws.InputNames.minimum_comparison.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.minimum_comparison.value}}{{mws.TEMPLATE_SUFFIX}}"><span class="hidden">Minimum</span> Comparison</label>
                                                                     </div>
                                                                     <div class="Cell interior-cell">
-                                                                        <select name="{{schema_builder.InputNames.minimum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.minimum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled required>
+                                                                        <select name="{{mws.InputNames.minimum_comparison.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.minimum_comparison.name}}{{mws.TEMPLATE_SUFFIX}}" size="2" disabled required>
                                                                             <option value="no_comparison" selected="selected">None</option>
-                                                                            <option value="{{metadata_package_schema_builder.ValidationKeys.min_exclusive.value}}">Greater Than</option>
-                                                                            <option value="{{metadata_package_schema_builder.ValidationKeys.min_inclusive.value}}">Greater Than Or Equal To</option>
+                                                                            <option value="{{mws.ValidationKeys.min_exclusive.value}}">Greater Than</option>
+                                                                            <option value="{{mws.ValidationKeys.min_inclusive.value}}">Greater Than Or Equal To</option>
                                                                         </select>
                                                                     </div>
                                                                 </div>
                                                                 <div class="Row">
                                                                     <div class="Cell interior-cell">
-                                                                        <label id="label_{{schema_builder.InputNames.minimum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.minimum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Minimum</span> Value</label>
+                                                                        <label id="label_{{mws.InputNames.minimum_value.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.minimum_value.value}}{{mws.TEMPLATE_SUFFIX}}"><span class="hidden">Minimum</span> Value</label>
                                                                     </div>
                                                                     <div class="Cell interior-cell">
-                                                                        <input type ="text" name="{{schema_builder.InputNames.minimum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.minimum_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 3"  disabled/>
+                                                                        <input type ="text" name="{{mws.InputNames.minimum_value.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.minimum_value.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g., 3"  disabled/>
                                                                     </div>
                                                                 </div>
                                                             </fieldset>
                                                         </div>
                                                         <div class="Cell right-cell detail-cell">
-                                                            <fieldset name="minimum_{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                            <fieldset name="minimum_{{mws.TEMPLATE_SUFFIX}}">
                                                                 <legend>Maximum (Optional)</legend>
                                                                 <div class="Row">
                                                                     <div class="Cell interior-cell">
-                                                                        <label id="label_{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Maximum</span> Comparison</label>
+                                                                        <label id="label_{{mws.InputNames.maximum_comparison.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.maximum_comparison.value}}{{mws.TEMPLATE_SUFFIX}}"><span class="hidden">Maximum</span> Comparison</label>
                                                                     </div>
                                                                     <div class="Cell interior-cell">
-                                                                        <select name="{{schema_builder.InputNames.maximum_comparison.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.maximum_comparison.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="2" disabled required>
+                                                                        <select name="{{mws.InputNames.maximum_comparison.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.maximum_comparison.name}}{{mws.TEMPLATE_SUFFIX}}" size="2" disabled required>
                                                                             <option value="no_comparison" selected="selected">None</option>
-                                                                            <option value="{{metadata_package_schema_builder.ValidationKeys.max_exclusive.value}}">Less Than</option>
-                                                                            <option value="{{metadata_package_schema_builder.ValidationKeys.max_inclusive.value}}">Less Than Or Equal To</option>
+                                                                            <option value="{{mws.ValidationKeys.max_exclusive.value}}">Less Than</option>
+                                                                            <option value="{{mws.ValidationKeys.max_inclusive.value}}">Less Than Or Equal To</option>
                                                                         </select>
                                                                     </div>
                                                                 </div>
                                                                 <div class="Row">
                                                                     <div class="Cell interior-cell">
-                                                                        <label id="label_{{schema_builder.InputNames.maximum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.maximum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}"><span class="hidden">Maximum</span> Value</label>
+                                                                        <label id="label_{{mws.InputNames.maximum_value.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.maximum_value.value}}{{mws.TEMPLATE_SUFFIX}}"><span class="hidden">Maximum</span> Value</label>
                                                                     </div>
                                                                     <div class="Cell interior-cell">
-                                                                        <input type ="text" name="{{schema_builder.InputNames.maximum_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.maximum_value.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g, 10"  disabled/><br />
+                                                                        <input type ="text" name="{{mws.InputNames.maximum_value.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.maximum_value.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g, 10"  disabled/><br />
                                                                     </div>
                                                                 </div>
                                                             </fieldset>
                                                         </div>
                                                     </div>
-                                                    <div class="initially_hidden hidden Row detail-row" id="categorical_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                    <div class="initially_hidden hidden Row detail-row" id="categorical_div{{mws.TEMPLATE_SUFFIX}}">
                                                         <div class="Cell left-cell detail-cell">
                                                             <div class="Row">
                                                                 <div class="Cell interior-cell">
-                                                                    <label id="label_{{schema_builder.InputNames.categorical_values.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.categorical_values.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Categorical Values</label> (One Per Line)
+                                                                    <label id="label_{{mws.InputNames.categorical_values.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.categorical_values.value}}{{mws.TEMPLATE_SUFFIX}}">Categorical Values</label> (One Per Line)
                                                                 </div>
                                                                 <div class="Cell interior-cell">
-                                                                    <textarea rows="5" cols="25" name="{{schema_builder.InputNames.categorical_values.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.categorical_values.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., Low&#10;Medium&#10;High" disabled required></textarea>
+                                                                    <textarea rows="5" cols="25" name="{{mws.InputNames.categorical_values.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.categorical_values.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g., Low&#10;Medium&#10;High" disabled required></textarea>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div class="Row detail-row">
                                                         <div class="Cell detail-cell">
-                                                            <fieldset name="defaults{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                            <fieldset name="defaults{{mws.TEMPLATE_SUFFIX}}">
                                                                 <legend>Default Value</legend>
                                                                 <div class="Row">
                                                                     <div class="Cell">
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell">
-                                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "{{schema_builder.DefaultTypes.no_default.name}}{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.no_default.name}}" checked="checked">
+                                                                                <input type="radio" name="{{mws.InputNames.default_value.value}}{{mws.TEMPLATE_SUFFIX}}" id = "{{mws.DefaultTypes.no_default.name}}{{mws.TEMPLATE_SUFFIX}}" value="{{mws.DefaultTypes.no_default.name}}" checked="checked">
                                                                             </div>
                                                                             <div class="Cell interior-cell">
-                                                                                <label id="label_no_default{{schema_builder.TEMPLATE_SUFFIX}}" for="no_default{{schema_builder.TEMPLATE_SUFFIX}}">No Default</label>
+                                                                                <label id="label_no_default{{mws.TEMPLATE_SUFFIX}}" for="no_default{{mws.TEMPLATE_SUFFIX}}">No Default</label>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="initially_hidden hidden Row" id="allowed_missing_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                                <div class="initially_hidden hidden Row" id="allowed_missing_default_div{{mws.TEMPLATE_SUFFIX}}">
                                                                     <div class="Cell">
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell">
-                                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "allowed_missing_default{{schema_builder.TEMPLATE_SUFFIX}}" value="allowed_missing_default">
+                                                                                <input type="radio" name="{{mws.InputNames.default_value.value}}{{mws.TEMPLATE_SUFFIX}}" id = "allowed_missing_default{{mws.TEMPLATE_SUFFIX}}" value="allowed_missing_default">
                                                                             </div>
                                                                             <div class="Cell interior-cell">
-                                                                                <label id="label_{{schema_builder.InputNames.allowed_missing_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.allowed_missing_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Allowed Missing Default</label>
+                                                                                <label id="label_{{mws.InputNames.allowed_missing_default_select.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.allowed_missing_default_select.value}}{{mws.TEMPLATE_SUFFIX}}">Allowed Missing Default</label>
                                                                             </div>
                                                                         </div>
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell"></div>
                                                                             <div class="Cell interior-cell">
-                                                                                <select name="{{schema_builder.InputNames.allowed_missing_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.allowed_missing_default_select.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="{{len(metadata_package_schema_builder.EbiMissingValues)}}" disabled required>
-                                                                                    {% for curr_enum in metadata_package_schema_builder.EbiMissingValues %}
+                                                                                <select name="{{mws.InputNames.allowed_missing_default_select.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.allowed_missing_default_select.name}}{{mws.TEMPLATE_SUFFIX}}" size="{{len(mws.EbiMissingValues)}}" disabled required>
+                                                                                    {% for curr_enum in mws.EbiMissingValues %}
                                                                                     <option value="{{curr_enum.name}}" disabled>{{curr_enum.value}}</option>
                                                                                     {% end %}
                                                                                 </select>
@@ -664,74 +663,74 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="initially_hidden hidden Row" id="categorical_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                                <div class="initially_hidden hidden Row" id="categorical_default_div{{mws.TEMPLATE_SUFFIX}}">
                                                                     <div class="Cell">
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell">
-                                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "categorical_default{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.categorical_default.name}}">
+                                                                                <input type="radio" name="{{mws.InputNames.default_value.value}}{{mws.TEMPLATE_SUFFIX}}" id = "categorical_default{{mws.TEMPLATE_SUFFIX}}" value="{{mws.DefaultTypes.categorical_default.name}}">
                                                                             </div>
                                                                             <div class="Cell interior-cell">
-                                                                                <label id="label_categorical_default{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.categorical_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Categorical Default</label>
+                                                                                <label id="label_categorical_default{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.categorical_default_select.value}}{{mws.TEMPLATE_SUFFIX}}">Categorical Default</label>
                                                                             </div>
                                                                         </div>
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell"></div>
                                                                             <div class="Cell interior-cell">
-                                                                                <select name="{{schema_builder.InputNames.categorical_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.categorical_default_select.name}}{{schema_builder.TEMPLATE_SUFFIX}}" size="1" disabled required></select>
+                                                                                <select name="{{mws.InputNames.categorical_default_select.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.categorical_default_select.name}}{{mws.TEMPLATE_SUFFIX}}" size="1" disabled required></select>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="initially_hidden hidden Row" id = "continuous_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                                <div class="initially_hidden hidden Row" id = "continuous_default_div{{mws.TEMPLATE_SUFFIX}}">
                                                                     <div class="Cell">
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell">
-                                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "continuous_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.continuous_default.name}}">
+                                                                                <input type="radio" name="{{mws.InputNames.default_value.value}}{{mws.TEMPLATE_SUFFIX}}" id = "continuous_default_value{{mws.TEMPLATE_SUFFIX}}" value="{{mws.DefaultTypes.continuous_default.name}}">
                                                                             </div>
                                                                             <div class="Cell interior-cell">
-                                                                                <label id="label_continuous_default{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.continuous_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Continuous Default</label>
+                                                                                <label id="label_continuous_default{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.continuous_default.value}}{{mws.TEMPLATE_SUFFIX}}">Continuous Default</label>
                                                                             </div>
                                                                         </div>
                                                                         <div class="Row">
                                                                                 <div class="Cell interior-cell"></div>
                                                                                 <div class="Cell interior-cell">
-                                                                                    <input type="text" name="{{schema_builder.InputNames.continuous_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.continuous_default.name}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 3" disabled required>
+                                                                                    <input type="text" name="{{mws.InputNames.continuous_default.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.continuous_default.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g., 3" disabled required>
                                                                                 </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="initially_hidden hidden Row" id = "boolean_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                                <div class="initially_hidden hidden Row" id = "boolean_default_div{{mws.TEMPLATE_SUFFIX}}">
                                                                     <div class="Cell">
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell">
-                                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "boolean_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.boolean_default.name}}">
+                                                                                <input type="radio" name="{{mws.InputNames.default_value.value}}{{mws.TEMPLATE_SUFFIX}}" id = "boolean_default_value{{mws.TEMPLATE_SUFFIX}}" value="{{mws.DefaultTypes.boolean_default.name}}">
                                                                             </div>
                                                                             <div class="Cell interior-cell">
-                                                                                <label id="label_boolean_default{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Boolean Default</label>
+                                                                                <label id="label_boolean_default{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.boolean_default_select.value}}{{mws.TEMPLATE_SUFFIX}}">Boolean Default</label>
                                                                             </div>
                                                                         </div>
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell"></div>
                                                                             <div class="Cell interior-cell">
-                                                                                <select name="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.boolean_default_select.value}}{{schema_builder.TEMPLATE_SUFFIX}}" size="1" disabled required></select>
+                                                                                <select name="{{mws.InputNames.boolean_default_select.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.boolean_default_select.value}}{{mws.TEMPLATE_SUFFIX}}" size="1" disabled required></select>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="initially_hidden hidden Row" id = "text_default_div{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                                <div class="initially_hidden hidden Row" id = "text_default_div{{mws.TEMPLATE_SUFFIX}}">
                                                                     <div class="Cell">
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell">
-                                                                                <input type="radio" name="{{schema_builder.InputNames.default_value.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id = "text_default_value{{schema_builder.TEMPLATE_SUFFIX}}" value="{{schema_builder.DefaultTypes.text_default.name}}">
+                                                                                <input type="radio" name="{{mws.InputNames.default_value.value}}{{mws.TEMPLATE_SUFFIX}}" id = "text_default_value{{mws.TEMPLATE_SUFFIX}}" value="{{mws.DefaultTypes.text_default.name}}">
                                                                             </div>
                                                                             <div class="Cell interior-cell">
-                                                                                <label id="label_text_default{{schema_builder.TEMPLATE_SUFFIX}}" for="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}">Text Default</label><br />
+                                                                                <label id="label_text_default{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.text_default.value}}{{mws.TEMPLATE_SUFFIX}}">Text Default</label><br />
                                                                             </div>
                                                                         </div>
                                                                         <div class="Row">
                                                                             <div class="Cell interior-cell"></div>
                                                                             <div class="Cell interior-cell">
-                                                                                <textarea name="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" id="{{schema_builder.InputNames.text_default.value}}{{schema_builder.TEMPLATE_SUFFIX}}" placeholder="e.g., 0.5 ml subcutaneously" disabled required></textarea>
+                                                                                <textarea name="{{mws.InputNames.text_default.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.text_default.value}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g., 0.5 ml subcutaneously" disabled required></textarea>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -741,7 +740,7 @@
                                                     </div>
                                                     <div class="Row detail-row">
                                                         <div class="Cell detail-cell-no-bottom-border">
-                                                           <input type="button" value="Remove Field" name="remove_field{{schema_builder.TEMPLATE_SUFFIX}}" id="remove_field{{schema_builder.TEMPLATE_SUFFIX}}">
+                                                           <input type="button" value="Remove Field" name="remove_field{{mws.TEMPLATE_SUFFIX}}" id="remove_field{{mws.TEMPLATE_SUFFIX}}">
                                                         </div>
                                                     </div>
                                                 </div>

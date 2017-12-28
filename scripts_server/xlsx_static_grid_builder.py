@@ -1,13 +1,13 @@
-import metadata_package_schema_builder
-import xlsx_basics
-import xlsx_validation_builder
+import scripts_server.metadata_wizard_settings
+import scripts_server.xlsx_basics as xlsxbasics
+import scripts_server.xlsx_validation_builder
 
 
-class ValidationWorksheet(xlsx_basics.MetadataWorksheet):
+class ValidationWorksheet(xlsxbasics.MetadataWorksheet):
     def __init__(self, workbook, num_attributes, num_samples, a_regex_handler):
         super().__init__(workbook, num_attributes, num_samples, a_regex_handler, make_sheet=False)
 
-        self.SAMPLE_NAME_HEADER = metadata_package_schema_builder.SAMPLE_NAME_HEADER
+        self.SAMPLE_NAME_HEADER = scripts_server.metadata_wizard_settings.SAMPLE_NAME_HEADER
         self.IS_ABSENT_HEADER = "is_absent"
         self.IS_VALID_ROW_HEADER = "is_valid_row"
         self.ROW_IN_METADATA_HEADER = "row_in_metadata"
@@ -35,8 +35,8 @@ class ValidationWorksheet(xlsx_basics.MetadataWorksheet):
         self.worksheet = self._create_worksheet("validation")
 
     def hide_columns(self, first_col_index, last_col_index=None):
-        first_col_letter = xlsx_basics.get_col_letters(first_col_index)
-        last_col_letter = first_col_letter if last_col_index is None else xlsx_basics.get_col_letters(last_col_index)
+        first_col_letter = xlsxbasics.get_col_letters(first_col_index)
+        last_col_letter = first_col_letter if last_col_index is None else xlsxbasics.get_col_letters(last_col_index)
         self.worksheet.set_column('{0}:{1}'.format(first_col_letter, last_col_letter), None, None, {'hidden': True})
 
 
@@ -58,32 +58,32 @@ def _write_static_validation_grid(val_sheet, schema_dict):
     :type val_sheet: ValidationWorksheet
     """
     curr_grid_col_index = None
-    sorted_keys = xlsx_basics.sort_keys(schema_dict)
+    sorted_keys = xlsxbasics.sort_keys(schema_dict)
     for field_index, field_name in enumerate(sorted_keys):
         field_specs_dict = schema_dict[field_name]
         curr_grid_col_index = val_sheet.first_static_grid_col_index + field_index
 
-        xlsx_basics.write_header(val_sheet, field_name, curr_grid_col_index)
+        xlsxbasics.write_header(val_sheet, field_name, curr_grid_col_index)
 
-        unformatted_formula_str = xlsx_validation_builder.get_formula_constraint(field_specs_dict,
+        unformatted_formula_str = scripts_server.xlsx_validation_builder.get_formula_constraint(field_specs_dict,
                                                                                  val_sheet.regex_handler)
         if unformatted_formula_str is not None:
             curr_metadata_col_index = val_sheet.first_data_col_index + field_index
-            # metadata_cell_range_str = xlsx_basics.format_single_col_range(val_sheet, curr_metadata_col_index,
+            # metadata_cell_range_str = xlsxbasics.format_single_col_range(val_sheet, curr_metadata_col_index,
             #                                                    sheet_name=val_sheet.metadata_sheet_name)
 
-            cell_enumerator = xlsx_basics.loop_through_range(curr_grid_col_index, val_sheet.first_data_row_index,
+            cell_enumerator = xlsxbasics.loop_through_range(curr_grid_col_index, val_sheet.first_data_row_index,
                                                              last_row_index=
                                                              val_sheet.last_allowable_row_for_sample_index)
             for curr_col_index, curr_row_index, curr_cell_range in cell_enumerator:
-                metadata_col_range = xlsx_basics.format_range(curr_metadata_col_index, None,
-                                                        sheet_name=val_sheet.metadata_sheet_name)
-                metadata_cell = xlsx_basics.format_range(curr_metadata_col_index, curr_row_index,
+                metadata_col_range = xlsxbasics.format_range(curr_metadata_col_index, None,
+                                                              sheet_name=val_sheet.metadata_sheet_name)
+                metadata_cell = xlsxbasics.format_range(curr_metadata_col_index, curr_row_index,
                                                          sheet_name=val_sheet.metadata_sheet_name)
                 formatted_formula_str = unformatted_formula_str.format(cell=metadata_cell, col_range=metadata_col_range)
                 val_sheet.worksheet.write_formula(curr_cell_range, formatted_formula_str)
 
-                # xlsx_basics.format_and_write_array_formula(val_sheet, curr_grid_col_index, unformatted_formula_str,
+                # xlsxbasics.format_and_write_array_formula(val_sheet, curr_grid_col_index, unformatted_formula_str,
                 #                                            write_col=True, cell_range_str=metadata_cell_range_str)
 
     # hide all the columns in the static grid.  Use value of curr_grid_col_index left over from last time thru loop.
@@ -142,7 +142,7 @@ def _write_static_helper_ranges(val_sheet, header_and_writer_func_tuple_list,
 
         col_index = get_col_index(curr_header_index) if write_col else val_sheet.helper_rows_header_col_index
         row_index = None if write_col else get_row_index(curr_header_index)
-        xlsx_basics.write_header(val_sheet, curr_header, col_index, row_index)
+        xlsxbasics.write_header(val_sheet, curr_header, col_index, row_index)
 
         curr_range_index = col_index if write_col else row_index
         curr_range_str = curr_write_method(val_sheet, curr_range_index,
@@ -165,9 +165,9 @@ def _write_static_name_col(val_sheet, col_index, index_and_range_tuple_by_header
     """
     # write sample_name column: e.g., =IF(metadata!B2:B11="","",metadata!B2:B11)
     # TODO: someday: +1 is a hack to get it to show name rather than sample id ... think of less fragile way
-    metadata_name_data_range = xlsx_basics.format_single_col_range(val_sheet, val_sheet.sample_id_col_index + 1,
+    metadata_name_data_range = xlsxbasics.format_single_col_range(val_sheet, val_sheet.sample_id_col_index + 1,
                                                                    sheet_name=val_sheet.metadata_sheet_name)
-    return xlsx_basics.format_and_write_array_formula(val_sheet, col_index, "IF({cell}=\"\",\"\",{cell})",
+    return xlsxbasics.format_and_write_array_formula(val_sheet, col_index, "IF({cell}=\"\",\"\",{cell})",
                                                       write_col=True, cell_range_str=metadata_name_data_range)
 
 
@@ -177,7 +177,7 @@ def _write_is_absent_col(val_sheet, col_index, index_and_range_tuple_by_header_d
     :type val_sheet: ValidationWorksheet
     """
     # write is_absent column: e.g., =COUNTBLANK(metadata!B2:AH2)=COLUMNS(metadata!B2:AH2)
-    metadata_single_row_range = xlsx_basics.format_single_data_grid_row_range(val_sheet, "{{curr_row_index}}",
+    metadata_single_row_range = xlsxbasics.format_single_data_grid_row_range(val_sheet, "{{curr_row_index}}",
                                                                               sheet_name=val_sheet.metadata_sheet_name)
     # When {{ and/or }} are put IN to string by a format call, as in first format call here, they aren't collapsed to
     # { and }, so second (empty) format call does that.
@@ -185,7 +185,7 @@ def _write_is_absent_col(val_sheet, col_index, index_and_range_tuple_by_header_d
         metadata_single_row_range=metadata_single_row_range).format()
 
     # Note: when I use the is_absent range later, I need it to be fixed, so making it so now
-    return xlsx_basics.copy_formula_throughout_range(val_sheet.worksheet, is_absent_partial_formula,
+    return xlsxbasics.copy_formula_throughout_range(val_sheet.worksheet, is_absent_partial_formula,
                                                      first_col_index=col_index,
                                                      first_row_index=val_sheet.first_data_row_index,
                                                      last_row_index=val_sheet.last_data_row_index,
@@ -199,8 +199,8 @@ def _write_is_valid_row_col(val_sheet, col_index, index_and_range_tuple_by_heade
     """
     # write is_valid_row column: e.g., =IF(AO2,TRUE,AND(AQ2:BW2))
     is_absent_col_index = index_and_range_tuple_by_header_dict[val_sheet.IS_ABSENT_HEADER][0]
-    is_absent_single_cell_range_str = xlsx_basics.format_range(is_absent_col_index, "{{curr_row_index}}")
-    static_grid_single_row_range_str = xlsx_basics.format_range(val_sheet.first_static_grid_col_index,
+    is_absent_single_cell_range_str = xlsxbasics.format_range(is_absent_col_index, "{{curr_row_index}}")
+    static_grid_single_row_range_str = xlsxbasics.format_range(val_sheet.first_static_grid_col_index,
                                                                 "{{curr_row_index}}",
                                                                 val_sheet.last_static_grid_col_index)
     # When {{ and/or }} are put IN to string by a format call, as in first format call here, they aren't collapsed to
@@ -209,7 +209,7 @@ def _write_is_valid_row_col(val_sheet, col_index, index_and_range_tuple_by_heade
         is_absent_1cell_range_str=is_absent_single_cell_range_str,
         static_grid_1row_range_str=static_grid_single_row_range_str).format()
 
-    return xlsx_basics.copy_formula_throughout_range(val_sheet.worksheet, is_valid_row_partial_formula, col_index,
+    return xlsxbasics.copy_formula_throughout_range(val_sheet.worksheet, is_valid_row_partial_formula, col_index,
                                                      val_sheet.first_data_row_index,
                                                      last_row_index=val_sheet.last_data_row_index)
 
@@ -222,9 +222,9 @@ def _write_row_in_metadata_col(val_sheet, col_index, index_and_range_tuple_by_he
     :type val_sheet: ValidationWorksheet
     """
     # write row_in_metadata column: e.g., =ROW(metadata!A2:A11)
-    metadata_sample_id_range_str = xlsx_basics.format_single_col_range(val_sheet, val_sheet.first_data_col_index,
+    metadata_sample_id_range_str = xlsxbasics.format_single_col_range(val_sheet, val_sheet.first_data_col_index,
                                                                        sheet_name=val_sheet.metadata_sheet_name)
-    return xlsx_basics.format_and_write_array_formula(val_sheet, col_index, "ROW({cell})", write_col=True,
+    return xlsxbasics.format_and_write_array_formula(val_sheet, col_index, "ROW({cell})", write_col=True,
                                                       cell_range_str=metadata_sample_id_range_str)
 
 
@@ -237,7 +237,7 @@ def _write_row_order_weight_col(val_sheet, col_index, index_and_range_tuple_by_h
     row_order_weight_formula_str = _format_order_weight_formula(
         index_and_range_tuple_by_header_dict, val_sheet.IS_VALID_ROW_HEADER,
         val_sheet.ROW_IN_METADATA_HEADER)
-    return xlsx_basics.format_and_write_array_formula(val_sheet, col_index, row_order_weight_formula_str,
+    return xlsxbasics.format_and_write_array_formula(val_sheet, col_index, row_order_weight_formula_str,
                                                       write_col=True)
 
 
@@ -249,7 +249,7 @@ def _write_row_rank_col(val_sheet, col_index, index_and_range_tuple_by_header_di
     # write row_rank column: e.g., =COUNTIF(AK$2:AK$11,"<="&$AK2:AK11)
     row_rank_formula_str = _format_rank_formula(val_sheet, index_and_range_tuple_by_header_dict,
                                                 val_sheet.ROW_ORDER_WEIGHT_HEADER, write_col=True)
-    return xlsx_basics.format_and_write_array_formula(val_sheet, col_index, row_rank_formula_str, write_col=True)
+    return xlsxbasics.format_and_write_array_formula(val_sheet, col_index, row_rank_formula_str, write_col=True)
 
 
 def _write_is_valid_col_row(val_sheet, row_index, index_and_range_tuple_by_header_dict):
@@ -268,7 +268,7 @@ def _write_is_valid_col_row(val_sheet, row_index, index_and_range_tuple_by_heade
                                                       first_row_index=val_sheet.first_data_row_index,
                                                       last_row_index=val_sheet.last_data_row_index)
 
-    return xlsx_basics.copy_formula_throughout_range(val_sheet.worksheet, partial_formula_str,
+    return xlsxbasics.copy_formula_throughout_range(val_sheet.worksheet, partial_formula_str,
                                                      first_col_index=val_sheet.first_static_grid_col_index,
                                                      first_row_index=row_index,
                                                      last_col_index=val_sheet.last_static_grid_col_index,
@@ -284,9 +284,9 @@ def _write_col_in_metadata_row(val_sheet, row_index, index_and_range_tuple_by_he
     :type val_sheet: ValidationWorksheet
     """
     # write col_in_metadata row: =COLUMN(metadata!B2:AH2)
-    metadata_single_row_range = xlsx_basics.format_single_data_grid_row_range(val_sheet, row_index,
+    metadata_single_row_range = xlsxbasics.format_single_data_grid_row_range(val_sheet, row_index,
                                                                               sheet_name=val_sheet.metadata_sheet_name)
-    return xlsx_basics.format_and_write_array_formula(val_sheet, row_index, "COLUMN({cell})", write_col=False,
+    return xlsxbasics.format_and_write_array_formula(val_sheet, row_index, "COLUMN({cell})", write_col=False,
                                                       cell_range_str=metadata_single_row_range)
 
 
@@ -299,7 +299,7 @@ def _write_col_order_weight_row(val_sheet, row_index, index_and_range_tuple_by_h
     col_order_weight_formula_str = _format_order_weight_formula(index_and_range_tuple_by_header_dict,
                                                                 val_sheet.IS_VALID_COL_HEADER,
                                                                 val_sheet.COL_IN_METADATA_HEADER)
-    return xlsx_basics.format_and_write_array_formula(val_sheet, row_index, col_order_weight_formula_str,
+    return xlsxbasics.format_and_write_array_formula(val_sheet, row_index, col_order_weight_formula_str,
                                                       write_col=False)
 
 
@@ -311,7 +311,7 @@ def _write_col_rank_row(val_sheet, row_index, index_and_range_tuple_by_header_di
     # write col_rank row: =COUNTIF($AQ15:$BW15,"<="&AQ$15:BW15)
     col_rank_formula_str = _format_rank_formula(val_sheet, index_and_range_tuple_by_header_dict,
                                                 val_sheet.COL_ORDER_WEIGHT_HEADER, write_col=False)
-    return xlsx_basics.format_and_write_array_formula(val_sheet, row_index, col_rank_formula_str, write_col=False)
+    return xlsxbasics.format_and_write_array_formula(val_sheet, row_index, col_rank_formula_str, write_col=False)
 
 
 def _format_order_weight_formula(index_and_range_tuple_by_name_dict, is_valid_header, position_in_metadata_header):
@@ -339,11 +339,11 @@ def _format_rank_formula(val_sheet, index_and_range_tuple_by_name_dict, order_we
     if write_col:
         range1_first_row_fixed = range1_last_row_fixed = True
         range2_first_col_fixed = True
-        format_func = xlsx_basics.format_single_col_range
+        format_func = xlsxbasics.format_single_col_range
     else:
         range1_first_col_fixed = range1_last_col_fixed = True
         range2_first_row_fixed = True
-        format_func = xlsx_basics.format_single_static_grid_row_range
+        format_func = xlsxbasics.format_single_static_grid_row_range
 
     order_weight_range1_str = format_func(val_sheet, order_weight_range_index, first_col_fixed=range1_first_col_fixed,
                                           first_row_fixed=range1_first_row_fixed,

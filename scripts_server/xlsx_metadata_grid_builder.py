@@ -1,34 +1,34 @@
 import collections
 
-import xlsx_basics
-import xlsx_validation_builder
-import metadata_package_schema_builder
+import scripts_server.metadata_wizard_settings as mws
+import scripts_server.xlsx_basics as xlsxbasics
+import scripts_server.xlsx_validation_builder as xvb
 
 
 def write_metadata_grid(data_worksheet, schema_dict):
     """
 
-    :type data_worksheet: xlsx_basics.MetadataWorksheet
+    :type data_worksheet: xlsxbasics.MetadataWorksheet
     """
 
     _write_sample_id_col(data_worksheet)
 
-    unlocked = xlsx_basics.make_format(data_worksheet.workbook, is_locked=False)
+    unlocked = xlsxbasics.make_format(data_worksheet.workbook, is_locked=False)
     # format as text to prevent autoformatting!
-    unlocked_text = xlsx_basics.make_format(data_worksheet.workbook, {'num_format': '@'}, is_locked=False)
+    unlocked_text = xlsxbasics.make_format(data_worksheet.workbook, {'num_format': '@'}, is_locked=False)
 
-    sorted_keys = xlsx_basics.sort_keys(schema_dict)
+    sorted_keys = xlsxbasics.sort_keys(schema_dict)
     for field_index, field_name in enumerate(sorted_keys):
         field_specs_dict = schema_dict[field_name]
         curr_col_index = field_index + 1  # add one bc sample id is in first col
 
-        xlsx_basics.write_header(data_worksheet, field_name, field_index + 1)
+        xlsxbasics.write_header(data_worksheet, field_name, field_index + 1)
         curr_format = unlocked_text if _determine_if_format_should_be_text(field_specs_dict) else unlocked
         data_worksheet.worksheet.set_column(curr_col_index, curr_col_index, None, curr_format)
 
-        col_range = xlsx_basics.format_range(curr_col_index, None)
-        starting_cell_name = xlsx_basics.format_range(curr_col_index, data_worksheet.first_data_row_index)
-        whole_col_range = xlsx_basics.format_range(curr_col_index, data_worksheet.first_data_row_index,
+        col_range = xlsxbasics.format_range(curr_col_index, None)
+        starting_cell_name = xlsxbasics.format_range(curr_col_index, data_worksheet.first_data_row_index)
+        whole_col_range = xlsxbasics.format_range(curr_col_index, data_worksheet.first_data_row_index,
                                                    last_row_index=data_worksheet.last_allowable_row_for_sample_index)
 
         validation_dict = _get_validation_dict(field_name, field_specs_dict, data_worksheet.regex_handler)
@@ -52,25 +52,25 @@ def write_metadata_grid(data_worksheet, schema_dict):
 
         max_samples_msg = "No more than {0} samples can be entered in this worksheet.  If you need to submit metadata" \
                           " for >{0} samples, please contact CMI directly.".format(data_worksheet.num_allowable_samples)
-        xlsx_basics.write_header(data_worksheet, max_samples_msg, data_worksheet.first_data_col_index,
-                                 data_worksheet.last_allowable_row_for_sample_index+1)
+        xlsxbasics.write_header(data_worksheet, max_samples_msg, data_worksheet.first_data_col_index,
+                                 data_worksheet.last_allowable_row_for_sample_index + 1)
 
 
 def _write_sample_id_col(data_sheet):
     """
 
-    :type data_sheet: xlsx_basics.MetadataWorksheet
+    :type data_sheet: xlsxbasics.MetadataWorksheet
     """
 
     data_sheet.worksheet.set_column(data_sheet.sample_id_col_index, data_sheet.sample_id_col_index, None, None,
                                     data_sheet.hidden_cell_setting)
-    xlsx_basics.write_header(data_sheet, "sample_id", data_sheet.sample_id_col_index)
+    xlsxbasics.write_header(data_sheet, "sample_id", data_sheet.sample_id_col_index)
 
     # +1 bc range is exclusive of last number
     for row_index in range(data_sheet.first_data_row_index, data_sheet.last_allowable_row_for_sample_index + 1):
-        curr_cell = xlsx_basics.format_range(data_sheet.sample_id_col_index, row_index)
+        curr_cell = xlsxbasics.format_range(data_sheet.sample_id_col_index, row_index)
         id_num = row_index - data_sheet.first_data_row_index + 1
-        data_row_range = xlsx_basics.format_single_data_grid_row_range(data_sheet, row_index)
+        data_row_range = xlsxbasics.format_single_data_grid_row_range(data_sheet, row_index)
 
         completed_formula = "=IF(COUNTBLANK({data_row_range})<>COLUMNS({data_row_range}),{id_num},\"\")".format(
             data_row_range=data_row_range, id_num=id_num)
@@ -97,7 +97,7 @@ def _get_validation_dict(field_name, field_schema_dict, a_regex_handler):
 
 def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler):
     result = None
-    allowed_onlies = xlsx_validation_builder.roll_up_allowed_onlies(field_schema_dict, a_regex_handler)
+    allowed_onlies = xvb.roll_up_allowed_onlies(field_schema_dict, a_regex_handler)
 
     if allowed_onlies is not None and len(allowed_onlies) > 0:
         allowed_onlies_as_strs = [str(x) for x in allowed_onlies]
@@ -107,7 +107,7 @@ def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler
         # back and use a formula validation.
         joined_allowed_str = ','.join(allowed_onlies_as_strs)
         if len(joined_allowed_str) <= 255:
-            message = xlsx_validation_builder.get_field_constraint_description(field_schema_dict, a_regex_handler)
+            message = xvb.get_field_constraint_description(field_schema_dict, a_regex_handler)
             # 'The value must be one of the following: {1}'.format(field_name, ", ".join(allowed_onlies_as_strs))
             result = _make_base_validate_dict(field_name, message)
             result.update({
@@ -121,8 +121,8 @@ def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler
 def _make_formula_constraint(field_name, field_schema_dict, a_regex_handler):
     result = None
 
-    formula_string = xlsx_validation_builder.get_formula_constraint(field_schema_dict, a_regex_handler)
-    message = xlsx_validation_builder.get_field_constraint_description(field_schema_dict, a_regex_handler)
+    formula_string = xvb.get_formula_constraint(field_schema_dict, a_regex_handler)
+    message = xvb.get_field_constraint_description(field_schema_dict, a_regex_handler)
 
     if formula_string is not None:
         formula_string = "=("+formula_string + ")"
@@ -168,7 +168,7 @@ def _make_base_validate_dict(field_name, message):
 def _add_default_if_any(data_worksheet, field_specs_dict, col_index):
     """
 
-    :type data_worksheet: xlsx_basics.MetadataWorksheet
+    :type data_worksheet: xlsxbasics.MetadataWorksheet
     """
 
     # So, you might be thinking: why don't we look at the sample_id column rather than the first visible metadata column
@@ -180,11 +180,11 @@ def _add_default_if_any(data_worksheet, field_specs_dict, col_index):
     # serve the need since the first visible column is a sensible place for people to start filling things in and
     # b) Austin says that sample_name, which will be always be required for every sample, is supposed to be the
     # first column always.
-    trigger_col_letter = xlsx_basics.get_col_letters(data_worksheet.first_data_col_index)
+    trigger_col_letter = xlsxbasics.get_col_letters(data_worksheet.first_data_col_index)
 
-    partial_default_formula = xlsx_validation_builder.get_default_formula(field_specs_dict, trigger_col_letter)
+    partial_default_formula = xvb.get_default_formula(field_specs_dict, trigger_col_letter)
     if partial_default_formula is not None:
-        xlsx_basics.copy_formula_throughout_range(data_worksheet.worksheet, partial_default_formula, col_index,
+        xlsxbasics.copy_formula_throughout_range(data_worksheet.worksheet, partial_default_formula, col_index,
                                                   data_worksheet.first_data_row_index,
                                                   last_row_index=data_worksheet.last_allowable_row_for_sample_index,
                                                   cell_format=None)
@@ -194,9 +194,8 @@ def _determine_if_format_should_be_text(field_specs_dict):
     result = True  # by default, assume format should be text
 
     data_type_vals = _apply_func_to_nested_dict_vals(
-        field_specs_dict, lambda x: _find_val_for_key(x, metadata_package_schema_builder.ValidationKeys.type.value))
-    if metadata_package_schema_builder.CerberusDataTypes.Integer.value in data_type_vals or \
-        metadata_package_schema_builder.CerberusDataTypes.Decimal.value in data_type_vals:
+        field_specs_dict, lambda x: _find_val_for_key(x, mws.ValidationKeys.type.value))
+    if mws.CerberusDataTypes.Integer.value in data_type_vals or mws.CerberusDataTypes.Decimal.value in data_type_vals:
         # in these cases, format needs to remain General
         result = False
 

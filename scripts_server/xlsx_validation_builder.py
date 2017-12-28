@@ -1,9 +1,7 @@
 import datetime
 
-import metadata_package_schema_builder
-import schema_builder
-import regex_handler
-    
+import scripts_server.metadata_wizard_settings as mws
+
 text_placeholder = "value"
 cell_placeholder = "{cell}"
 col_range_placeholder = "{col_range}"
@@ -11,8 +9,8 @@ col_range_placeholder = "{col_range}"
 
 def roll_up_allowed_onlies(field_schema_dict, a_regex_handler):
     all_allowed_vals = []
-    if metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
-        anyof_subschemas = field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]
+    if mws.ValidationKeys.anyof.value in field_schema_dict:
+        anyof_subschemas = field_schema_dict[mws.ValidationKeys.anyof.value]
         for curr_anyof_subschema in anyof_subschemas:
             subschema_allowed_vals = roll_up_allowed_onlies(curr_anyof_subschema, a_regex_handler)
             if subschema_allowed_vals is None:
@@ -23,8 +21,8 @@ def roll_up_allowed_onlies(field_schema_dict, a_regex_handler):
         # next subschema
     # end if there are subschemas
 
-    if metadata_package_schema_builder.ValidationKeys.allowed.value in field_schema_dict:
-        curr_allowed_vals = field_schema_dict[metadata_package_schema_builder.ValidationKeys.allowed.value]
+    if mws.ValidationKeys.allowed.value in field_schema_dict:
+        curr_allowed_vals = field_schema_dict[mws.ValidationKeys.allowed.value]
         all_allowed_vals.extend(curr_allowed_vals)
     else:
         curr_formula_constraint = _get_single_level_formula_constraint(field_schema_dict, a_regex_handler)
@@ -59,8 +57,8 @@ def get_default_formula(field_schema_dict, trigger_col_letter, make_text=False):
 
     # default is only filled in if user has put something into a trigger column, to avoid confusing them by having
     # entries in rows that they haven't even thought about yet.
-    if metadata_package_schema_builder.ValidationKeys.default.value in field_schema_dict:
-        default_val = field_schema_dict[metadata_package_schema_builder.ValidationKeys.default.value]
+    if mws.ValidationKeys.default.value in field_schema_dict:
+        default_val = field_schema_dict[mws.ValidationKeys.default.value]
         if make_text:
             result = "The default value is {0}".format(default_val)
         else:
@@ -80,14 +78,14 @@ def get_default_formula(field_schema_dict, trigger_col_letter, make_text=False):
                     if default_val in curr_allowed_vals:
                         break
 
-            if data_type_of_default == metadata_package_schema_builder.CerberusDataTypes.Text.value or \
-                            data_type_of_default == metadata_package_schema_builder.CerberusDataTypes.DateTime.value:
+            if data_type_of_default == mws.CerberusDataTypes.Text.value or \
+                            data_type_of_default == mws.CerberusDataTypes.DateTime.value:
                 default_val = '"{0}"'.format(default_val)
 
             result = '=IF({trigger_col_letter}{{curr_row_index}}="", "", {default_val})'.format(
                 trigger_col_letter=trigger_col_letter, default_val=default_val)
-    elif metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
-        for curr_subschema_dict in field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]:
+    elif mws.ValidationKeys.anyof.value in field_schema_dict:
+        for curr_subschema_dict in field_schema_dict[mws.ValidationKeys.anyof.value]:
             result = get_default_formula(curr_subschema_dict, trigger_col_letter, make_text)
             if result is not None:
                 break
@@ -113,8 +111,8 @@ def get_field_constraint_description(field_schema_dict, a_regex_handler):
     result = _uppercase_first_letter(result)
 
     # prepend the description, if one exists
-    if schema_builder.InputNames.field_desc.value in field_schema_dict:
-        field_desc = field_schema_dict[schema_builder.InputNames.field_desc.value]
+    if mws.InputNames.field_desc.value in field_schema_dict:
+        field_desc = field_schema_dict[mws.InputNames.field_desc.value]
         if field_desc:
             if not field_desc.endswith("."):
                 field_desc += "."
@@ -126,8 +124,8 @@ def get_field_constraint_description(field_schema_dict, a_regex_handler):
 
 def _get_data_types_and_allowed_vals(field_schema_dict):
     result = []
-    if metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
-        anyof_subschemas = field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]
+    if mws.ValidationKeys.anyof.value in field_schema_dict:
+        anyof_subschemas = field_schema_dict[mws.ValidationKeys.anyof.value]
         if len(anyof_subschemas) > 2:
             raise ValueError("Current schema includes more than two anyof options, "
                              "which is not supported: '{0}'".format(field_schema_dict))
@@ -142,7 +140,7 @@ def _get_data_types_and_allowed_vals(field_schema_dict):
 
     data_types_detected = [x[0] for x in result]
     if len(data_types_detected) > 1:
-        if metadata_package_schema_builder.CerberusDataTypes.Text.value not in data_types_detected:
+        if mws.CerberusDataTypes.Text.value not in data_types_detected:
             raise ValueError("Two data types for a field are supported "
                              "only if one of them is text; instead, found {0}'.".format(data_types_detected))
 
@@ -151,9 +149,9 @@ def _get_data_types_and_allowed_vals(field_schema_dict):
 
 def _get_single_level_data_type_and_allowed_vals(field_schema_dict):
     curr_allowed_vals = None
-    if metadata_package_schema_builder.ValidationKeys.allowed.value in field_schema_dict:
-        curr_allowed_vals = field_schema_dict[metadata_package_schema_builder.ValidationKeys.allowed.value]
-    curr_data_type = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
+    if mws.ValidationKeys.allowed.value in field_schema_dict:
+        curr_allowed_vals = field_schema_dict[mws.ValidationKeys.allowed.value]
+    curr_data_type = field_schema_dict[mws.ValidationKeys.type.value]
 
     return curr_data_type, curr_allowed_vals
 
@@ -166,7 +164,7 @@ def _uppercase_first_letter(a_string):
 
 def _make_type_constraint(field_schema_dict, make_text):
     result = None
-    anyof = metadata_package_schema_builder.ValidationKeys.anyof.value
+    anyof = mws.ValidationKeys.anyof.value
     if anyof not in field_schema_dict:
         _, _, result = _parse_field_type(field_schema_dict, make_text)
 
@@ -174,8 +172,8 @@ def _make_type_constraint(field_schema_dict, make_text):
             # Note the check for blank cell value first (can't use ISBLANK because that returns false if there is a
             # formula in the cell even if that formula doesn't yield an actual value).
             blank_is_valid = False
-            if metadata_package_schema_builder.ValidationKeys.empty.value in field_schema_dict:
-                blank_is_valid = field_schema_dict[metadata_package_schema_builder.ValidationKeys.empty.value]
+            if mws.ValidationKeys.empty.value in field_schema_dict:
+                blank_is_valid = field_schema_dict[mws.ValidationKeys.empty.value]
 
             blank_is_valid_str = "TRUE" if blank_is_valid else "FALSE"
             result = 'IF({cell}="",' + "{0},{1})".format(blank_is_valid_str, result)
@@ -192,13 +190,13 @@ def _parse_field_type(field_schema_dict, make_text):
     the_type = None
     type_constraint = None
     python_type = None
-    if metadata_package_schema_builder.ValidationKeys.type.value in field_schema_dict:
-        the_type = field_schema_dict[metadata_package_schema_builder.ValidationKeys.type.value]
+    if mws.ValidationKeys.type.value in field_schema_dict:
+        the_type = field_schema_dict[mws.ValidationKeys.type.value]
 
         if make_text:
             type_constraint = "the value must be a {0}".format(the_type)
         else:
-            if the_type == metadata_package_schema_builder.CerberusDataTypes.Integer.value:
+            if the_type == mws.CerberusDataTypes.Integer.value:
                 # Note that INT(cell) throws a value error (rather than returning anything) if a non-castable string is
                 # entered, which is why the iserror call is necessary.  INT also throws an error if there is no value in the
                 # cell, so the handling for blanks at the end of this function is important
@@ -207,7 +205,7 @@ def _parse_field_type(field_schema_dict, make_text):
                 # integer-based version for use with array formulas
                 # type_constraint = 'IF(ISERROR(INT({cell})),0,INT({cell})={cell})'
                 python_type = int
-            elif the_type == metadata_package_schema_builder.CerberusDataTypes.Decimal.value:
+            elif the_type == mws.CerberusDataTypes.Decimal.value:
                 # have to use VALUE() here because Excel feels the "real" content of a cell that has a formula is the
                 # formula, not whatever the formula evaluates to.  HOWEVER, VALUE() of an empty cell evaluates to ZERO,
                 # which doesn't make sense for our usage, so again the handling for blanks at the end of this function is
@@ -216,13 +214,13 @@ def _parse_field_type(field_schema_dict, make_text):
                 # integer-based version for use with array formulas
                 # type_constraint = "INT(ISNUMBER(VALUE({cell})))"
                 python_type = float
-            elif the_type == metadata_package_schema_builder.CerberusDataTypes.Text.value:
+            elif the_type == mws.CerberusDataTypes.Text.value:
                 # text can be anything
                 type_constraint = "TRUE"  # "ISTEXT({cell})"
                 # integer-based version for use with array formulas
                 # type_constraint = 1
                 python_type = str
-            elif the_type == metadata_package_schema_builder.CerberusDataTypes.DateTime.value:
+            elif the_type == mws.CerberusDataTypes.DateTime.value:
                 type_constraint = "TRUE"  # constraint for date is handled with regular expression
                 # type_constraint = 'NOT(ISERR(DATEVALUE(TEXT({cell}, "YYYY-MM-DD HH:MM:SS"))))'
                 # integer-based version for use with array formulas
@@ -237,8 +235,8 @@ def _parse_field_type(field_schema_dict, make_text):
 def _make_anyof_constraint(field_schema_dict, a_regex_handler, field_data_type=None, make_text=False):
     constraint = None
     subschema_constraints = []
-    if metadata_package_schema_builder.ValidationKeys.anyof.value in field_schema_dict:
-        anyof_subschemas = field_schema_dict[metadata_package_schema_builder.ValidationKeys.anyof.value]
+    if mws.ValidationKeys.anyof.value in field_schema_dict:
+        anyof_subschemas = field_schema_dict[mws.ValidationKeys.anyof.value]
         for curr_anyof_subschema in anyof_subschemas:
             curr_subschema_constraint = get_formula_constraint(curr_anyof_subschema, a_regex_handler, field_data_type,
                                                                make_text=make_text)
@@ -295,7 +293,7 @@ def _get_single_level_formula_constraint(field_schema_dict, a_regex_handler, fie
 
 def _make_unique_constraint(field_schema_dict, make_text):
     constraint = None
-    unique_key = metadata_package_schema_builder.ValidationKeys.unique.value
+    unique_key = mws.ValidationKeys.unique.value
     if unique_key in field_schema_dict:
         if make_text:
             constraint = "must be unique"
@@ -311,7 +309,7 @@ def _make_regex_constraint(field_schema_dict, make_text, a_regex_handler):
     :type a_regex_handler: regex_handler.RegexHandler
     """
     constraint = None
-    regex_key = metadata_package_schema_builder.ValidationKeys.regex.value
+    regex_key = mws.ValidationKeys.regex.value
     if regex_key in field_schema_dict:
         regex_val = field_schema_dict[regex_key]
         constraint = a_regex_handler.get_formula_or_message_for_regex(regex_val, not make_text)
@@ -357,13 +355,13 @@ def _make_list_constraint(schema_key, format_str, is_and, field_schema_dict, fie
 
 def _make_allowed_constraint(field_schema_dict, field_data_type, make_text):
     format_text = "must equal {1}" if make_text else "exact({0},{1})"
-    return _make_list_constraint(metadata_package_schema_builder.ValidationKeys.allowed.value, format_text, False,
+    return _make_list_constraint(mws.ValidationKeys.allowed.value, format_text, False,
                                  field_schema_dict, field_data_type, make_text=make_text)
 
 
 def _make_forbidden_constraint(field_schema_dict, field_data_type, make_text):
     format_text = "must not equal {1}" if make_text else "{0}<>{1}"
-    return _make_list_constraint(metadata_package_schema_builder.ValidationKeys.forbidden.value, format_text, True,
+    return _make_list_constraint(mws.ValidationKeys.forbidden.value, format_text, True,
                                  field_schema_dict, field_data_type, make_text=make_text)
 
 
@@ -476,20 +474,20 @@ def _get_guaranteed_pass_value(threshold_val, increase):
 
 
 def _make_lte_max_constraint(field_schema_dict, field_type, make_text, a_regex_handler):
-    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_inclusive.value,
+    return _make_comparison_constraint(mws.ValidationKeys.max_inclusive.value,
                                        "<=", field_schema_dict, field_type, make_text)
 
 
 def _make_gte_min_constraint(field_schema_dict, field_type, make_text, a_regex_handler):
-    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.min_inclusive.value,
+    return _make_comparison_constraint(mws.ValidationKeys.min_inclusive.value,
                                        ">=", field_schema_dict, field_type, make_text)
 
 
 def _make_lt_max_constraint(field_schema_dict, field_type, make_text, a_regex_handler):
-    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.max_exclusive.value,
+    return _make_comparison_constraint(mws.ValidationKeys.max_exclusive.value,
                                        "<", field_schema_dict, field_type, make_text)
 
 
 def _make_gt_min_constraint(field_schema_dict, field_type, make_text, a_regex_handler):
-    return _make_comparison_constraint(metadata_package_schema_builder.ValidationKeys.min_exclusive.value,
+    return _make_comparison_constraint(mws.ValidationKeys.min_exclusive.value,
                                        ">", field_schema_dict, field_type, make_text)
