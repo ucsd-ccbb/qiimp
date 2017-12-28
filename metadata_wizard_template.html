@@ -182,7 +182,9 @@
             NO_PACKAGE_WARNING_DIV: "no_package_warning_div",
             FIELD_DETAILS_DIV: "field_details_div",
             PACKAGE_DETAILS_DIV: "package_details_div",
-            EXISTING_FIELDS_DIV: "existing_fields"
+            EXISTING_FIELDS_DIV: "existing_fields",
+            ENV_FIELD: "{{schema_builder.InputNames.environment.value}}",
+            SAMPLE_TYPE_FIELD: "{{schema_builder.InputNames.sample_type.value}}"
         };
 
         g_transferred_variables.SHOWN_ELEMENTS_BY_FIELD_TYPE = {
@@ -397,6 +399,8 @@
                                 </div>
                                 <div class="row" id="select_package_button_div">
                                     <div class="col-sm-12">
+                                        <input type = "hidden" id="env" name="env" value="" />
+                                        <input type = "hidden" id="sample_type" name="sample_type" value="" />
                                         <button name="select_package_button" id="select_package_button" type="button"
                                                 onclick="onSelectPackage();validateFormIfSubmitted();" disabled>Select Package</button>
                                     </div>

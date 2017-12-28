@@ -16,7 +16,6 @@ function TranferredVariables(){
 }
 
 function Fields(){
-    this.package_info = null;
     this._reserved_words = [];
     this._package_fields = {};
     this._existing_field_names = {};

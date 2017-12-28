@@ -5,7 +5,8 @@ function onModeChange(element){
     var div_to_display_basename = selected_mode.replace("metadata_mode_","");
     var div_to_display = div_to_display_basename + "_div";
 
-    if (g_fields_state.package_info !== null){
+    var existing_package_info = _getEnvAndSampleTypeFromHiddenFields();
+    if (existing_package_info !== null){
         var confirm_msg = "Changing the package selection method will remove all package fields and any custom fields. Go ahead?";
         if (!confirm(confirm_msg)){
             return;
@@ -53,7 +54,8 @@ function onSelectPackage(){
     }
 
     // If the user re-chose the SAME package, do nothing
-    if (g_fields_state.package_info === package_info){
+    var existing_package_info = _getEnvAndSampleTypeFromHiddenFields();
+    if (existing_package_info === package_info){
         return;
     }
 
@@ -107,8 +109,10 @@ function determinePackageInfo(){
 }
 
 function makePackageInfoDict(env, sample_type){
-    // TODO: someday: explicitly share keys between front and back end
-    return {"env":env, "sample_type": sample_type};
+    var result = {};
+    result[g_transferred_variables.ELEMENT_IDENTIFIERS.ENV_FIELD] = env;
+    result[g_transferred_variables.ELEMENT_IDENTIFIERS.SAMPLE_TYPE_FIELD] = sample_type;
+    return result;
 }
 
 function resetFieldsAndDivs(package_info){
@@ -121,19 +125,41 @@ function resetFieldsAndDivs(package_info){
     $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAMES_SELECT)).empty();
     $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_DETAILS_DIV)).empty();
     $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.PACKAGE_DETAILS_DIV)).empty();
+
     // TODO: someday: remove hardcoding of div name
     $("#files").empty();
 
     // Reset variables tracking field information
     g_fields_state = new Fields();
-    g_fields_state.package_info = package_info;
+    _setEnvAndSampleTypeToHiddenFields(package_info)
 }
 
+function _getEnvAndSampleTypeFromHiddenFields(){
+    var result = null;
+    var env_val = $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.ENV_FIELD)).val();
+    var sample_type_val = $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.SAMPLE_TYPE_FIELD)).val();
+    if ((env_val !== "") || (sample_type_val !== "")) {
+        result = makePackageInfoDict(env_val, sample_type_val)
+    }
+    return result;
+}
+
+function _setEnvAndSampleTypeToHiddenFields(env_and_sample_type_dict){
+    var env_val = "";
+    var sample_type_val = "";
+    if (env_and_sample_type_dict !== null){
+        env_val = env_and_sample_type_dict[g_transferred_variables.ELEMENT_IDENTIFIERS.ENV_FIELD];
+        sample_type_val = env_and_sample_type_dict[g_transferred_variables.ELEMENT_IDENTIFIERS.SAMPLE_TYPE_FIELD];
+    }
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.ENV_FIELD)).val(env_val);
+    $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.SAMPLE_TYPE_FIELD)).val(sample_type_val);
+}
 
 function ajax_err(request, error) {
     console.log(request);
     console.log(error);
 }
+
 function ajax_ok(data) {
     // Set the reserved words
     g_fields_state.setReservedWords(data["reserved_words"]);

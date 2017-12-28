@@ -46,6 +46,14 @@ def _parse_form_value(curr_value, retain_list=False):
     return revised_values
 
 
+def _get_package_schema_by_env_and_sample_type(wiz_state, arguments_obj):
+    env_value = _parse_form_value(arguments_obj[schema_builder.InputNames.environment.value])
+    sampletype_value = _parse_form_value(arguments_obj[schema_builder.InputNames.sample_type.value])
+    result = metadata_package_schema_builder.load_schemas_for_package_key(
+        env_value, sampletype_value, wiz_state.parent_stack_by_env_name, wiz_state.env_schemas)
+    return result
+
+
 class MetadataWizardState(object):
     @staticmethod
     def _get_config_values(is_deployed):
@@ -85,10 +93,7 @@ class MetadataWizardState(object):
         self.env_schemas = None
         self.default_locales_list = None
         self.reserved_words_list = None
-
-        self.package_schema = None
         self.merge_info_by_merge_id = {}
-
 
     def set_up(self, is_deployed):
         self.packages_dir_path = os.path.join(self.local_dir, "packages")
@@ -119,20 +124,16 @@ class PackageHandler(tornado.web.RequestHandler):
 
     def post(self, *args):
         wiz_state = self.application.settings["wizard_state"]
-
-        env_value = _parse_form_value(self.request.arguments["env"])
-        sampletype_value = _parse_form_value(self.request.arguments["sample_type"])
-        wiz_state.package_schema = metadata_package_schema_builder.load_schemas_for_package_key(
-            env_value, sampletype_value, wiz_state.parent_stack_by_env_name, wiz_state.env_schemas)
+        package_schema = _get_package_schema_by_env_and_sample_type(wiz_state, self.request.arguments)
 
         field_descriptions = []
-        for curr_field_name, curr_field_dict in wiz_state.package_schema.items():
+        for curr_field_name, curr_field_dict in package_schema.items():
             curr_desc = xlsx_validation_builder.get_field_constraint_description(curr_field_dict, wiz_state.regex_handler)
             field_descriptions.append({"name": curr_field_name,
                                        "description": curr_desc})
 
         self.write(json.dumps(
-            {"field_names": sorted(wiz_state.package_schema.keys()),
+            {"field_names": sorted(package_schema.keys()),
              "reserved_words": wiz_state.reserved_words_list,
              "field_descriptions": field_descriptions}))
         self.finish()
@@ -215,7 +216,7 @@ class MergeHandler(tornado.web.RequestHandler):
             # start by getting all the files that were uploaded
             file_info_dicts_list = wiz_state.merge_info_by_merge_id[merge_id]
 
-            # TODO: replace below with Austin's code to merge the files
+            # TODO: insert Austin's code to merge the files, once provided
 
             # delete the info/files stored in wiz_state.merge_info_by_merge_id under this merge id, since merge is done
             wiz_state.merge_info_by_merge_id.pop(merge_id)
@@ -249,6 +250,9 @@ class MainHandler(tornado.web.RequestHandler):
         wiz_state = self.application.settings["wizard_state"]
 
         try:
+            # first get the package schema info
+            package_schema = _get_package_schema_by_env_and_sample_type(wiz_state, self.request.arguments)
+
             study_name = None
             study_default_locale = None
             dict_of_field_schemas_by_index = defaultdict(dict)
@@ -296,7 +300,7 @@ class MainHandler(tornado.web.RequestHandler):
                 for field_name, curr_validation_schema in field_name_and_schema_tuples_list:
                     dict_of_validation_schema_by_index[field_name] = curr_validation_schema
 
-            mutable_package_schema = copy.deepcopy(wiz_state.package_schema)
+            mutable_package_schema = copy.deepcopy(package_schema)
             mutable_package_schema = self._update_package_with_locale_defaults(mutable_package_schema,
                                                                                study_default_locale)
             mutable_package_schema.update(dict_of_validation_schema_by_index)

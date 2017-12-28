@@ -32,6 +32,8 @@ class InputNames(Enum):
     maximum_value = "maximum_value"
     units = "units"
     is_phi = "is_phi"
+    environment = "env"
+    sample_type = "sample_type"
 
 
 class FieldTypes(Enum):
