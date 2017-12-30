@@ -101,6 +101,22 @@ def _mock_a_units_field_if_relevant(curr_field_from_form):
     return result
 
 
+# So ... the schema indicates whether a field is phi, but Qiita can't actually read the schema,
+# so the customer requests that if a field is marked as phi, then the suffix "_phi" is appended to
+# the end of the field name.  I kind of hate rewriting the customer's inputs this way, so hopefully
+# Qiita will be able to read the schema soon.  NB that I COULD change the field names when the schema
+# is first generated, but I went with rewriting them afterwards on request so that I can retain a "clean"
+# copy of the schema that has the original field names for output on the schema worksheet.
+def rewrite_field_names_with_phi_if_relevant(schema_dict):
+    result = {}
+    for curr_field_name, curr_field_schema in schema_dict.items():
+        new_field_name = curr_field_name
+        if curr_field_schema[mws.InputNames.is_phi.value]:
+            new_field_name = new_field_name + mws.PHI_SUFFIX
+        result[new_field_name] = curr_field_schema
+    return result
+
+
 def _build_top_level_schema_dict(curr_field_from_form):
     top_level_schema = {mws.ValidationKeys.empty.value: False,
                         mws.ValidationKeys.required.value: True,

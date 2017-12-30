@@ -153,6 +153,7 @@
         g_transferred_variables.TEMPLATE_SUFFIX = "{{mws.TEMPLATE_SUFFIX}}";
         g_transferred_variables.FIELD_NAME_REGEX = /{{ mws.FIELD_NAME_REGEX }}/;
         g_transferred_variables.SAMPLETYPES_BY_ENV = JSON.parse('{% raw sampletypes_by_env_json %}');
+        g_transferred_variables.RESERVED_SUFFIXES = ["{{mws.UNITS_SUFFIX}}", "{{mws.PHI_SUFFIX}}"];
 
         // Note that these are to be the bases (without template suffix or separator)
         g_transferred_variables.ELEMENT_IDENTIFIERS = {

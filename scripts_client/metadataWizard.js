@@ -17,6 +17,9 @@ function TranferredVariables(){
 
 function Fields(){
     this._reserved_words = [];
+    // NB: by setting the suffixes like this, I am assuming that the Fields constructor won't be
+    // called until after the info is loaded from the back-end.  If that changes, this needs to change!
+    this._reserved_suffixes = g_transferred_variables.RESERVED_SUFFIXES;
     this._package_fields = {};
     this._existing_field_names = {};
     this._uploaded_file_names = [];
@@ -82,6 +85,10 @@ Fields.prototype.setReservedWords = function(raw_reserved_words_list){
 
 Fields.prototype.getReservedWords = function(){
     return this._reserved_words;
+};
+
+Fields.prototype.getReservedSuffixes = function(){
+    return this._reserved_suffixes;
 };
 
 // Dynamically generate HTML specifying input elements for a new field

@@ -143,6 +143,7 @@ function getFieldNameValueByIndex(field_index) {
 function validatePutativeFieldName(putative_field_name){
     var error_msgs = [];
     error_msgs.push(validateNameIsNotReserved(putative_field_name));
+    error_msgs.push(validateNameDoesNotHaveReservedSuffix(putative_field_name));
     error_msgs.push(validateNameMatchesPattern(putative_field_name));
     error_msgs.push(validateNameIsUnique(putative_field_name));
     // (filter - JS 1.6 and above)
@@ -155,6 +156,20 @@ function validateNameIsNotReserved(putative_field_name) {
     // if the value in the name element appears in the list of reserved words, then it is invalid
     if (g_fields_state.getReservedWords().indexOf(putative_field_name) > -1) {
         result = "'" + putative_field_name + "' is not an allowed field name because it is a reserved word.";
+    }
+    return result;
+}
+
+function validateNameDoesNotHaveReservedSuffix(putative_field_name) {
+    var result = null;
+    // if the value in the name element ends with one of the reserved suffixes, then it is invalid
+    var reserved_suffixes_list = g_fields_state.getReservedSuffixes();
+    for (var i = 0; i < reserved_suffixes_list.length; i++){
+        var curr_reserved_suffix = reserved_suffixes_list[i];
+        if (putative_field_name.endsWith(curr_reserved_suffix)) {
+            result = "'" + putative_field_name + "' is not an allowed field name because it ends with the reserved suffix '" + curr_reserved_suffix + "'.";
+            break;
+        }
     }
     return result;
 }

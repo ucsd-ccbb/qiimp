@@ -4,6 +4,7 @@ import unicodedata
 import xlsxwriter
 import yaml
 
+import scripts_server.schema_builder
 import scripts_server.xlsx_basics as xlsxbasics
 import scripts_server.xlsx_metadata_grid_builder
 import scripts_server.xlsx_validation_builder
@@ -31,15 +32,16 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
                                                'strings_to_urls': True})
 
     # write metadata worksheet
+    phi_renamed_schema_dict = scripts_server.schema_builder.rewrite_field_names_with_phi_if_relevant(schema_dict)
     metadata_worksheet = xlsxbasics.MetadataWorksheet(workbook, num_columns, num_samples, a_regex_handler,
                                                        num_allowable_samples=num_allowable_samples)
-    scripts_server.xlsx_metadata_grid_builder.write_metadata_grid(metadata_worksheet, schema_dict)
+    scripts_server.xlsx_metadata_grid_builder.write_metadata_grid(metadata_worksheet, phi_renamed_schema_dict)
 
     # write validation worksheet
     validation_worksheet = scripts_server.xlsx_static_grid_builder.ValidationWorksheet(workbook, num_columns, num_samples,
                                                                         a_regex_handler)
     index_and_range_str_tuple_by_header_dict = scripts_server.xlsx_static_grid_builder.write_static_validation_grid_and_helpers(
-        validation_worksheet, schema_dict)
+        validation_worksheet, phi_renamed_schema_dict)
     scripts_server.xlsx_dynamic_grid_builder.write_dynamic_validation_grid(
         validation_worksheet, index_and_range_str_tuple_by_header_dict)
 
@@ -47,15 +49,15 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
     descriptions_worksheet = DescriptionWorksheet(workbook, num_columns, num_samples, a_regex_handler)
     xlsxbasics.write_header(descriptions_worksheet, "field name", 0)
     xlsxbasics.write_header(descriptions_worksheet, "field description", 1)
-    sorted_keys = xlsxbasics.sort_keys(schema_dict)
+    sorted_keys = xlsxbasics.sort_keys(phi_renamed_schema_dict)
     for field_index, field_name in enumerate(sorted_keys):
         row_num = field_index + 1 + 1  # plus 1 to move past name row, and plus 1 again because row nums are 1-based
-        field_specs_dict = schema_dict[field_name]
+        field_specs_dict = phi_renamed_schema_dict[field_name]
         message = scripts_server.xlsx_validation_builder.get_field_constraint_description(field_specs_dict, a_regex_handler)
         descriptions_worksheet.worksheet.write("A{0}".format(row_num), field_name, metadata_worksheet.bold_format)
         descriptions_worksheet.worksheet.write("B{0}".format(row_num), message)
 
-    # write schema worksheet
+    # write schema worksheet--note, don't use the phi_renamed_schema_dict but the original schema_dict
     schema_worksheet = xlsxbasics.create_worksheet(workbook, "metadata_schema")
     schema_worksheet.write_string("A1", yaml.dump(schema_dict, default_flow_style=False))
 

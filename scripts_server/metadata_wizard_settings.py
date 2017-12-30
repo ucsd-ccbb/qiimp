@@ -10,6 +10,7 @@ SEPARATOR = "_"
 TEMPLATE_SUFFIX = SEPARATOR + "template"
 # TODO: someday: move this into the config
 UNITS_SUFFIX = SEPARATOR + "units"
+PHI_SUFFIX = SEPARATOR + "phi"
 # All field names should be lowercase and contain only alphanumeric and underscores.
 # No field name can start with a number
 FIELD_NAME_REGEX = "^[a-z][a-z0-9_]*$"
