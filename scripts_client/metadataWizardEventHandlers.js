@@ -142,9 +142,16 @@ function removeField(event){
     $(curr_field_details_id_selector).remove();
 
     // remove field from field_names selectbox
-    var select_option_id_string = g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAMES_SELECT + " option[value='" + field_index + "']";
+    var select_options_string = g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_NAMES_SELECT + " option";
+    var select_option_id_string = select_options_string + "[value='" + field_index + "']";
     var select_option_id_selector = getIdSelectorFromId(select_option_id_string);
     $(select_option_id_selector).remove();
+
+    // if there are no custom fields left, then hide existing fields details div
+    var select_options_id_selector = getIdSelectorFromId(select_options_string);
+    if ($(select_options_id_selector).length === 0) {
+        $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.EXISTING_FIELDS_DIV)).addClass('hidden');
+    }
 
     // remove field from list of existing field names
     g_fields_state.removeExistingField(field_name);
