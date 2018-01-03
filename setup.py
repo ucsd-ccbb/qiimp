@@ -80,6 +80,29 @@ setup(
         'test': ['coverage'],
     },
 
+    package_data={
+        'metadata_wizard': [
+            'output/*.*',
+            'client_scripts/*.*',
+            'settings/*.*',
+            'settings/packages/*.*',
+            'templates/*.*',
+            # man, I *hate* that there's no way to do recursive directory inclusion with package_data!
+            'third-party/*.*',
+            'third-party/jQuery-File-Upload-9.19.2/cors/*.*',
+            'third-party/jQuery-File-Upload-9.19.2/css/*.*',
+            'third-party/jQuery-File-Upload-9.19.2/img/*.*',
+            'third-party/jQuery-File-Upload-9.19.2/js/*.*',
+            'third-party/jQuery-File-Upload-9.19.2/js/cors/*.*',
+            'third-party/jQuery-File-Upload-9.19.2/js/vendor/*.*',
+            # I am leaving out the server and test sub-folders on the theory I don't need them for deployment ...
+            'third-party/jquery_validation/*.*',
+            'third-party/microbiome/*.*',
+            'third-party/microbiome/css/*.*',
+            'third-party/microbiome/img/*.*'
+        ]
+    },
+
     # I'm transferring package data with the install, which I then need to relocate.
     # This is harder to do if the data is zipped up in an egg, so no zipping!
     zip_safe=False,
