@@ -1,0 +1,1 @@
+This file is not necessary for the functioning of the application; its only purpose is to ensure that deployment from GitHub creates the necessary outputs folder, which would not be the case if no file checked into github were in the folder.
