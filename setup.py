@@ -95,4 +95,13 @@ setup(
     # I'm transferring package data with the install, which I then need to relocate.
     # This is harder to do if the data is zipped up in an egg, so no zipping!
     zip_safe=False,
+
+    # To provide executable scripts, use entry points in preference to the
+    # "scripts" keyword. Entry points provide cross-platform support and allow
+    # pip to create the appropriate form of executable for the target platform.
+    entry_points={
+        'console_scripts': [
+            'start_metadata_wizard_server=scripts_server.metadata_wizard_server:main'
+        ]
+    }
 )
