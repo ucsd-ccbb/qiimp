@@ -301,7 +301,7 @@ class DownloadHandler(tornado.web.RequestHandler):
         pass
 
 
-if __name__ == "__main__":
+def main():
     wizard_state = mws.MetadataWizardState()
     is_deployed = _parse_cmd_line_args()
     wizard_state.set_up(is_deployed)
@@ -321,3 +321,7 @@ if __name__ == "__main__":
 
     application.listen(wizard_state.listen_port)
     tornado.ioloop.IOLoop.instance().start()
+
+
+if __name__ == "__main__":
+    main()
