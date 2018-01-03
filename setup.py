@@ -81,15 +81,15 @@ setup(
     },
 
     package_data={
-        'dual_crispr': ['settings/config.txt',
-                        'settings/default_locales.yaml',
-                        'settings/environments.yaml',
-                        'settings/regex_definitions.yaml',
-                        'settings/reserved_words.yaml',
-                        'settings/sampletypes.yaml',
-                        'settings/readme_template.txt',
-                        'settings/install.sh',
-                        'settings/packages/*.*']
+        'scripts_server': [
+            'README.md',
+            'output/*.*',
+            'scripts_client/*.*',
+            'settings/*.*',
+            'settings/packages/*.*',
+            'templates/*.*',
+            'third-party/*.*'
+        ]
     },
 
     # I'm transferring package data with the install, which I then need to relocate.
