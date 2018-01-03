@@ -163,12 +163,11 @@ class MetadataWizardState(object):
         self.merge_info_by_merge_id = {}
 
     def set_up(self, is_deployed):
-        # see https://stackoverflow.com/a/21005918
-        self.install_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
+        self.install_dir = os.path.dirname(__file__)
         self.settings_dir_path = os.path.join(self.install_dir, "settings")
         self.packages_dir_path = os.path.join(self.settings_dir_path, "packages")
         self.templates_dir_path = os.path.join(self.install_dir, "templates")
-        self.client_scripts_dir_path = os.path.join(self.install_dir, "scripts_client")
+        self.client_scripts_dir_path = os.path.join(self.install_dir, "client_scripts")
 
 
         self._get_config_values(is_deployed)

@@ -1,13 +1,13 @@
-import scripts_server.metadata_wizard_settings
-import scripts_server.xlsx_basics as xlsxbasics
-import scripts_server.xlsx_validation_builder
+import metadata_wizard.metadata_wizard_settings
+import metadata_wizard.xlsx_basics as xlsxbasics
+import metadata_wizard.xlsx_validation_builder
 
 
 class ValidationWorksheet(xlsxbasics.MetadataWorksheet):
     def __init__(self, workbook, num_attributes, num_samples, a_regex_handler):
         super().__init__(workbook, num_attributes, num_samples, a_regex_handler, make_sheet=False)
 
-        self.SAMPLE_NAME_HEADER = scripts_server.metadata_wizard_settings.SAMPLE_NAME_HEADER
+        self.SAMPLE_NAME_HEADER = metadata_wizard.metadata_wizard_settings.SAMPLE_NAME_HEADER
         self.IS_ABSENT_HEADER = "is_absent"
         self.IS_VALID_ROW_HEADER = "is_valid_row"
         self.ROW_IN_METADATA_HEADER = "row_in_metadata"
@@ -65,8 +65,8 @@ def _write_static_validation_grid(val_sheet, schema_dict):
 
         xlsxbasics.write_header(val_sheet, field_name, curr_grid_col_index)
 
-        unformatted_formula_str = scripts_server.xlsx_validation_builder.get_formula_constraint(field_specs_dict,
-                                                                                 val_sheet.regex_handler)
+        unformatted_formula_str = metadata_wizard.xlsx_validation_builder.get_formula_constraint(field_specs_dict,
+                                                                                                 val_sheet.regex_handler)
         if unformatted_formula_str is not None:
             curr_metadata_col_index = val_sheet.first_data_col_index + field_index
             # metadata_cell_range_str = xlsxbasics.format_single_col_range(val_sheet, curr_metadata_col_index,

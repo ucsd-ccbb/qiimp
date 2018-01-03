@@ -12,11 +12,11 @@ import tornado.ioloop  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.web  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.websocket
 
-import scripts_server.metadata_wizard_settings as mws
-import scripts_server.metadata_package_schema_builder as mpsb
-import scripts_server.schema_builder
-import scripts_server.xlsx_builder
-import scripts_server.xlsx_validation_builder
+import metadata_wizard.metadata_wizard_settings as mws
+import metadata_wizard.metadata_package_schema_builder as mpsb
+import metadata_wizard.schema_builder
+import metadata_wizard.xlsx_builder
+import metadata_wizard.xlsx_validation_builder
 
 _allowed_min_browser_versions = {
     'chrome': 49,
@@ -61,7 +61,7 @@ class PackageHandler(tornado.web.RequestHandler):
 
         field_descriptions = []
         for curr_field_name, curr_field_dict in package_schema.items():
-            curr_desc = scripts_server.xlsx_validation_builder.get_field_constraint_description(curr_field_dict, wiz_state.regex_handler)
+            curr_desc = metadata_wizard.xlsx_validation_builder.get_field_constraint_description(curr_field_dict, wiz_state.regex_handler)
             field_descriptions.append({"name": curr_field_name,
                                        "description": curr_desc})
 
@@ -229,7 +229,7 @@ class MainHandler(tornado.web.RequestHandler):
                 # The only time when multiple fields come back is when the input is a continuous field, in which
                 # case the units for that field are split out and put in *another* field that always has the same
                 # value (ugh, but this is the customer requirement).
-                field_name_and_schema_tuples_list = scripts_server.schema_builder.get_validation_schemas(curr_schema, wiz_state.regex_handler)
+                field_name_and_schema_tuples_list = metadata_wizard.schema_builder.get_validation_schemas(curr_schema, wiz_state.regex_handler)
                 for field_name, curr_validation_schema in field_name_and_schema_tuples_list:
                     dict_of_validation_schema_by_index[field_name] = curr_validation_schema
 
@@ -238,9 +238,9 @@ class MainHandler(tornado.web.RequestHandler):
                                                                                study_default_locale)
             mutable_package_schema.update(dict_of_validation_schema_by_index)
 
-            file_name = scripts_server.xlsx_builder.write_workbook(study_name, mutable_package_schema,
-                                                                   dict_of_field_schemas_by_index,
-                                                                   wiz_state)
+            file_name = metadata_wizard.xlsx_builder.write_workbook(study_name, mutable_package_schema,
+                                                                    dict_of_field_schemas_by_index,
+                                                                    wiz_state)
 
             self.redirect("/download/{0}".format(file_name))
         except Exception as e:

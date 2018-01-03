@@ -1,8 +1,8 @@
 import collections
 
-import scripts_server.metadata_wizard_settings as mws
-import scripts_server.xlsx_basics as xlsxbasics
-import scripts_server.xlsx_validation_builder as xvb
+import metadata_wizard.metadata_wizard_settings as mws
+import metadata_wizard.xlsx_basics as xlsxbasics
+import metadata_wizard.xlsx_validation_builder as xvb
 
 
 def write_metadata_grid(data_worksheet, schema_dict):

@@ -1,7 +1,7 @@
 import os
 import warnings
 
-import scripts_server.metadata_wizard_settings as mws
+import metadata_wizard.metadata_wizard_settings as mws
 
 # NOTE: The xlsx_validation_builder.py module's handling of allowed values requires that the
 # data type of a schema NOT be defined outside of an anyof, EVEN IF the type of all of the anyof options are the same.

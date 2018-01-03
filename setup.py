@@ -81,10 +81,9 @@ setup(
     },
 
     package_data={
-        'scripts_server': [
-            'README.md',
+        'metadata_wizard': [
             'output/*.*',
-            'scripts_client/*.*',
+            'client_scripts/*.*',
             'settings/*.*',
             'settings/packages/*.*',
             'templates/*.*',
@@ -101,7 +100,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'start_metadata_wizard_server=scripts_server.metadata_wizard_server:main'
+            'start_metadata_wizard_server=metadata_wizard.metadata_wizard_server:main'
         ]
     }
 )

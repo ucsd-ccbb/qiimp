@@ -1,6 +1,6 @@
 import datetime
 
-import scripts_server.metadata_wizard_settings as mws
+import metadata_wizard.metadata_wizard_settings as mws
 
 text_placeholder = "value"
 cell_placeholder = "{cell}"
