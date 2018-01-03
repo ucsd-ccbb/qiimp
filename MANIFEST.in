@@ -1,2 +1,2 @@
 include README.md
-recursive-include metadata_wizard *
+recursive-include metadata_wizard/client_scripts *
