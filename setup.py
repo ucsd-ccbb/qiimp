@@ -80,17 +80,6 @@ setup(
         'test': ['coverage'],
     },
 
-    package_data={
-        'metadata_wizard': [
-            'output/*.*',
-            'client_scripts/*.*',
-            'settings/*.*',
-            'settings/packages/*.*',
-            'templates/*.*',
-            'third-party/*.*'
-        ]
-    },
-
     # I'm transferring package data with the install, which I then need to relocate.
     # This is harder to do if the data is zipped up in an egg, so no zipping!
     zip_safe=False,
