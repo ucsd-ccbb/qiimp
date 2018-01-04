@@ -184,7 +184,8 @@
             PACKAGE_DETAILS_DIV: "package_details_div",
             EXISTING_FIELDS_DIV: "existing_fields",
             ENV_FIELD: "{{mws.InputNames.environment.value}}",
-            SAMPLE_TYPE_FIELD: "{{mws.InputNames.sample_type.value}}"
+            SAMPLE_TYPE_FIELD: "{{mws.InputNames.sample_type.value}}",
+            UNITS_DIV: "units_div"
         };
 
         g_transferred_variables.SHOWN_ELEMENTS_BY_FIELD_TYPE = {
@@ -264,6 +265,12 @@
                 default:
                     alert("Unexpected data type value: '" + data_type_value + "'")
             }
+        }
+
+        function showHideUnits(field_index, data_type_value) {
+            var show_units = !(data_type_value === "{{mws.CerberusDataTypes.DateTime.value}}");
+            var units_div_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.UNITS_DIV, field_index);
+            showEnableOrHideDisable(units_div_id_selector, show_units);
         }
 
         function enableDisableDefaultSelects(field_index, curr_val){
@@ -552,7 +559,7 @@
                                                             </div>
                                                         </div>
                                                         <div class="Cell right-cell detail-cell">
-                                                            <div class="Row">
+                                                            <div class="Row hidden" id="units_div{{mws.TEMPLATE_SUFFIX}}">
                                                                 <div class = "Cell interior-cell">
                                                                     <label id="label_{{mws.InputNames.units.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.units.value}}{{mws.TEMPLATE_SUFFIX}}">Units:</label>
                                                                 </div>

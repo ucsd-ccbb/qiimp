@@ -115,7 +115,7 @@ function updateDefaultsWithBooleanVals(event){
 }
 
 // Reset type validation on minimum, maximum, and continuous default when data type select is changed
-function updateTypeValidations(event){
+function updateTypeValidationsAndUnitsDisplay(event){
     // find out what data type was selected
     var field_index = event.data.field_index;
     var data_type_value = $(event.target).val();
@@ -123,6 +123,9 @@ function updateTypeValidations(event){
     updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, field_index, data_type_value);
     updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, field_index, data_type_value);
     updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CONTINUOUS, field_index, data_type_value);
+
+    // also show or hide units div based on whether or not type is datetime
+    showHideUnits(field_index, data_type_value);
 }
 
 function removeField(event){
