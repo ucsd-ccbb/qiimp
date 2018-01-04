@@ -1,6 +1,17 @@
 # Note that this is a list rather than a dictionary because I anticipate wanting
 # to explicitly control the order in which these are visible to the user.
-- {beer: Beer}
-- {cheese: Cheese}
-- {fresh_water: Fresh Water}
+- {skin: Skin}
+- {saliva: Saliva}
+- {stool: Stool}
+- {colon_mucosa: Colon Mucosa}
+- {colon_content: Colon Content}
+- {sputum: Sputum}
+- {urine: Urine}
+- {blood: Blood}
+- {serum: Serum}
+- {tongue: Tongue}
+- {vaginal_mucus: Vaginal Mucus}
+- {lung_tissue: Lung Tissue}
+- {ear_wax: Ear Wax}
+- {nasal_mucus: Nasal Mucus}
 - {other: Other}

@@ -6,9 +6,9 @@
     parent: null
 - ebi_submittable:
     display_name: Other EBI-Submittable Environment
-    filename: null
+    filename: ebi-submittable.xlsx
     filename_by_sampletypes_list:
-    - {other: null}
+    - {other: base-other.xlsx}
     parent: base
 - free-living:
     display_name: null
@@ -18,13 +18,40 @@
 - other_env:
     display_name: Other Free-Living Environment
     filename: null
-    filename_by_sampletypes_list:
-    - {beer: null}
-    - {cheese: null}
-    - {fresh_water: null}
+    filename_by_sampletypes_list: []
     parent: free-living
 - host_associated:
-    display_name: Other Host
-    filename: host_associated.xlsx
+    display_name: Other Non-Animal Host
+    filename: host-associated.xlsx
     filename_by_sampletypes_list: []
     parent: ebi_submittable
+- animal:
+    display_name: Other Animal Host
+    filename: animal.xlsx
+    filename_by_sampletypes_list: []
+    parent: host_associated
+- vertebrate:
+    display_name: Other Vertebrate Host
+    filename: vertebrate.xlsx
+    filename_by_sampletypes_list:
+    - {skin: null}
+    - {saliva: null}
+    - {stool: null}
+    - {colon_mucosa: null}
+    - {colon_content: vertebrate-colon-content.xlsx}
+    - {sputum: null}
+    - {urine: null}
+    - {serum: null}
+    parent: animal
+- human:
+    display_name: Human
+    filename: human.xlsx
+    filename_by_sampletypes_list:
+    - {tongue: null}
+    - {colon_content: human-colon-content.xlsx}
+    - {vaginal_mucus: null}
+    - {lung_tissue: null}
+    - {ear_wax: null}
+    - {blood: null}
+    - {nasal_mucus: null}
+    parent: vertebrate
