@@ -210,7 +210,7 @@ $(function () {
     $('#fileupload').fileupload({
         // Uncomment the following to send cross-domain cookies:
         //xhrFields: {withCredentials: true},
-        url: '{{ merge_url }}'
+        url: '{{ wiz_state.full_merge_url }}'
     });
 
     // Enable iframe cross-domain access via redirect option:
