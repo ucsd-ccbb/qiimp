@@ -66,8 +66,11 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
     form_worksheet.write_string("A1", yaml.dump(form_dict, default_flow_style=False))
 
     # write readme worksheet
+    readme_format = workbook.add_format({'align': 'left', 'valign': 'top'})
+    readme_format.set_text_wrap()
     form_worksheet = xlsxbasics.create_worksheet(workbook, "readme")
-    form_worksheet.write_string("A1", metadata_wizard_settings.make_readme_text())
+    form_worksheet.set_column(0, 0, 100)  # Width of column A set to 100.
+    form_worksheet.merge_range('A1:A100', metadata_wizard_settings.make_readme_text(), readme_format)
 
     # close workbook
     workbook.close()
