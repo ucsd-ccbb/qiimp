@@ -1,6 +1,7 @@
 import argparse
 from collections import defaultdict
 import copy
+import itertools
 import json
 import sys
 import traceback
@@ -8,6 +9,8 @@ import tempfile
 
 from urllib.parse import quote
 
+import openpyxl
+import pandas
 import tornado.ioloop  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.web  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.websocket
@@ -123,6 +126,7 @@ class MergeHandler(tornado.web.RequestHandler):
         files_element_name = "files[]"
         merge_id_element_name = "merge_id"
         filename_key = "filename"
+        body_key = "body"
 
         merge_id = _parse_form_value(self.request.arguments[merge_id_element_name])
 
@@ -145,70 +149,62 @@ class MergeHandler(tornado.web.RequestHandler):
             self.finish()
         else:
             # all file uploads are done; do the actual merge and redirect to the download page;
-
-            # start by getting all the files that were uploaded
+            # get all the files that were uploaded, merge them into a tsv, and present for download
             file_info_dicts_list = wiz_state.merge_info_by_merge_id[merge_id]
+            merge_filename = self._merge_xlsxs(file_info_dicts_list, filename_key, body_key, ".xlsx", wiz_state)
+            self.redirect("/download/{0}".format(merge_filename))
 
-            # TODO: insert Austin's code to merge the files, once provided                           
-                
-            #create a dummy dataframe for the first merger
-            combined_sheet = pd.DataFrame()
-
-            for file in file_info_dicts_list: #likely need to redo this call based on input from Amanda, don't understand how this is getting the right names
-                
-                # The libraries for reading xlsx files don't accept a stream, only a file name, so I HAVE to write this to a 
-                # file at least temporarily ... 
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") 
-                temp_file.write(file['body']) 
-                temp_file.close()  # but DON'T delete yet 
-                
-                combined_sheet = merge_xlsx(temp_file.name,'metadata','validation',combined_sheet)
-           
-            #likely need to save the file somewhere else, ask Amanda
-            combined_sheet.to_csv(path_or_buf='merged_tsv.tsv',sep ='\t', na_rep = 'not applicable', header = True, index = False)
-
-            # delete the info/files stored in wiz_state.merge_info_by_merge_id under this merge id, since merge is done
-            wiz_state.merge_info_by_merge_id.pop(merge_id)
-            
-            #looks like this function is merging all the file names together but don't think this is what we want?
-            pretend_filename = "_".join([x[filename_key] for x in file_info_dicts_list])
-            self.redirect("/download/{0}".format(pretend_filename))
-    
-    def merge_xlsx(filepath, metadata_sheetname, validation_sheetname, merged_df):
-                #load workbook
-                wb = openpyxl.load_workbook(filename=filepath)
-                sheet_names = wb.get_sheet_names()
-
-                #check that the notebook has the expected tabs
-                if validation_sheetname not in sheet_names or metadata_sheetname not in sheet_names:
-                    error_msg = "{0}'{1}' .".format(NON_WIZARD_XLSX_ERROR_PREFIX, filepath)
-                    raise ValueError(error_msg)
-
-                validation_sheet = wb[validation_sheetname] 
-                for row in validation_sheet.rows:
-                    for cell in row:
-                        print(cell.value)
-                        if str(cell.value) == 'Fix':
-                            fix_error_msg = "{0}'{1}' .".format('There is an invalid cell in ', filepath)
-                            raise ValueError(fix_error_msg)
-
-                #read in the metadata and process to DataFrame
-                metadata_sheet = wb[metadata_sheetname]    
-                metadata = metadata_sheet.values    
-                cols = next(metadata)[0:]
-                metadata = list(metadata)
-                metadata = (islice(r, 0, None) for r in metadata)
-                adding_df = pd.DataFrame(metadata, columns=cols)
-                
-                #combine the newly created DataFrame with the previous DataFrame, then update it
-                merged_df = merged_df.combine_first(adding_df)
-                merged_df.update(adding_df)
-    
-                return merged_df
-    
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
         pass
+
+    def _merge_xlsxs(self, file_info_dicts_list, filename_key, body_key, xlsx_suffix, wizard_state):
+        # create a dummy dataframe for the first merger
+        combined_sheet = pandas.DataFrame()
+
+        merged_filenames = []
+        for curr_file_info_dict in file_info_dicts_list:
+            merged_filenames.append(curr_file_info_dict[filename_key])
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=xlsx_suffix)
+            temp_file.write(curr_file_info_dict[body_key])
+            temp_file.close()  # but DON'T delete yet
+
+            # TODO: someday: these hard-coded sheet names should be refactored
+            combined_sheet = self._merge_xlsx(temp_file.name, 'metadata', 'validation', combined_sheet)
+
+        merge_filename = "_".join([x.replace(xlsx_suffix, "") for x in merged_filenames]) + ".tsv"
+        merge_filepath = wizard_state.get_output_path(merge_filename)
+        combined_sheet.to_csv(path_or_buf=merge_filepath, sep='\t', na_rep='not applicable', header=True, index=False)
+        return merge_filename
+
+    # TODO: someday: refactor so this can move into xlsx_basics?
+    def _merge_xlsx(self, filepath, metadata_sheetname, validation_sheetname, merged_df):
+        # load workbook
+        wb = openpyxl.load_workbook(filename=filepath)
+        mws.check_is_metadata_wizard_file(wb, metadata_sheetname, filepath)
+
+        validation_sheet = wb[validation_sheetname]
+        for row in validation_sheet.rows:
+            for cell in row:
+                print(cell.value)
+                # TODO: someday: remove hard-code of Fix
+                if str(cell.value) == 'Fix':
+                    fix_error_msg = "{0}'{1}' .".format('There is an invalid cell in ', filepath)
+                    raise ValueError(fix_error_msg)
+
+        # read in the metadata and process to DataFrame
+        metadata_sheet = wb[metadata_sheetname]
+        metadata = metadata_sheet.values
+        cols = next(metadata)[0:]
+        metadata = list(metadata)
+        metadata = (itertools.islice(r, 0, None) for r in metadata)
+        adding_df = pandas.DataFrame(metadata, columns=cols)
+
+        # combine the newly created DataFrame with the previous DataFrame, then update it
+        merged_df = merged_df.combine_first(adding_df)
+        merged_df.update(adding_df)
+
+        return merged_df
 
 
 class MainHandler(tornado.web.RequestHandler):

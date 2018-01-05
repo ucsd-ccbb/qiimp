@@ -34,15 +34,21 @@ def get_single_key_and_subdict(a_dict):
 def load_yaml_from_wizard_xlsx(filepath, yaml_sheetname):
     assumed_cell = "A1"
     wb = openpyxl.load_workbook(filename=filepath)
-    sheet_names = wb.get_sheet_names()
-    if yaml_sheetname not in sheet_names:
-        error_msg = "{0}'{1}' .".format(NON_WIZARD_XLSX_ERROR_PREFIX, filepath)
-        raise ValueError(error_msg)
+    check_is_metadata_wizard_file(wb, yaml_sheetname, filepath)
 
     yaml_sheet = wb[yaml_sheetname]
     yaml_string = yaml_sheet[assumed_cell].value
     yaml_dict = yaml.load(yaml_string)
     return yaml_dict
+
+
+# TODO: someday: grrr ... this doesn't really belong here, I feel, but can't move it xlsx_basics because that
+# would create a circular reference, so some refactoring is called for ...
+def check_is_metadata_wizard_file(openpyxl_workbook, yaml_sheetname, filepath):
+    sheet_names = openpyxl_workbook.get_sheet_names()
+    if yaml_sheetname not in sheet_names:
+        error_msg = "{0}'{1}' .".format(NON_WIZARD_XLSX_ERROR_PREFIX, filepath)
+        raise ValueError(error_msg)
 
 
 def _load_yaml_from_fp(filepath):
