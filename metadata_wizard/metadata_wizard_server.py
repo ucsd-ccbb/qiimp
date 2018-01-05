@@ -149,14 +149,63 @@ class MergeHandler(tornado.web.RequestHandler):
             # start by getting all the files that were uploaded
             file_info_dicts_list = wiz_state.merge_info_by_merge_id[merge_id]
 
-            # TODO: insert Austin's code to merge the files, once provided
+            # TODO: insert Austin's code to merge the files, once provided                           
+                
+            #create a dummy dataframe for the first merger
+            combined_sheet = pd.DataFrame()
+
+            for file in file_info_dicts_list: #likely need to redo this call based on input from Amanda, don't understand how this is getting the right names
+                
+                # The libraries for reading xlsx files don't accept a stream, only a file name, so I HAVE to write this to a 
+                # file at least temporarily ... 
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") 
+                temp_file.write(file['body']) 
+                temp_file.close()  # but DON'T delete yet 
+                
+                combined_sheet = merge_xlsx(temp_file.name,'metadata','validation',combined_sheet)
+           
+            #likely need to save the file somewhere else, ask Amanda
+            combined_sheet.to_csv(path_or_buf='merged_tsv.tsv',sep ='\t', na_rep = 'not applicable', header = True, index = False)
 
             # delete the info/files stored in wiz_state.merge_info_by_merge_id under this merge id, since merge is done
             wiz_state.merge_info_by_merge_id.pop(merge_id)
-
+            
+            #looks like this function is merging all the file names together but don't think this is what we want?
             pretend_filename = "_".join([x[filename_key] for x in file_info_dicts_list])
             self.redirect("/download/{0}".format(pretend_filename))
+    
+    def merge_xlsx(filepath, metadata_sheetname, validation_sheetname, merged_df):
+                #load workbook
+                wb = openpyxl.load_workbook(filename=filepath)
+                sheet_names = wb.get_sheet_names()
 
+                #check that the notebook has the expected tabs
+                if validation_sheetname not in sheet_names or metadata_sheetname not in sheet_names:
+                    error_msg = "{0}'{1}' .".format(NON_WIZARD_XLSX_ERROR_PREFIX, filepath)
+                    raise ValueError(error_msg)
+
+                validation_sheet = wb[validation_sheetname] 
+                for row in validation_sheet.rows:
+                    for cell in row:
+                        print(cell.value)
+                        if str(cell.value) == 'Fix':
+                            fix_error_msg = "{0}'{1}' .".format('There is an invalid cell in ', filepath)
+                            raise ValueError(fix_error_msg)
+
+                #read in the metadata and process to DataFrame
+                metadata_sheet = wb[metadata_sheetname]    
+                metadata = metadata_sheet.values    
+                cols = next(metadata)[0:]
+                metadata = list(metadata)
+                metadata = (islice(r, 0, None) for r in metadata)
+                adding_df = pd.DataFrame(metadata, columns=cols)
+                
+                #combine the newly created DataFrame with the previous DataFrame, then update it
+                merged_df = merged_df.combine_first(adding_df)
+                merged_df.update(adding_df)
+    
+                return merged_df
+    
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
         pass
