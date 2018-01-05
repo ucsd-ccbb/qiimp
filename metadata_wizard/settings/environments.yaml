@@ -55,3 +55,8 @@
     - {blood: null}
     - {nasal_mucus: null}
     parent: vertebrate
+- iacuc-eligible:
+    display_name: null
+    filename: iacuc-eligible.xlsx
+    filename_by_sampletypes_list: []
+    parent: vertebrate
