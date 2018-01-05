@@ -167,17 +167,13 @@ class MainHandler(tornado.web.RequestHandler):
         wiz_state = self.application.settings["wizard_state"]
         global _allowed_min_browser_versions
 
-        # get the package info
-        combination_dicts_list, host_dicts_list, sampletype_dicts_list, wiz_state.parent_stack_by_env_name, \
-        wiz_state.env_schemas = mpsb.load_environment_and_sampletype_info(
-            wiz_state.environment_definitions, wiz_state.displayname_by_sampletypes_list, wiz_state.packages_dir_path)
-
-        sampletypes_by_env_json = json.dumps(sampletype_dicts_list)
+        sampletypes_by_env_json = json.dumps(wiz_state.sampletype_display_dicts_list)
 
         self.render("metadata_wizard_template.html", wiz_state=wiz_state,
                     allowed_min_browser_versions=_allowed_min_browser_versions, select_size=10,
-                    combinations_list=combination_dicts_list, sampletypes_by_env_json=sampletypes_by_env_json,
-                    hosts_list=host_dicts_list)
+                    combinations_list=wiz_state.combinations_display_dicts_list,
+                    sampletypes_by_env_json=sampletypes_by_env_json,
+                    hosts_list=wiz_state.envs_display_dicts_list)
 
     def post(self):
         wiz_state = self.application.settings["wizard_state"]
@@ -305,6 +301,14 @@ def main():
     wizard_state = mws.MetadataWizardState()
     is_deployed = _parse_cmd_line_args()
     wizard_state.set_up(is_deployed)
+
+    # get the package info; NB that the reason this isn't done in wizard_state.set_up is that mpsb references
+    # wizard_state and so having wizard_state also reference mpsb would create a circular reference; refactoring
+    # would be necessary to make it possible to move this.
+    env_and_sampletype_infos = mpsb.load_environment_and_sampletype_info(wizard_state.environment_definitions,
+                                                                         wizard_state.displayname_by_sampletypes_list,
+                                                                         wizard_state.packages_dir_path)
+    wizard_state.set_env_and_sampletype_infos(env_and_sampletype_infos)
 
     settings = {
         "static_path": wizard_state.static_path,

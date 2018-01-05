@@ -157,6 +157,10 @@ class MetadataWizardState(object):
         self.reserved_words_list = None
         self.displayname_by_sampletypes_list = None
         self.environment_definitions = None
+
+        self.combinations_display_dicts_list = None
+        self.envs_display_dicts_list = None
+        self.sampletype_display_dicts_list = None
         self.parent_stack_by_env_name = None
         self.env_schemas = None
 
@@ -181,6 +185,15 @@ class MetadataWizardState(object):
         self.default_locales_list = _load_yaml_from_fp(self._get_settings_item_path(self.DEFAULT_LOCALES_YAML_PATH))
         self.displayname_by_sampletypes_list = _load_yaml_from_fp(self._get_settings_item_path(self.SAMPLETYPES_YAML_PATH))
         self.environment_definitions = _load_yaml_from_fp(self._get_settings_item_path(self.ENVIRONMENTS_YAML_PATH))
+
+    def set_env_and_sampletype_infos(self, env_and_sampletype_infos_tuple):
+        # NB: These values come from metadata_package_schema_builder.load_environment_and_sampletype_info; a more
+        # explicit output rather than an arbitrarily ordered tuple wouldn't be a bad idea :)
+        self.combinations_display_dicts_list = env_and_sampletype_infos_tuple[0]
+        self.envs_display_dicts_list = env_and_sampletype_infos_tuple[1]
+        self.sampletype_display_dicts_list = env_and_sampletype_infos_tuple[2]
+        self.parent_stack_by_env_name = env_and_sampletype_infos_tuple[3]
+        self.env_schemas = env_and_sampletype_infos_tuple[4]
 
     def get_output_path(self, file_name):
         return os.path.join(self.install_dir, self.get_partial_output_path(file_name))
