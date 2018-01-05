@@ -186,7 +186,6 @@ class MergeHandler(tornado.web.RequestHandler):
         validation_sheet = wb[validation_sheetname]
         for row in validation_sheet.rows:
             for cell in row:
-                print(cell.value)
                 # TODO: someday: remove hard-code of Fix
                 if str(cell.value) == 'Fix':
                     fix_error_msg = "{0}'{1}' .".format('There is an invalid cell in ', filepath)
