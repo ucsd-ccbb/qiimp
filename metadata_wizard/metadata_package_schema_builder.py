@@ -18,9 +18,28 @@ _SAMPLE_TYPES_KEY = "sampletypes"
 _REQUIRED_EXTENSION = ".xlsx"
 
 
-def update_schema(base_schema, fields_to_modify_schemas, add_silently=False):
+def update_schema(base_schema, fields_to_modify_schemas, add_silently=False, force_piecemeal_overwrite=False):
     for curr_field_name, curr_schema_modifications in fields_to_modify_schemas.items():
         if curr_field_name in base_schema:
+            # NB: setting force_piecemeal_overwrite to True is VERY DANGEROUS and should only be done in special
+            # situations where other code in the application enforces the consistency of the resulting field schema.
+            # The reason this option exists is so that locale defaults (only) can be overwritten without the
+            # default_locations.yaml needing to fully redefine the elevation, geo_loc_name, latitude, and longitude
+            # fields for every single default locale choice.
+            if not force_piecemeal_overwrite:
+                # only some keys can be overwritten piecemeal, while some need to be overwritten as a group.  If the
+                # schema modifications we are applying include any of the keys that need to be overwritten as a group,
+                # then any existing keys in the group need to be removed first so we don't get an inconsistent chimera.
+                non_overwritable_keys = _get_non_overwritable_keys()
+                # if the new modifications are trying to specify any of the non-overwritable keys
+                if set(non_overwritable_keys).intersection(list(curr_schema_modifications.keys())):
+                    # remove any instance of the non-overwritable keys from the base schema of the field first
+                    field_base_schema = base_schema[curr_field_name]
+                    non_overwritable_keys_in_field = set(non_overwritable_keys).intersection(list(field_base_schema.keys()))
+                    for curr_special_key in non_overwritable_keys_in_field:
+                        field_base_schema.pop(curr_special_key)
+                # end if this schema modification includes keys that cannot be overwritten piecemeal
+
             base_schema[curr_field_name].update(curr_schema_modifications)
         else:
             if add_silently:
@@ -165,3 +184,15 @@ def _make_name_and_display_name_dict(name, display_name):
 
 def _get_name_and_display_name(names_dict):
     return names_dict[mws.NAME_KEY], names_dict[mws.DISPLAY_NAME_KEY]
+
+
+# Some keys (e.g., field_desc, is_phi) can be inherited from a parent even when other keys for the same field are being
+# overwritten by more specific ones, because these keys are essentially independent, unitary pieces of information.
+# However, many of the keys need to come together in order to make sense, because it is the combination of them that
+# defines the nature of the field: for example, you shouldn't be able to inherit the "units" key from a parent if you
+# have overwritten the "type" key to be "string"! This function gets the list of keys that can only be set together, as
+# a coherent set, and cannot be overwritten piecemeal with lower-level information.
+def _get_non_overwritable_keys():
+    result = [x.value for x in mws.ValidationKeys]
+    result.append(mws.InputNames.units.value)
+    return result

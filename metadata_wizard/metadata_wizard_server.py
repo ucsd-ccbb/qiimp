@@ -325,7 +325,8 @@ class MainHandler(tornado.web.RequestHandler):
             raise ValueError("Default study locale '{0}' was not found among known default locales.".format(
                 study_default_locale))
 
-        package_schema = mpsb.update_schema(package_schema, locale_fields_to_modify)
+        package_schema = mpsb.update_schema(package_schema, locale_fields_to_modify, add_silently=True,
+                                            force_piecemeal_overwrite=True)
         return package_schema
 
 
@@ -367,6 +368,7 @@ def main():
         (r"/(merge)$", MergeHandler)
     ], **settings)
 
+    print("server ready")
     application.listen(wizard_state.listen_port)
     tornado.ioloop.IOLoop.instance().start()
 
