@@ -1,17 +1,40 @@
 # Note that this is a list rather than a dictionary because I anticipate wanting
 # to explicitly control the order in which these are visible to the user.
 - {skin: Skin}
-- {saliva: Saliva}
-- {stool: Stool}
 - {colon_mucosa: Colon Mucosa}
 - {colon_content: Colon Content}
+- {stool: Stool}
 - {sputum: Sputum}
 - {urine: Urine}
 - {blood: Blood}
 - {serum: Serum}
 - {tongue: Tongue}
+- {saliva: Saliva}
 - {vaginal_mucus: Vaginal Mucus}
 - {lung_tissue: Lung Tissue}
 - {ear_wax: Ear Wax}
 - {nasal_mucus: Nasal Mucus}
+- {air: Air}
+- {anaerobic-digester-content: Anaerobic Digester Content}
+- {beer: Beer}
+- {cheese: Cheese}
+- {dust: Dust}
+- {fresh-water: Fresh Water}
+- {marine-sediment: Marine Sediment}
+- {sea-water: Sea Water}
+- {sediment: Sediment}
+- {soil: Soil}
+- {waste-water: Waste Water}
+- {fruit: Fruit}
+- {seed: Seed}
+- {leaf: Leaf}
+- {stem: Stem}
+- {root: Root}
+- {rhizome: Rhizome}
+- {sponge: Sponge}
+- {coral: Coral}
+- {biofilm: Biofilm}
+- {whole-gut: Whole Gut}
+- {insect: Insect}
+- {insect-gut: Insect Gut}
 - {other: Other}

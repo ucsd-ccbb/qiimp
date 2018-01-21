@@ -1,62 +1,131 @@
-- base:
-    display_name: null
-    filename: base.xlsx
+- human:
+    display_name: Human
+    filename: human.xlsx
     filename_by_sampletypes_list:
-    - {other: null}
-    parent: null
+    - {tongue: human-tongue.xlsx}
+    - {colon_content: human-gut.xlsx}
+    - {colon_mucosa: human-gut.xlsx}
+    - {saliva: human-saliva.xlsx}
+    - {stool: human-gut.xlsx}
+    - {skin: human-skin.xlsx}
+    - {lung_tissue: human-lung-tissue.xlsx}
+    - {ear_wax: human-ear-wax.xlsx}
+    - {blood: human-blood.xlsx}
+    - {vaginal mucus: human-vaginal-mucus.xlsx}
+    - {nasal_mucus: human-nasal-mucus.xlsx}
+    - {other: human-other.xlsx}
+    parent: vertebrate
+- mouse:
+    display_name: Mouse
+    filename: mouse.xlsx
+    filename_by_sampletypes_list:
+    - {colon_content: mouse-gut.xlsx}
+    - {colon_mucosa: mouse-gut.xlsx}
+    - {other: mouse-other.xlsx}
+    - {skin: mouse-skin.xlsx}
+    - {stool: mouse-gut.xlsx}
+    parent: iacuc-eligible
+- rat:
+    display_name: Rat
+    filename: rat.xlsx
+    filename_by_sampletypes_list:
+    - {colon_content: rat-gut.xlsx}
+    - {colon_mucosa: rat-gut.xlsx}
+    - {other: rat-other.xlsx}
+    - {stool: rat-gut.xlsx}
+    parent: iacuc-eligible
+- iacuc-eligible:
+    display_name: null
+    filename: iacuc-eligible.xlsx
+    filename_by_sampletypes_list: []
+    parent: vertebrate
+- vertebrate:
+    display_name: Other Vertebrate Host
+    filename: vertebrate.xlsx
+    filename_by_sampletypes_list:
+    - {skin: vertebrate-skin.xlsx}
+    - {saliva: vertebrate-saliva.xlsx}
+    - {stool: vertebrate-stool.xlsx}
+    - {colon_mucosa: vertebrate-colon-mucosa.xlsx}
+    - {colon_content: vertebrate-colon-content.xlsx}
+    - {sputum: vertebrate-sputum.xlsx}
+    - {urine: vertebrate-urine.xlsx}
+    - {serum: vertebrate-serum.xlsx}
+    parent: animal
+- non-vertebrate:
+    display_name: Non-Vertebrate Animal Host
+    filename: non-vertebrate-animal.xlsx
+    filename_by_sampletypes_list:
+    - {sponge: null}
+    - {coral: null}
+    - {biofilm: null}
+    - {whole-gut: null}
+    - {insect: null}
+    - {insect-gut: null}
+    parent: animal
+- animal:
+    display_name: null
+    filename: animal.xlsx
+    filename_by_sampletypes_list: []
+    parent: host_associated
+- plant:
+    display_name: Plant Host
+    filename: plant.xlsx
+    filename_by_sampletypes_list:
+    - {fruit: null}
+    - {seed: null}
+    - {leaf: null}
+    - {stem: null}
+    - {root: null}
+    - {rhizome: null}
+    parent: host_associated
+- fungus:
+    display_name: Fungus Host
+    filename: fungus.xlsx
+    filename_by_sampletypes_list: []
+    parent: host_associated
+- host_associated:
+    display_name: Other Non-Animal Host
+    filename: host-associated.xlsx
+    filename_by_sampletypes_list: []
+    parent: ebi_submittable
+- built_env:
+    display_name: Built Environment
+    filename: built-environment.xlsx
+    filename_by_sampletypes_list:
+    - {air: free-living-air.xlsx}
+    - {anaerobic-digester-content: null}
+    parent: free-living
+- other_env:
+    display_name: Other Free-Living Environment
+    filename: other-environment.xlsx
+    filename_by_sampletypes_list:
+    - {air: free-living-air.xlsx}
+    - {beer: null}
+    - {cheese: null}
+    - {fresh-water: null}
+    - {marine-sediment: null}
+    - {sea-water: null}
+    - {sediment: null}
+    - {soil: null}
+    - {waste-water: null}
+    parent: free-living
+- free-living:
+    display_name: null
+    filename: free-living.xlsx
+    filename_by_sampletypes_list:
+    - {dust: null}
+    - {air: free-living-air.xlsx}
+    parent: ebi_submittable
 - ebi_submittable:
     display_name: Other EBI-Submittable Environment
     filename: ebi-submittable.xlsx
     filename_by_sampletypes_list:
     - {other: base-other.xlsx}
     parent: base
-- free-living:
+- base:
     display_name: null
-    filename: null
-    filename_by_sampletypes_list: []
-    parent: ebi_submittable
-- other_env:
-    display_name: Other Free-Living Environment
-    filename: null
-    filename_by_sampletypes_list: []
-    parent: free-living
-- host_associated:
-    display_name: Other Non-Animal Host
-    filename: host-associated.xlsx
-    filename_by_sampletypes_list: []
-    parent: ebi_submittable
-- animal:
-    display_name: Other Animal Host
-    filename: animal.xlsx
-    filename_by_sampletypes_list: []
-    parent: host_associated
-- vertebrate:
-    display_name: Other Vertebrate Host
-    filename: vertebrate.xlsx
+    filename: base.xlsx
     filename_by_sampletypes_list:
-    - {skin: null}
-    - {saliva: null}
-    - {stool: null}
-    - {colon_mucosa: null}
-    - {colon_content: vertebrate-colon-content.xlsx}
-    - {sputum: null}
-    - {urine: null}
-    - {serum: null}
-    parent: animal
-- human:
-    display_name: Human
-    filename: human.xlsx
-    filename_by_sampletypes_list:
-    - {tongue: null}
-    - {colon_content: human-colon-content.xlsx}
-    - {vaginal_mucus: null}
-    - {lung_tissue: null}
-    - {ear_wax: null}
-    - {blood: null}
-    - {nasal_mucus: null}
-    parent: vertebrate
-- iacuc-eligible:
-    display_name: null
-    filename: iacuc-eligible.xlsx
-    filename_by_sampletypes_list: []
-    parent: vertebrate
+    - {other: null}
+    parent: null
