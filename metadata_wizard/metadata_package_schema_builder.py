@@ -1,3 +1,4 @@
+import copy
 import os
 import warnings
 
@@ -20,6 +21,8 @@ _REQUIRED_EXTENSION = ".xlsx"
 
 def update_schema(base_schema, fields_to_modify_schemas, add_silently=False, force_piecemeal_overwrite=False):
     for curr_field_name, curr_schema_modifications in fields_to_modify_schemas.items():
+        curr_schema_mods_copy = copy.deepcopy(curr_schema_modifications)
+
         if curr_field_name in base_schema:
             # NB: setting force_piecemeal_overwrite to True is VERY DANGEROUS and should only be done in special
             # situations where other code in the application enforces the consistency of the resulting field schema.
@@ -32,7 +35,7 @@ def update_schema(base_schema, fields_to_modify_schemas, add_silently=False, for
                 # then any existing keys in the group need to be removed first so we don't get an inconsistent chimera.
                 non_overwritable_keys = _get_non_overwritable_keys()
                 # if the new modifications are trying to specify any of the non-overwritable keys
-                if set(non_overwritable_keys).intersection(list(curr_schema_modifications.keys())):
+                if set(non_overwritable_keys).intersection(list(curr_schema_mods_copy.keys())):
                     # remove any instance of the non-overwritable keys from the base schema of the field first
                     field_base_schema = base_schema[curr_field_name]
                     non_overwritable_keys_in_field = set(non_overwritable_keys).intersection(list(field_base_schema.keys()))
@@ -40,10 +43,10 @@ def update_schema(base_schema, fields_to_modify_schemas, add_silently=False, for
                         field_base_schema.pop(curr_special_key)
                 # end if this schema modification includes keys that cannot be overwritten piecemeal
 
-            base_schema[curr_field_name].update(curr_schema_modifications)
+            base_schema[curr_field_name].update(curr_schema_mods_copy)
         else:
             if add_silently:
-                base_schema[curr_field_name] = curr_schema_modifications
+                base_schema[curr_field_name] = curr_schema_mods_copy
             else:
                 warnings.warn("Field '{0}' could not be modified as it does not exist in the base schema '{1}'.".format(
                     curr_field_name, base_schema
