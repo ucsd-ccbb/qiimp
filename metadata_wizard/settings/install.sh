@@ -7,6 +7,8 @@ conda install python=3.5 -y
 conda install pyyaml -y
 conda install tornado -y
 conda install xlsxwriter -y
+conda install openpyxl -y
+conda install pandas -y
 conda install git -y
 git clone https://github.com/ucsd-ccbb/cmi_metadata_wizard.git
 cd cmi_metadata_wizard
