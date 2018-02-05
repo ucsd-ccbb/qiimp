@@ -61,10 +61,10 @@ Select “Package Fields” to fill out this section. In this section of the met
 * Select Manually: Manually select your fields by looking at a list of each sample type
 * You may only use one of these options
  
-.. figure::  images/wizard1.png
+.. figure::  images/usewizard1.png
    :align:   center
  
-.. figure::  images/wizard2.png
+.. figure::  images/usewizard2.png
    :align:   center
  
 * If you select “Use Wizard”, you must go through 2 layers to select your sample type.
@@ -158,7 +158,7 @@ Now that you have your default fields added to your metadata template, you can a
 .. figure::  images/text.png
    :align:   center
  
-*Text: A description of the sample
+* Text: A description of the sample
 
   * Description: A description of your field
   * Protected Health Information: Labels this field as PHI or not
@@ -218,7 +218,7 @@ Now that you have your default fields added to your metadata template, you can a
   
   * This file MUST be created with the Metadata Wizard
 
-.. figure::  images/uploadfile..png
+.. figure::  images/uploadfile.png
    :align:   center
 
 * To upload your excel file, select the “Choose File” button to bring up your computer’s file to choose from
