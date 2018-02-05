@@ -31,7 +31,7 @@ This section should be opened automatically. If you have closed it, select “St
 
   * None: Used for studies where samples were not collected at UCSD or one of its affiliated San Diego campuses (e.g. Rady Children’s Hospital)
   
-*You will be required to supply the latitude, longitude, and elevation for each sample individually
+    *You will be required to supply the latitude, longitude, and elevation for each sample individually
 
   * San Diego Standard: Used for studies conducted at UCSD or one of its affiliated San Diego campuses
   
