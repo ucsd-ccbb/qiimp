@@ -31,7 +31,7 @@ This section should be opened automatically. If you have closed it, select “St
 
   * None: Used for studies where samples were not collected at UCSD or one of its affiliated San Diego campuses (e.g. Rady Children’s Hospital)
   
-    *You will be required to supply the latitude, longitude, and elevation for each sample individually
+    * You will be required to supply the latitude, longitude, and elevation for each sample individually
 
   * San Diego Standard: Used for studies conducted at UCSD or one of its affiliated San Diego campuses
   
@@ -129,7 +129,7 @@ Now that you have your default fields added to your metadata template, you can a
 .. figure::  images/fieldselect.png
    :align:   center
 
-*Select the field that you would like to add more information to
+* Select the field that you would like to add more information to
 
   * This will open up text boxes for you to fill in both Field Type and Field Details 
  
