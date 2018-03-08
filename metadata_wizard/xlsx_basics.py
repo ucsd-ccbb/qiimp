@@ -144,9 +144,10 @@ class MetadataWorksheet(object):
 
         :type a_regex_handler: regex_handler.RegexHandler
         """
+        SHEET_NAME = "Metadata"
 
         self.workbook = workbook
-        self.metadata_sheet_name = "metadata"
+        self.metadata_sheet_name = SHEET_NAME
         self.regex_handler = a_regex_handler
         self.num_allowable_samples = num_allowable_samples
         self._num_field_columns = num_attributes

@@ -5,7 +5,7 @@ import metadata_wizard.xlsx_basics as xlsxbasics
 import metadata_wizard.xlsx_validation_builder as xvb
 
 
-def write_metadata_grid(data_worksheet, schema_dict):
+def write_metadata_grid(data_worksheet, schema_dict, field_descs_sheet_name):
     """
 
     :type data_worksheet: xlsxbasics.MetadataWorksheet
@@ -31,7 +31,8 @@ def write_metadata_grid(data_worksheet, schema_dict):
         whole_col_range = xlsxbasics.format_range(curr_col_index, data_worksheet.first_data_row_index,
                                                    last_row_index=data_worksheet.last_allowable_row_for_sample_index)
 
-        validation_dict = _get_validation_dict(field_name, field_specs_dict, data_worksheet.regex_handler)
+        validation_dict = _get_validation_dict(field_name, field_specs_dict, data_worksheet.regex_handler,
+                                               field_descs_sheet_name)
         value_key = "value"
         if validation_dict is not None:
             if value_key in validation_dict:
@@ -77,7 +78,7 @@ def _write_sample_id_col(data_sheet):
         data_sheet.worksheet.write_formula(curr_cell, completed_formula)
 
 
-def _get_validation_dict(field_name, field_schema_dict, a_regex_handler):
+def _get_validation_dict(field_name, field_schema_dict, a_regex_handler, field_descs_sheet_name):
     result = None
     validation_generators = [
         _make_allowed_only_constraint,
@@ -85,7 +86,7 @@ def _get_validation_dict(field_name, field_schema_dict, a_regex_handler):
     ]
 
     for curr_generator in validation_generators:
-        curr_validation_dict = curr_generator(field_name, field_schema_dict, a_regex_handler)
+        curr_validation_dict = curr_generator(field_name, field_schema_dict, a_regex_handler, field_descs_sheet_name)
         if curr_validation_dict is not None:
             result = curr_validation_dict
             break
@@ -95,7 +96,7 @@ def _get_validation_dict(field_name, field_schema_dict, a_regex_handler):
     return result
 
 
-def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler):
+def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler, field_descs_sheet_name):
     result = None
     allowed_onlies = xvb.roll_up_allowed_onlies(field_schema_dict, a_regex_handler)
 
@@ -109,7 +110,7 @@ def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler
         if len(joined_allowed_str) <= 255:
             message = xvb.get_field_constraint_description(field_schema_dict, a_regex_handler)
             # 'The value must be one of the following: {1}'.format(field_name, ", ".join(allowed_onlies_as_strs))
-            result = _make_base_validate_dict(field_name, message)
+            result = _make_base_validate_dict(field_name, message, field_descs_sheet_name)
             result.update({
                 'validate': 'list',
                 'source': allowed_onlies
@@ -118,7 +119,7 @@ def _make_allowed_only_constraint(field_name, field_schema_dict, a_regex_handler
     return result
 
 
-def _make_formula_constraint(field_name, field_schema_dict, a_regex_handler):
+def _make_formula_constraint(field_name, field_schema_dict, a_regex_handler, field_descs_sheet_name):
     result = None
 
     formula_string = xvb.get_formula_constraint(field_schema_dict, a_regex_handler)
@@ -126,7 +127,7 @@ def _make_formula_constraint(field_name, field_schema_dict, a_regex_handler):
 
     if formula_string is not None:
         formula_string = "=("+formula_string + ")"
-        result = _make_base_validate_dict(field_name, message)
+        result = _make_base_validate_dict(field_name, message, field_descs_sheet_name)
         result.update({
             'validate': 'custom',
             'value': formula_string
@@ -135,7 +136,7 @@ def _make_formula_constraint(field_name, field_schema_dict, a_regex_handler):
     return result
 
 
-def _make_base_validate_dict(field_name, message):
+def _make_base_validate_dict(field_name, message, field_descs_sheet_name):
     input_title_prefix = 'Enter '
     error_title_prefix = 'Invalid '
 
@@ -151,7 +152,8 @@ def _make_base_validate_dict(field_name, message):
         result = prefix + message
 
         if len(result) > msg_len_limit:
-            placeholder_msg = "[text truncated: please refer to field descriptions sheet for full requirements]."
+            placeholder_msg = "[text truncated: please refer to {0} sheet for full requirements].".format(
+                field_descs_sheet_name)
             usable_len = msg_len_limit - len(placeholder_msg)
             result = result[:usable_len] + placeholder_msg
 

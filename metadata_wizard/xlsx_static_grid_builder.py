@@ -7,6 +7,8 @@ class ValidationWorksheet(xlsxbasics.MetadataWorksheet):
     def __init__(self, workbook, num_attributes, num_samples, a_regex_handler):
         super().__init__(workbook, num_attributes, num_samples, a_regex_handler, make_sheet=False)
 
+        SHEET_NAME = "Validation"
+
         self.SAMPLE_NAME_HEADER = metadata_wizard.metadata_wizard_settings.SAMPLE_NAME_HEADER
         self.IS_ABSENT_HEADER = "is_absent"
         self.IS_VALID_ROW_HEADER = "is_valid_row"
@@ -32,7 +34,7 @@ class ValidationWorksheet(xlsxbasics.MetadataWorksheet):
         # instance variable in case that changes in the future.
         self.name_static_col_index = self.name_col_index + self._col_offset
 
-        self.worksheet = self._create_worksheet("validation")
+        self.worksheet = self._create_worksheet(SHEET_NAME)
 
     def hide_columns(self, first_col_index, last_col_index=None):
         first_col_letter = xlsxbasics.get_col_letters(first_col_index)

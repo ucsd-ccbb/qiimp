@@ -17,6 +17,10 @@ yaml.add_representer(collections.defaultdict, Representer.represent_dict)
 
 
 def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings):
+    SCHEMA_SHEET_NAME = "metadata_schema"
+    FORM_SHEET_NAME = "metadata_form"
+    README_SHEET_NAME = "Instructions"
+
     num_allowable_samples = 1000
     # TODO: someday: either expand code to use num_samples and add real code to get in from interface, or take out unused hook
     num_samples = 0
@@ -34,12 +38,13 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
     # write metadata worksheet
     phi_renamed_schema_dict = metadata_wizard.schema_builder.rewrite_field_names_with_phi_if_relevant(schema_dict)
     metadata_worksheet = xlsxbasics.MetadataWorksheet(workbook, num_columns, num_samples, a_regex_handler,
-                                                       num_allowable_samples=num_allowable_samples)
-    metadata_wizard.xlsx_metadata_grid_builder.write_metadata_grid(metadata_worksheet, phi_renamed_schema_dict)
+                                                      num_allowable_samples=num_allowable_samples)
+    metadata_wizard.xlsx_metadata_grid_builder.write_metadata_grid(metadata_worksheet, phi_renamed_schema_dict,
+                                                                   DescriptionWorksheet.get_sheet_name())
 
     # write validation worksheet
-    validation_worksheet = metadata_wizard.xlsx_static_grid_builder.ValidationWorksheet(workbook, num_columns, num_samples,
-                                                                                        a_regex_handler)
+    validation_worksheet = metadata_wizard.xlsx_static_grid_builder.ValidationWorksheet(workbook, num_columns,
+                                                                                        num_samples, a_regex_handler)
     index_and_range_str_tuple_by_header_dict = metadata_wizard.xlsx_static_grid_builder.write_static_validation_grid_and_helpers(
         validation_worksheet, phi_renamed_schema_dict)
     metadata_wizard.xlsx_dynamic_grid_builder.write_dynamic_validation_grid(
@@ -58,17 +63,17 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
         descriptions_worksheet.worksheet.write("B{0}".format(row_num), message)
 
     # write schema worksheet--note, don't use the phi_renamed_schema_dict but the original schema_dict
-    schema_worksheet = xlsxbasics.create_worksheet(workbook, "metadata_schema")
+    schema_worksheet = xlsxbasics.create_worksheet(workbook, SCHEMA_SHEET_NAME)
     schema_worksheet.write_string("A1", yaml.dump(schema_dict, default_flow_style=False))
 
     # write form worksheet
-    form_worksheet = xlsxbasics.create_worksheet(workbook, "metadata_form")
+    form_worksheet = xlsxbasics.create_worksheet(workbook, FORM_SHEET_NAME)
     form_worksheet.write_string("A1", yaml.dump(form_dict, default_flow_style=False))
 
     # write readme worksheet
     readme_format = workbook.add_format({'align': 'left', 'valign': 'top'})
     readme_format.set_text_wrap()
-    form_worksheet = xlsxbasics.create_worksheet(workbook, "readme")
+    form_worksheet = xlsxbasics.create_worksheet(workbook, README_SHEET_NAME)
     form_worksheet.set_column(0, 0, 100)  # Width of column A set to 100.
     form_worksheet.merge_range('A1:A100', metadata_wizard_settings.make_readme_text(), readme_format)
 
@@ -78,10 +83,15 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
 
 
 class DescriptionWorksheet(xlsxbasics.MetadataWorksheet):
+    @classmethod
+    def get_sheet_name(self):
+        return "Data Dictionary"
+
     def __init__(self, workbook, num_attributes, num_samples, a_regex_handler):
         super().__init__(workbook, num_attributes, num_samples, a_regex_handler, make_sheet=False)
 
-        self.worksheet = xlsxbasics.create_worksheet(self.workbook, "field descriptions",
+        SHEET_NAME = self.get_sheet_name()
+        self.worksheet = xlsxbasics.create_worksheet(self.workbook, SHEET_NAME,
                                                       self._permissive_protect_options)
 
 
