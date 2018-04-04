@@ -63,19 +63,10 @@ function readInAndResetFormField(curr_field_dict, curr_field_key) {
         // TODO: someday: must find better way to place brackets ... also icky in template.html
         input_name = input_name.replace("[]", "");
         input_name = input_name + "[]";
-        // assume we're dealing with values from a checkbox fieldset
+        // assume we're dealing with values from a checkbox fieldset;
+        // need to set the value separately for each checkbox
         for (var curr_checkbox_val_index in input_value){
-            // only trigger onchange event after setting last value in field;
-            // otherwise, since fields come through dictionary in basically arbitrary order,
-            // effect of partial change of allowed missing checkboxes can wipe out
-            // allowed missing default select, if that happened to come through first,
-            // because of allowed missing fieldset's onchange's call to resetSelectedOptionIfDisabled.
-
-            // NB: Ignore pycharm conversion warning--actively WANT conversion here, since
-            // curr_checkbox_val_index is a string representation of an int and input_value.length-1 is
-            // an ACTUAL integer
-            var trigger_onchange = curr_checkbox_val_index == input_value.length-1;
-            setFormValue(input_name, input_value[curr_checkbox_val_index], trigger_onchange);
+            setFormValue(input_name, input_value[curr_checkbox_val_index], true);
         }
     } else {
         setFormValue(input_name, input_value, true);
