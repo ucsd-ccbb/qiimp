@@ -325,7 +325,7 @@ class MainHandler(tornado.web.RequestHandler):
             raise ValueError("Default study locale '{0}' was not found among known default locales.".format(
                 study_default_locale))
 
-        package_schema = mpsb.update_schema(package_schema, locale_fields_to_modify, add_silently=True,
+        package_schema = mpsb.update_schema(package_schema, locale_fields_to_modify, add_silently=False,
                                             force_piecemeal_overwrite=True)
         return package_schema
 
