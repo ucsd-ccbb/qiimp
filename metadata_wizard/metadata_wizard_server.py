@@ -20,6 +20,7 @@ import metadata_wizard.metadata_package_schema_builder as mpsb
 import metadata_wizard.schema_builder
 import metadata_wizard.xlsx_builder
 import metadata_wizard.xlsx_validation_builder
+import metadata_wizard.xlsx_basics
 
 _allowed_min_browser_versions = {
     'chrome': 49,
@@ -63,7 +64,9 @@ class PackageHandler(tornado.web.RequestHandler):
         package_schema = _get_package_schema_by_env_and_sample_type(wiz_state, self.request.arguments)
 
         field_descriptions = []
-        for curr_field_name, curr_field_dict in package_schema.items():
+        sorted_keys = metadata_wizard.xlsx_basics.sort_keys(package_schema)
+        for curr_field_name in sorted_keys:
+            curr_field_dict = package_schema[curr_field_name]
             curr_desc = metadata_wizard.xlsx_validation_builder.get_field_constraint_description(curr_field_dict, wiz_state.regex_handler)
             field_descriptions.append({"name": curr_field_name,
                                        "description": curr_desc})
