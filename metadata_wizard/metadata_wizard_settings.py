@@ -117,9 +117,9 @@ class InputNames(Enum):
 
 class FieldTypes(Enum):
     Boolean = "boolean"
-    Text = CerberusDataTypes.Text.value
     Categorical = "categorical"
     Continuous = "continuous"
+    Text = CerberusDataTypes.Text.value
 
 
 class DefaultTypes(Enum):
