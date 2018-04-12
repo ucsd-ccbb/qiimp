@@ -20,6 +20,7 @@ METADATA_SCHEMA_SHEET_NAME = "metadata_schema"
 SAMPLE_NAME_HEADER = "sample_name"
 NAME_KEY = "name"
 DISPLAY_NAME_KEY = "display_name"
+TUTORIAL_LINK = "Need help? Visit the <a target='_blank' href='http://metadata-wizard-tutorial.readthedocs.io/en/latest/'>tutorial</a>! (Opens in new tab.)"
 
 
 def get_single_key_and_subdict(a_dict):
