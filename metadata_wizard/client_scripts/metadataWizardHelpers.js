@@ -226,6 +226,14 @@ function addDateTimeValidationRule(field_index, required_base_name){
     });
 }
 
+
+function addNoDuplicatesRule(field_index, required_base_name) {
+    var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
+    $(id_selector).rules("add", {
+       hasNoDuplicates: true
+    });
+}
+
 function addOnChangeEvent(field_index, base_name, onChangeFunc) {
     var new_func = function (event) {
         var result = onChangeFunc(event);

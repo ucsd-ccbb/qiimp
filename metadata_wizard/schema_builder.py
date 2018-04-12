@@ -166,9 +166,10 @@ def _generate_categorical_schema(curr_field_from_form, a_regex_handler):
     categorical_vals_str = curr_field_from_form[mws.InputNames.categorical_values.value]
     split_categorical_vals = categorical_vals_str.split("\r\n")
     split_categorical_vals = [x.strip() for x in split_categorical_vals]
+    non_empty_split_categorical_values = [x for x in split_categorical_vals if x != ""]
 
     curr_schema.update({
-        mws.ValidationKeys.allowed.value: split_categorical_vals
+        mws.ValidationKeys.allowed.value: non_empty_split_categorical_values
     })
     return curr_schema
 

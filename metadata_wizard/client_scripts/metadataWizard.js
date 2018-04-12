@@ -193,6 +193,24 @@ $.validator.addMethod("isNotNone", function(value, element){
     return (value !== "no_comparison");
 }, "Must not be None if a threshold value has been provided.");
 
+// For JQuery validation plugin, custom validator functions always have
+// first argument: the current value of the validated element. Second argument: the element to be validated
+$.validator.addMethod("hasNoDuplicates", function(value, element) {
+    // get the values from the text area, split into an array
+    var raw_values = getValuesFromMultilineTextArea(value);
+    // https://stackoverflow.com/a/15868720
+    var unique_values = raw_values.reduce(function(a,b){
+        if (a.indexOf(b) < 0 ) a.push(b);
+        return a;
+      },[]);
+    // if the length of the raw values is the same as the length of the unique
+    // values, then every raw value is unique and validation passes.  Otherwise,
+    // something is wrong.
+    var return_val = raw_values.length === unique_values.length;
+
+    return this.optional(element) || return_val;
+}, "Must not contain duplicate items.");
+
 function setUpDynamicPlusMinusGlyphsOnAccordionSections(){
     // From https://www.tutorialrepublic.com/twitter-bootstrap-tutorial/bootstrap-accordion.php
     // Add minus icon for collapse element which is open by default
@@ -419,8 +437,10 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
         addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE);
         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE, updateDefaultsWithBooleanVals);
     },
-    function (field_index) { //make categorical values required and add onchange handler to update defaults
+    function (field_index) { //make categorical values required, require values must be unique,
+        // and add onchange handler to update defaults
         addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.CATEGORY_VALS);
+        addNoDuplicatesRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.CATEGORY_VALS);
         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.CATEGORY_VALS, updateDefaultsWithCategories);
     },
     function (field_index){ //make minimum required if minimum comparison is not none
