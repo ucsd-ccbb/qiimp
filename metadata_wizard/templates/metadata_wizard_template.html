@@ -485,7 +485,8 @@
                                                 <label class="hidden" id="label_{{mws.InputNames.field_type.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.field_type.value}}{{mws.TEMPLATE_SUFFIX}}">Field Type</label>
                                                 <select name="{{mws.InputNames.field_type.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.field_type.name}}{{mws.TEMPLATE_SUFFIX}}" size={{len(mws.FieldTypes)}} >
                                                     {% for curr_enum in mws.FieldTypes %}
-                                                    <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
+                                                    <!--<option value="{{curr_enum.value}}" title="{{wiz_state.FIELD_TYPE_TOOLTIPS[curr_enum.value]}}">{{curr_enum.name}}</option>-->
+                                                    <option value="{{curr_enum.value}}">{{wiz_state.FIELD_TYPE_TOOLTIPS[curr_enum.value]}}</option>
                                                     {% end %}
                                                 </select>
                                             </div>

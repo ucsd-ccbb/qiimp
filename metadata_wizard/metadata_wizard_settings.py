@@ -122,6 +122,14 @@ class FieldTypes(Enum):
     Text = CerberusDataTypes.Text.value
 
 
+def _get_field_type_to_tooltip_dict():
+    return {
+        FieldTypes.Text.value: "Free Text",
+        FieldTypes.Boolean.value: "Boolean (True/False)",
+        FieldTypes.Categorical.value: "Categorical (Group A, B, C, etc.)",
+        FieldTypes.Continuous.value: "Continous (Numbers, dates, etc.)"
+    }
+
 class DefaultTypes(Enum):
     no_default = "no_default"
     boolean_default = "boolean_default"
@@ -143,6 +151,7 @@ class MetadataWizardState(object):
         self.DEFAULT_LOCALES_YAML_PATH = "default_locales.yaml"
         self.ENVIRONMENTS_YAML_PATH = "environments.yaml"
         self.SAMPLETYPES_YAML_PATH = "sampletypes.yaml"
+        self.FIELD_TYPE_TOOLTIPS = _get_field_type_to_tooltip_dict()
 
         self.install_dir = None
         self.static_path = None
