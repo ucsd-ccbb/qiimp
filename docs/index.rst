@@ -1,7 +1,5 @@
 Metadata Wizard Tutorial
 ==================
- 
-TEST
 
 This tutorial will walk you through the creation of a metadata template using Metadata Wizard.
  
