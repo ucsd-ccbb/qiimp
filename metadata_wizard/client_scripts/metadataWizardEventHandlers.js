@@ -126,7 +126,15 @@ function updateTypeValidationsAndUnitsDisplay(event){
 
     // also show or hide units div based on whether or not type is datetime
     showHideUnits(field_index, data_type_value);
+    enableDisableUnitsText(field_index);
 }
+
+
+function enableDisableUnitsTextOnIsUnitlessChange(event){
+    var field_index = event.data.field_index;
+    enableDisableUnitsText(field_index);
+}
+
 
 function removeField(event){
     var field_index = event.data.field_index;

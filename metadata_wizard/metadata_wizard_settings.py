@@ -110,6 +110,7 @@ class InputNames(Enum):
     maximum_comparison = "maximum_comparison"
     maximum_value = "maximum_value"
     units = "units"
+    is_unitless = "is_unitless"
     is_phi = "is_phi"
     environment = "env"
     sample_type = "sample_type"

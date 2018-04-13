@@ -109,6 +109,18 @@ function setFormValue(input_name, input_value, trigger_onchange){
     }
 }
 
+// NB: this enables or disables the units *textbox* based on whether the "is_unitless" checkbox is unchecked or
+// checked, respectively.  It does not show or hide anything; see showHideUnits for the code that shows/hides the
+// whole enclosing units *div* based on what data type was selected.
+function enableDisableUnitsText(field_index){
+    var is_unitless_id_selector = getIdSelectorFromBaseNameAndFieldIndex(
+        g_transferred_variables.ELEMENT_IDENTIFIERS.IS_UNITLESS, field_index);
+     var is_unitless_value = $(is_unitless_id_selector).is(":checked");
+
+    // enable units textbox if is_unitless is FALSE; else disable it
+    enableOrDisableByValue(g_transferred_variables.ELEMENT_IDENTIFIERS.UNITS, field_index, is_unitless_value, false);
+}
+
 // From https://stackoverflow.com/a/9116746
 function getElementType(element){
     return element[0].tagName == "INPUT" ? element[0].type.toLowerCase() : element[0].tagName.toLowerCase();

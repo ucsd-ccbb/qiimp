@@ -458,6 +458,10 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
     function (field_index) { //make datetime default pass datetime validation
         addDateTimeValidationRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_DATETIME);
     },
+    function (field_index) { //make status of is_unitless checkbox determine whether units textbox is enabled
+        addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.IS_UNITLESS,
+            enableDisableUnitsTextOnIsUnitlessChange);
+    },
     function (field_index){ //add onclick event handler to remove button for field
         addEventHandler("click", field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.REMOVE_FIELD, removeField)
     }

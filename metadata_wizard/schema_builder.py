@@ -29,7 +29,7 @@ def _get_special_handling_fields():
             mws.InputNames.datetime_default.value, mws.InputNames.true_value.value, mws.InputNames.false_value.value,
             mws.InputNames.data_type.value, mws.InputNames.categorical_values.value, mws.InputNames.minimum_comparison.value,
             mws.InputNames.minimum_value.value, mws.InputNames.maximum_comparison.value, mws.InputNames.maximum_value.value,
-            mws.InputNames.is_phi.value]
+            mws.InputNames.is_phi.value, mws.InputNames.is_unitless.value]
 
 # def _get_cast_func_by_data_type():
 #     return {mws.CerberusDataTypes.Text.value: str,

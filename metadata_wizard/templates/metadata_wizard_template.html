@@ -167,6 +167,8 @@
             MIN_COMPARE: "{{mws.InputNames.minimum_comparison.value}}",
             MAXIMUM: "{{mws.InputNames.maximum_value.value}}",
             MAX_COMPARE: "{{mws.InputNames.maximum_comparison.value}}",
+            UNITS: "{{mws.InputNames.units.value}}",
+            IS_UNITLESS: "{{mws.InputNames.is_unitless.value}}",
             CATEGORY_VALS: "{{mws.InputNames.categorical_values.value}}",
             DEFAULT_MISSINGS: "{{mws.InputNames.allowed_missing_default_select.value}}",
             DEFAULT_OPTION: "{{mws.InputNames.default_value.value}}",
@@ -569,6 +571,9 @@
                                                                 </div>
                                                                 <div class="Cell interior-cell">
                                                                     <input name="{{mws.InputNames.units.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.units.name}}{{mws.TEMPLATE_SUFFIX}}" type="text" placeholder="e.g., years"  disabled required/>
+                                                                    <p>or</p>
+                                                                    <input type="checkbox" name="{{mws.InputNames.is_unitless.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.is_unitless.value}}{{mws.TEMPLATE_SUFFIX}}" value="True">
+                                                                    <label id="label_{{mws.InputNames.is_unitless.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.is_unitless.value}}{{mws.TEMPLATE_SUFFIX}}">Is unitless</label>
                                                                 </div>
                                                             </div>
                                                         </div>
