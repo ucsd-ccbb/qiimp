@@ -20,7 +20,6 @@ METADATA_SCHEMA_SHEET_NAME = "metadata_schema"
 SAMPLE_NAME_HEADER = "sample_name"
 NAME_KEY = "name"
 DISPLAY_NAME_KEY = "display_name"
-TUTORIAL_LINK = "Need help? Visit the <a target='_blank' href='http://metadata-wizard-tutorial.readthedocs.io/en/latest/'>tutorial</a>! (Opens in new tab.)"
 
 
 def get_single_key_and_subdict(a_dict):
@@ -153,6 +152,9 @@ class MetadataWizardState(object):
         self.ENVIRONMENTS_YAML_PATH = "environments.yaml"
         self.SAMPLETYPES_YAML_PATH = "sampletypes.yaml"
         self.FIELD_TYPE_TOOLTIPS = _get_field_type_to_tooltip_dict()
+        self.TUTORIAL_LINK = "http://metadata-wizard-tutorial.readthedocs.io/en/latest/"
+        self.TUTORIAL_BLURB = "Need help? Visit the <a target='_blank' href='" + self.TUTORIAL_LINK + \
+                              "'>tutorial</a>! (Opens in new tab.)"
 
         self.install_dir = None
         self.static_path = None

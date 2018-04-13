@@ -73,9 +73,19 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
     # write readme worksheet
     readme_format = workbook.add_format({'align': 'left', 'valign': 'top'})
     readme_format.set_text_wrap()
-    form_worksheet = xlsxbasics.create_worksheet(workbook, README_SHEET_NAME)
-    form_worksheet.set_column(0, 0, 100)  # Width of column A set to 100.
-    form_worksheet.merge_range('A1:A100', metadata_wizard_settings.make_readme_text(), readme_format)
+    readme_worksheet = xlsxbasics.create_worksheet(workbook, README_SHEET_NAME)
+    readme_worksheet.set_column(0, 0, 100)  # Width of column A set to 100.
+    tutorial_hyperlink_str = "=HYPERLINK(\"{0}\", \"Click here for instructions on using this spreadsheet.\")".format(
+                                       metadata_wizard_settings.TUTORIAL_LINK)
+
+    readme_worksheet.write_formula(0,0, tutorial_hyperlink_str,
+                                   # TODO: someday: centralize link format definitions.
+                                   # this link format is a copy-paste of the one in
+                                   # xlsx_dynamic_grid_builder._write_dynamic_name_link_col ; assuming we want
+                                   # all the link formats in the spreadsheet to look the same, they should be defined
+                                   # in one central place.
+                                   xlsxbasics.make_format(workbook, {'font_color': 'blue', 'underline': 1}))
+    readme_worksheet.write_string('A3', metadata_wizard_settings.make_readme_text(), readme_format)
 
     # close workbook
     workbook.close()

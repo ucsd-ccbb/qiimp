@@ -1,5 +1,3 @@
-{% import metadata_wizard.metadata_wizard_settings as mws %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,7 +35,7 @@
                 <strong>Download your <a href="{{ static_url(template_file_partial_path) }}">customized metadata template spreadsheet</a> now!</strong>
                 <br />
                 <br />
-                {% raw mws.TUTORIAL_LINK %}
+                {% raw wiz_state.TUTORIAL_BLURB %}
                 <br />
                 <br />
                 To make another metadata template, click <a href="http://{{ wiz_state.main_url }}">here</a>.
