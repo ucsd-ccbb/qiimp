@@ -1,6 +1,7 @@
 function addFields(input_field_names_or_dicts){
     var new_field_nums_and_names = [];
     var is_dicts = !Array.isArray(input_field_names_or_dicts);
+    var input_names_in_order = getPossibleFieldInputNamesInOrder();
 
     // If the input is a list and the list has nothing in it, bail out without doing anything
     if ((!is_dicts) && (input_field_names_or_dicts.length === 0)){
@@ -27,16 +28,17 @@ function addFields(input_field_names_or_dicts){
             decorateNewElements(g_fields_state.getCurrentNextFieldNum());
 
             if (curr_field_dict !== null) {
-                // Ugh, allowed_missing_vals[] is a terrible PITA that needs to be set FIRST because otherwise the
-                // default stuff gets all confused
-                if (curr_field_dict["allowed_missing_vals[]"]) {
-                    readInAndResetFormField(curr_field_dict, "allowed_missing_vals[]");
-                    delete curr_field_dict["allowed_missing_vals[]"];
-                }
-
-                // Now loop over everything else
-                for (var curr_field_key in curr_field_dict) {
-                    readInAndResetFormField(curr_field_dict, curr_field_key);
+                // loop over each of the possible input name in field details, in order;
+                // if the current input name is found in the set of input names for this field,
+                // read in the value and set the form input with it.
+                // Doing this loop, instead of just looping over the set of input names for this field,
+                // ensures that the inputs are set in a sensible order that allows the
+                // onchange events to handle interrelated conditional changes.
+                for (var curr_input_name_index in input_names_in_order){
+                    var curr_input_name = input_names_in_order[curr_input_name_index];
+                    if (curr_input_name in curr_field_dict){
+                        readInAndResetFormField(curr_field_dict, curr_input_name);
+                    }
                 }
             }
 
@@ -52,6 +54,32 @@ function addFields(input_field_names_or_dicts){
 
     // show the div with the field names and details
     $(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.EXISTING_FIELDS_DIV)).removeClass('hidden');
+}
+
+function getPossibleFieldInputNamesInOrder(){
+    // After battling several intractable bugs, I conclude that the onchange interactions between
+    // the elements are such that filling them in completely random order (as they come back in the
+    // form dictionary) and trying to keep all the conditional updating sane is a losing battle.
+    // I therefore decide to fill them in the order they will likely be filled in the interface.
+
+    // I could have hardcoded this order somewhere (as a variable, or encoded in the names of the field,
+    // or something) but I'm concerned that would set us  up for inscrutable future bugs when a
+    // new field was added to the interface but left out of that ordered list, and thus not reloaded
+    // properly.  Therefore, I decide to instead set the order by dynamically getting the order in which
+    // the field detail template's input elements are present in the interface; this assumes, obviously, that
+    // that order is sensible, but currently it is and I see no reason why that would need to change.
+
+    // get the order in which to add input elements for each field
+    var field_details_template_inputs_selector = getIdSelectorFromId(
+        g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_DETAILS +
+        g_transferred_variables.TEMPLATE_SUFFIX) + " :input";
+    // ": input" gets ALL input elements, including textarea, select, etc
+    var input_names_in_order = [];
+    $(field_details_template_inputs_selector).each(function( index, element ) {
+        input_names_in_order.push(this.name.replace(g_transferred_variables.TEMPLATE_SUFFIX, ""));
+    });
+
+    return input_names_in_order;
 }
 
 function readInAndResetFormField(curr_field_dict, curr_field_key) {
