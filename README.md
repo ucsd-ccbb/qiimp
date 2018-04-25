@@ -16,6 +16,6 @@ Modify the copied config file so that the line
 
     static_path: /home/ec2-user/cmi_metadata_wizard
     
-in the [DEPLOYED] section points to <working dir>.  
+in the [DEPLOYED] section points to the working directory.  
 
     start_metadata_wizard_server --deployed
