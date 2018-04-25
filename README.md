@@ -11,4 +11,11 @@ Note that this repository contains the full code necessary for the metadata wiza
     cd <working dir>
     pip install --upgrade git+git://github.com/ucsd-ccbb/cmi_metadata_wizard.git
     cp <working dir>/config.txt /home/ec2-user/miniconda3/lib/python3.5/site-packages/metadata_wizard/settings/config.txt
+    
+Modify the copied config file so that the line 
+
+    static_path: /home/ec2-user/cmi_metadata_wizard
+    
+in the [DEPLOYED] section points to <working dir>.  
+
     start_metadata_wizard_server --deployed
