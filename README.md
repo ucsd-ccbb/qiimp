@@ -44,7 +44,7 @@ Note that this repository contains the full code necessary for the metadata wiza
             /home/ec2-user/miniconda3/envs/metadata_wizard/lib/python3.6/site-packages/metadata_wizard/metadata_package_schema_builder.py:154: UserWarning: No filename specified for 'None'.
             warnings.warn("No filename specified for '{0}'.".format(a_dict))
   
-  * When the metadata wizard is accessible, a `server ready` message will be printed to `STDOUT`
+    * When the metadata wizard is accessible, a `server ready` message will be printed to `STDOUT`
 
 8. Access the metadata wizard through a browser at the URL of your instance + the port number, e.g. `http://ec2-18-236-71-136.us-west-2.compute.amazonaws.com:8181/`
     
