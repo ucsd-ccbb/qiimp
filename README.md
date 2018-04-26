@@ -45,7 +45,6 @@ Note that this repository contains the full code necessary for the metadata wiza
             warnings.warn("No filename specified for '{0}'.".format(a_dict))
   
   * When the metadata wizard is accessible, a `server ready` message will be printed to `STDOUT`
-  * To stop the metadata wizard, type `Ctrl+c`
 
 8. Access the metadata wizard through a browser at the URL of your instance + the port number, e.g. `http://ec2-18-236-71-136.us-west-2.compute.amazonaws.com:8181/`
     
@@ -55,4 +54,6 @@ Note that this repository contains the full code necessary for the metadata wiza
             WARNING:tornado.access:404 GET /static/third-party/microbiome/fonts/glyphicons-halflings-regular.woff (128.54.20.205) 0.45ms
             WARNING:tornado.access:404 GET /static/third-party/microbiome/fonts/glyphicons-halflings-regular.ttf (128.54.20.205) 0.49ms
             WARNING:tornado.access:404 GET /favicon.ico (128.54.20.205) 0.59ms
+            
+9. If desired (when done using it), stop the metadata wizard by typing `Ctrl+c` on the server command line
     
