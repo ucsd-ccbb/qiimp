@@ -38,22 +38,19 @@ Note that this repository contains the full code necessary for the metadata wiza
         start_metadata_wizard_server --deployed
     
    * If you are running the metadata wizard on your local host instead of on a publicly available host, run it *without* the `--deployed` switch.  It will then use the settings in the `[LOCAL]` section of the config instead of the `[DEPLOYED]` section. 
-   * Note that seeing a number of `DeprecationWarning`s and `UserWarning`s like the examples below are expected and does not indicate a failure:
+   * If you see `UserWarning`s like the examples below:
    
-            /home/ec2-user/miniconda3/envs/metadata_wizard/lib/python3.6/site-packages/metadata_wizard/metadata_wizard_settings.py:48: DeprecationWarning: Call to deprecated function get_sheet_names (Use wb.sheetnames).sheet_names = openpyxl_workbook.get_sheet_names()
-            /home/ec2-user/miniconda3/envs/metadata_wizard/lib/python3.6/site-packages/metadata_wizard/metadata_package_schema_builder.py:154: UserWarning: No filename specified for 'None'.
-            warnings.warn("No filename specified for '{0}'.".format(a_dict))
+            /home/ec2-user/miniconda3/envs/metadata_wizard/lib/python3.6/site-packages/metadata_wizard/metadata_package_schema_builder.py:163: UserWarning: No filename specified for sample type 'sponge' in environment 'non-vertebrate'.
+            warnings.warn("No filename specified for {0}.".format(context_description))
+  
+        * ... this indicates that not all environments and/or sample types have schema files defined for them in the `settings/environments.yaml` file for the installation.  
+        * This is sometimes acceptable, specifically in cases in which the sample type or environment truly has no unique field definitions associated with it, such as the "other" sample type in the "base" environment.
+        * However, it is more often an indication that not all expected configuration information for environment and sample type packages has been properly placed in the `settings/packages` directory.  
+        * Thus, each such warning should be checked to ensure that it is expected.
   
     * When the metadata wizard is accessible, a `server ready` message will be printed to `STDOUT`
 
 8. Access the metadata wizard through a browser at the URL of your instance + the port number, e.g. `http://ec2-18-236-71-136.us-west-2.compute.amazonaws.com:8181/`
-    
-    * Note that seeing a number of `tornado` warnings printed to the server `STDERR` when accessing the site, like the ones shown below, is expected and does not indicate a failure:
-    
-            WARNING:tornado.access:404 GET /static/third-party/microbiome/img/body-bg.png (128.54.20.205) 0.60ms
-            WARNING:tornado.access:404 GET /static/third-party/microbiome/fonts/glyphicons-halflings-regular.woff (128.54.20.205) 0.45ms
-            WARNING:tornado.access:404 GET /static/third-party/microbiome/fonts/glyphicons-halflings-regular.ttf (128.54.20.205) 0.49ms
-            WARNING:tornado.access:404 GET /favicon.ico (128.54.20.205) 0.59ms
             
 9. If desired (when done using it), stop the metadata wizard by typing `Ctrl+c` on the server command line
     
