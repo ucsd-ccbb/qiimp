@@ -95,14 +95,18 @@ def load_environment_and_sampletype_info(envs_definitions, displayname_by_sample
         if curr_env_parent_name is not None:
             parent_env_name_by_env_name[curr_env_name] = curr_env_parent_name
 
-        curr_env_schemas = {_ENV_SCHEMA_KEY: _load_schema_from_filename_val(package_dir_path, curr_env_dict)}
+        curr_env_context_desc = "environment '{0}'".format(curr_env_name)
+        curr_env_schemas = {_ENV_SCHEMA_KEY: _load_schema_from_filename_val(package_dir_path, curr_env_dict,
+                                                                            curr_env_context_desc)}
 
         curr_env_sampletype_schemas_by_name = {}
         curr_env_sampletype_dicts_list = curr_env_dict[_FILENAME_BY_SAMPLETYPES_LIST_KEY]
         for curr_env_sampletype in curr_env_sampletype_dicts_list:
             curr_env_sampletype_name, curr_env_sampletype_filename = mws.get_single_key_and_subdict(curr_env_sampletype)
 
-            curr_env_sampletype_schema = _load_schema_from_filename_val(package_dir_path, curr_env_sampletype_filename)
+            curr_sample_context_desc = "sample type '{0}' in {1}".format(curr_env_sampletype_name, curr_env_context_desc)
+            curr_env_sampletype_schema = _load_schema_from_filename_val(package_dir_path, curr_env_sampletype_filename,
+                                                                        curr_sample_context_desc)
             curr_env_sampletype_schemas_by_name[curr_env_sampletype_name] = curr_env_sampletype_schema
 
         curr_env_schemas[_SAMPLE_TYPES_KEY] = curr_env_sampletype_schemas_by_name
@@ -142,16 +146,21 @@ def load_environment_and_sampletype_info(envs_definitions, displayname_by_sample
            parent_stack_by_env_name, env_schemas
 
 
-def _load_schema_from_filename_val(base_dir, a_dict):
+def _load_schema_from_filename_val(base_dir, a_dict, context_description):
     a_schema = {}
-    a_filename = a_dict
+
+    # input "a_dict" can be either a filename string or a dictionary that
+    # contains a key for filename, the value of which is the filename string.
+    # Try looking up the filename key in the a_dict input to get the filename
+    # string; if that fails, assume the input is *already* the filename str
+
     try:
         a_filename = a_dict[_FILE_NAME_KEY]
     except:
-        pass
+        a_filename = a_dict
 
     if a_filename is None:
-        warnings.warn("No filename specified for '{0}'.".format(a_dict))
+        warnings.warn("No filename specified for {0}.".format(context_description))
     else:
         a_filepath = os.path.join(base_dir, a_filename)
         a_schema = mws.load_yaml_from_wizard_xlsx(a_filepath, mws.METADATA_SCHEMA_SHEET_NAME)
