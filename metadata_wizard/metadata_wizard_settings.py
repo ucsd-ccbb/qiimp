@@ -45,7 +45,7 @@ def load_yaml_from_wizard_xlsx(filepath, yaml_sheetname):
 # TODO: someday: grrr ... this doesn't really belong here, I feel, but can't move it xlsx_basics because that
 # would create a circular reference, so some refactoring is called for ...
 def check_is_metadata_wizard_file(openpyxl_workbook, yaml_sheetname, filepath):
-    sheet_names = openpyxl_workbook.get_sheet_names()
+    sheet_names = openpyxl_workbook.sheetnames
     if yaml_sheetname not in sheet_names:
         error_msg = "{0}'{1}' .".format(NON_WIZARD_XLSX_ERROR_PREFIX, filepath)
         raise ValueError(error_msg)
