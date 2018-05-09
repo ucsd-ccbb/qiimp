@@ -1,6 +1,6 @@
 import datetime
 
-import metadata_wizard.metadata_wizard_settings as mws
+import qiimp.metadata_wizard_settings as mws
 
 text_placeholder = "value"
 cell_placeholder = "{cell}"

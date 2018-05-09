@@ -1,6 +1,6 @@
 import string
 
-import metadata_wizard.metadata_wizard_settings as mws
+import qiimp.metadata_wizard_settings as mws
 
 
 # region general functions for working with worksheets and formulas

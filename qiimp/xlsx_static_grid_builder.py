@@ -1,6 +1,6 @@
-import metadata_wizard.metadata_wizard_settings
-import metadata_wizard.xlsx_basics as xlsxbasics
-import metadata_wizard.xlsx_validation_builder
+import qiimp.metadata_wizard_settings
+import qiimp.xlsx_basics as xlsxbasics
+import qiimp.xlsx_validation_builder
 
 
 class ValidationWorksheet(xlsxbasics.MetadataWorksheet):
@@ -9,7 +9,7 @@ class ValidationWorksheet(xlsxbasics.MetadataWorksheet):
 
         SHEET_NAME = "Validation"
 
-        self.SAMPLE_NAME_HEADER = metadata_wizard.metadata_wizard_settings.SAMPLE_NAME_HEADER
+        self.SAMPLE_NAME_HEADER = qiimp.metadata_wizard_settings.SAMPLE_NAME_HEADER
         self.IS_ABSENT_HEADER = "is_absent"
         self.IS_VALID_ROW_HEADER = "is_valid_row"
         self.ROW_IN_METADATA_HEADER = "row_in_metadata"
@@ -67,7 +67,7 @@ def _write_static_validation_grid(val_sheet, schema_dict):
 
         xlsxbasics.write_header(val_sheet, field_name, curr_grid_col_index)
 
-        unformatted_formula_str = metadata_wizard.xlsx_validation_builder.get_formula_constraint(field_specs_dict,
+        unformatted_formula_str = qiimp.xlsx_validation_builder.get_formula_constraint(field_specs_dict,
                                                                                                  val_sheet.regex_handler)
         if unformatted_formula_str is not None:
             curr_metadata_col_index = val_sheet.first_data_col_index + field_index

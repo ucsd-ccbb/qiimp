@@ -1,4 +1,4 @@
-import metadata_wizard.xlsx_basics as xlsxbasics
+import qiimp.xlsx_basics as xlsxbasics
 
 
 def write_dynamic_validation_grid(val_sheet, index_and_range_str_tuple_by_header_dict):

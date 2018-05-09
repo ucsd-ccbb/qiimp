@@ -4,12 +4,12 @@ import unicodedata
 import xlsxwriter
 import yaml
 
-import metadata_wizard.schema_builder
-import metadata_wizard.xlsx_basics as xlsxbasics
-import metadata_wizard.xlsx_metadata_grid_builder
-import metadata_wizard.xlsx_validation_builder
-import metadata_wizard.xlsx_static_grid_builder
-import metadata_wizard.xlsx_dynamic_grid_builder
+import qiimp.schema_builder
+import qiimp.xlsx_basics as xlsxbasics
+import qiimp.xlsx_metadata_grid_builder
+import qiimp.xlsx_validation_builder
+import qiimp.xlsx_static_grid_builder
+import qiimp.xlsx_dynamic_grid_builder
 
 # Ensures defaultdicts are represented as nice yaml rather than nasty (see https://stackoverflow.com/a/19323121 )
 from yaml.representer import Representer
@@ -36,18 +36,18 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
                                                'strings_to_urls': True})
 
     # write metadata worksheet
-    phi_renamed_schema_dict = metadata_wizard.schema_builder.rewrite_field_names_with_phi_if_relevant(schema_dict)
+    phi_renamed_schema_dict = qiimp.schema_builder.rewrite_field_names_with_phi_if_relevant(schema_dict)
     metadata_worksheet = xlsxbasics.MetadataWorksheet(workbook, num_columns, num_samples, a_regex_handler,
                                                       num_allowable_samples=num_allowable_samples)
-    metadata_wizard.xlsx_metadata_grid_builder.write_metadata_grid(metadata_worksheet, phi_renamed_schema_dict,
+    qiimp.xlsx_metadata_grid_builder.write_metadata_grid(metadata_worksheet, phi_renamed_schema_dict,
                                                                    DescriptionWorksheet.get_sheet_name())
 
     # write validation worksheet
-    validation_worksheet = metadata_wizard.xlsx_static_grid_builder.ValidationWorksheet(workbook, num_columns,
+    validation_worksheet = qiimp.xlsx_static_grid_builder.ValidationWorksheet(workbook, num_columns,
                                                                                         num_samples, a_regex_handler)
-    index_and_range_str_tuple_by_header_dict = metadata_wizard.xlsx_static_grid_builder.write_static_validation_grid_and_helpers(
+    index_and_range_str_tuple_by_header_dict = qiimp.xlsx_static_grid_builder.write_static_validation_grid_and_helpers(
         validation_worksheet, phi_renamed_schema_dict)
-    metadata_wizard.xlsx_dynamic_grid_builder.write_dynamic_validation_grid(
+    qiimp.xlsx_dynamic_grid_builder.write_dynamic_validation_grid(
         validation_worksheet, index_and_range_str_tuple_by_header_dict)
 
     # write descriptions worksheet
@@ -58,7 +58,7 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
     for field_index, field_name in enumerate(sorted_keys):
         row_num = field_index + 1 + 1  # plus 1 to move past name row, and plus 1 again because row nums are 1-based
         field_specs_dict = phi_renamed_schema_dict[field_name]
-        message = metadata_wizard.xlsx_validation_builder.get_field_constraint_description(field_specs_dict, a_regex_handler)
+        message = qiimp.xlsx_validation_builder.get_field_constraint_description(field_specs_dict, a_regex_handler)
         descriptions_worksheet.worksheet.write("A{0}".format(row_num), field_name, metadata_worksheet.bold_format)
         descriptions_worksheet.worksheet.write("B{0}".format(row_num), message)
 

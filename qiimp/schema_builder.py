@@ -1,4 +1,4 @@
-import metadata_wizard.metadata_wizard_settings as mws
+import qiimp.metadata_wizard_settings as mws
 
 
 def _get_field_type_to_schema_generator():

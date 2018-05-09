@@ -1,8 +1,8 @@
 import collections
 
-import metadata_wizard.metadata_wizard_settings as mws
-import metadata_wizard.xlsx_basics as xlsxbasics
-import metadata_wizard.xlsx_validation_builder as xvb
+import qiimp.metadata_wizard_settings as mws
+import qiimp.xlsx_basics as xlsxbasics
+import qiimp.xlsx_validation_builder as xvb
 
 
 def write_metadata_grid(data_worksheet, schema_dict, field_descs_sheet_name):
