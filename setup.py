@@ -112,7 +112,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'start_metadata_wizard_server=qiimp.metadata_wizard_server:main'
+            'start_qiimp_server=qiimp.metadata_wizard_server:main'
         ]
     }
 )
