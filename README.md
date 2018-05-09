@@ -1,4 +1,4 @@
-# cmi_metadata_wizard
+# qiimp
 Web application to collect metadata specifications from an experimenter and produce metadata input files with appropriate constraints
 
 Note that this repository contains the full code necessary for the metadata wizard proof-of-concept demo to function, which includes code that ccbb-ucsd did not write (contained in the "third-party" folder).
@@ -17,7 +17,7 @@ Note that this repository contains the full code necessary for the metadata wiza
     
 3. Install the metadata wizard from github.com
 
-        pip install --upgrade git+git://github.com/ucsd-ccbb/cmi_metadata_wizard.git
+        pip install --upgrade git+git://github.com/ucsd-ccbb/qiimp.git
     
 4. Find the `config.txt` file 
 

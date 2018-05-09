@@ -14,7 +14,7 @@ PHI_SUFFIX = SEPARATOR + "phi"
 # All field names should be lowercase and contain only alphanumeric and underscores.
 # No field name can start with a number
 FIELD_NAME_REGEX = "^[a-z][a-z0-9_]*$"
-NON_WIZARD_XLSX_ERROR_PREFIX = "Spreadsheet does not appear to have been produced by the metadata wizard: "
+NON_WIZARD_XLSX_ERROR_PREFIX = "Spreadsheet does not appear to have been produced by QIIMP: "
 # TODO: someday: this duplicates a definition in xlsx_builder, which would be a circular reference here; refactor!
 METADATA_SCHEMA_SHEET_NAME = "metadata_schema"
 SAMPLE_NAME_HEADER = "sample_name"

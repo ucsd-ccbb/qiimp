@@ -304,7 +304,7 @@ function makeValidationSettings(){
                 required: "Either 'Use Wizard' or 'Select Manually' must be selected."
             },
             "files[]": {
-                extension: "Only .xlsx files produced by the metadata wizard may be uploaded."
+                extension: "Only .xlsx files produced by QIIMP may be uploaded."
             }
         },
 		onfocusout: function( element ) {

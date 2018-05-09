@@ -1,5 +1,5 @@
 [DEPLOYED]
-static_path: /home/ec2-user/cmi_metadata_wizard
+static_path: /home/ec2-user/qiimp
 websocket_url: 
 listen_port: 8183
 

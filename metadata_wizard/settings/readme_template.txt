@@ -1,1 +1,0 @@
-This file was created by the Metadata Wizard VERSION at GENERATION_TIMESTAMP.

@@ -304,7 +304,7 @@ class MainHandler(tornado.web.RequestHandler):
         error_details = "".join(error_details_list)
 
         email_addr = "abirmingham@ucsd.edu"
-        subject = "Metadata Wizard error report"
+        subject = "QIIMP error report"
         mailto_url = "mailto:{0}?subject={1}&body={2}".format(email_addr, quote(subject), quote(error_details))
 
         self.render("metadata_error_template.html", mailto_url=mailto_url, error_trace=error_details,

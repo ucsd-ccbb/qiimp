@@ -4,7 +4,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Metadata Wizard</title>
+    <title>QIIMP</title>
     <link href="{{ static_url("third-party/favicon.ico") }}" rel="icon" type="image/x-icon" />
     <link href="{{ static_url("third-party/jQuery-File-Upload-9.19.2/css/jquery.fileupload.css") }}" rel="stylesheet" />
     <link href="{{ static_url("third-party/microbiome/css/bootstrap.css") }}" rel="stylesheet" />
@@ -282,7 +282,7 @@
     <div class="row">
         <div class="col-sm-4"></div>
         <div class="col-sm-8">
-            <h1>Metadata Wizard</h1>
+            <h1>QIIMP</h1>
             <div>
                 {% raw wiz_state.TUTORIAL_BLURB %}
             </div>
@@ -428,7 +428,7 @@
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <p>
-                                            Enter custom fields by typing their names into the box below and/or uploading them from a previously created Metadata Wizard file:
+                                            Enter custom fields by typing their names into the box below and/or uploading them from a previously created QIIMP file:
                                         </p>
                                         <label class="hidden" id="label_field_names" for="field_names">Custom Fields:</label>
                                         <textarea rows="5" cols="25" name="field_names" id="field_names" placeholder="e.g., phenotype&#10;timepoint&#10;disease_state"></textarea><br />
@@ -441,7 +441,7 @@
                                         <!-- from https://blueimp.github.io/jQuery-File-Upload/basic.html -->
                                         <div class="col=sm-12">
                                             and/or<br />
-                                            <label class="hidden" id = "label_upload_file_name" for="upload_file_name">Existing Metadata Wizard Spreadsheet:</label>
+                                            <label class="hidden" id = "label_upload_file_name" for="upload_file_name">Existing QIIMP Spreadsheet:</label>
                                             <input id="fileupload" type="file" name="files[]" disabled style="color:transparent;">
                                             <!-- The global progress bar -->
                                             <div id="progress">

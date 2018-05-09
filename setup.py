@@ -16,7 +16,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='cmi_metadata_wizard',
+    name='qiimp',
 
     # Versions should comply with PEP440.
     version='0.3',
@@ -25,7 +25,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url="https://github.com/ucsd-ccbb/cmi_metadata_wizard",
+    url="https://github.com/ucsd-ccbb/qiimp",
 
     # Author details
     author='The Center for Computational Biology and Bioinformatics',
@@ -81,7 +81,7 @@ setup(
     },
 
     package_data={
-        'metadata_wizard': [
+        'qiimp': [
             'output/*.*',
             'client_scripts/*.*',
             'settings/*.*',
@@ -112,7 +112,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'start_metadata_wizard_server=metadata_wizard.metadata_wizard_server:main'
+            'start_metadata_wizard_server=qiimp.metadata_wizard_server:main'
         ]
     }
 )

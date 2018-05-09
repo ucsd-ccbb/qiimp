@@ -10,7 +10,7 @@ conda install xlsxwriter -y
 conda install openpyxl -y
 conda install pandas -y
 conda install git -y
-git clone https://github.com/ucsd-ccbb/cmi_metadata_wizard.git
-cd cmi_metadata_wizard
+git clone https://github.com/ucsd-ccbb/qiimp.git
+cd qiimp
 # ensure URL/port in metadata_wizard_server.py main and in metadataWizard.js document.ready are set for instance
 python metadata_wizard_server.py
