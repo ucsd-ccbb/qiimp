@@ -65,10 +65,12 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
     # write schema worksheet--note, don't use the phi_renamed_schema_dict but the original schema_dict
     schema_worksheet = xlsxbasics.create_worksheet(workbook, SCHEMA_SHEET_NAME)
     schema_worksheet.write_string("A1", yaml.dump(schema_dict, default_flow_style=False))
+    schema_worksheet.hide()
 
     # write form worksheet
     form_worksheet = xlsxbasics.create_worksheet(workbook, FORM_SHEET_NAME)
     form_worksheet.write_string("A1", yaml.dump(form_dict, default_flow_style=False))
+    form_worksheet.hide()
 
     # write readme worksheet
     readme_format = workbook.add_format({'align': 'left', 'valign': 'top'})
