@@ -10,12 +10,12 @@ Note that this repository contains the full code necessary for the metadata wiza
 
 ## Installation
 
-1. Create and source a `conda` environment for the metadata wizard
+1. Create and source a `conda` environment for QIIMP
 
-        conda create -n metadata_wizard python=3 openpyxl tornado xlsxwriter PyYAML pandas git
-        source activate metadata_wizard
+        conda create -n qiimp python=3 openpyxl tornado xlsxwriter PyYAML pandas git
+        source activate qiimp
     
-3. Install the metadata wizard from github.com
+3. Install QIIMP from github.com
 
         pip install --upgrade git+git://github.com/ucsd-ccbb/qiimp.git
     
@@ -23,24 +23,24 @@ Note that this repository contains the full code necessary for the metadata wiza
 
     * Find the location of your `conda` install's `site-packages` folder by running
         
-            pip show cmi-metadata-wizard
+            pip show qiimp
     
-    * Look for the line in the output that starts with `Location: ` and find the path it lists (for example, `/Users/Me/Applications/miniconda3/envs/metadata_wizard/lib/python3.6/site-packages`).  This will be referred to below as `sitepackagespath`.
-    * The `config.txt` file will be at `sitepackagespath/metadata_wizard/settings/config.txt`
+    * Look for the line in the output that starts with `Location: ` and find the path it lists (for example, `/Users/Me/Applications/miniconda3/envs/qiimp/lib/python3.6/site-packages`).  This will be referred to below as `sitepackagespath`.
+    * The `config.txt` file will be at `sitepackagespath/qiimp/settings/config.txt`
     
 6. Edit the `[DEPLOYED]` section of the `config.txt` file to set the appropriate values for your installation
 
     * Set the `websocket_url` variable to the public hostname of the machine/instance (e.g., `ec2-34-215-148-70.us-west-2.compute.amazonaws.com`).  
     * If you want the port used to be something other than the default (8183), set the `listen_port` variable to the desired port. **Be sure that public access to this port is enabled on your machine!**
     
-7. Start the metadata wizard
+7. Start the QIIMP server
 
-        start_metadata_wizard_server --deployed
+        start_qiimp_server --deployed
     
-   * If you are running the metadata wizard on your local host instead of on a publicly available host, run it *without* the `--deployed` switch.  It will then use the settings in the `[LOCAL]` section of the config instead of the `[DEPLOYED]` section. 
+   * If you are running QIIMP on your local host instead of on a publicly available host, run it *without* the `--deployed` switch.  It will then use the settings in the `[LOCAL]` section of the config instead of the `[DEPLOYED]` section. 
    * If you see `UserWarning`s like the examples below:
    
-            /home/ec2-user/miniconda3/envs/metadata_wizard/lib/python3.6/site-packages/metadata_wizard/metadata_package_schema_builder.py:163: UserWarning: No filename specified for sample type 'sponge' in environment 'non-vertebrate'.
+            /home/ec2-user/miniconda3/envs/qiimp/lib/python3.6/site-packages/qiimp/metadata_package_schema_builder.py:163: UserWarning: No filename specified for sample type 'sponge' in environment 'non-vertebrate'.
             warnings.warn("No filename specified for {0}.".format(context_description))
   
         * ... this indicates that not all environments and/or sample types have schema files defined for them in the `settings/environments.yaml` file for the installation.  
@@ -48,9 +48,9 @@ Note that this repository contains the full code necessary for the metadata wiza
         * However, it is more often an indication that not all expected configuration information for environment and sample type packages has been properly placed in the `settings/packages` directory.  
         * Thus, each such warning should be checked to ensure that it is expected.
   
-    * When the metadata wizard is accessible, a `server ready` message will be printed to `STDOUT`
+    * When the QIIMP server is accessible, a `server ready` message will be printed to `STDOUT`
 
-8. Access the metadata wizard through a browser at the URL of your instance + the port number, e.g. `http://ec2-18-236-71-136.us-west-2.compute.amazonaws.com:8181/`
+8. Access QIIMP through a browser at the URL of your instance + the port number, e.g. `http://ec2-18-236-71-136.us-west-2.compute.amazonaws.com:8181/`
             
-9. If desired (when done using it), stop the metadata wizard by typing `Ctrl+c` on the server command line
+9. If desired (when done using it), stop the QIIMP server by typing `Ctrl+c` on the server command line
     
