@@ -125,8 +125,10 @@ function updateTypeValidationsAndUnitsDisplay(event){
     updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CONTINUOUS, field_index, data_type_value);
 
     // also show or hide units div based on whether or not type is datetime
-    showHideUnits(field_index, data_type_value);
-    enableDisableUnitsText(field_index);
+    var showUnits = showHideUnits(field_index, data_type_value);
+    if (showUnits){
+        enableDisableUnitsText(field_index);
+    }
 }
 
 

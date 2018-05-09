@@ -260,6 +260,7 @@
             var show_units = !(data_type_value === "{{mws.CerberusDataTypes.DateTime.value}}");
             var units_div_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.UNITS_DIV, field_index);
             showEnableOrHideDisable(units_div_id_selector, show_units);
+            return show_units;
         }
 
         function enableDisableDefaultSelects(field_index, curr_val){
