@@ -1,7 +1,7 @@
-Metadata Wizard Tutorial
+QIIMP Tutorial
 ==================
 
-This tutorial will walk you through the creation of a metadata template using Metadata Wizard.
+This tutorial will walk you through the creation of a metadata template using QIIMP.
  
 Home Screen
 ------------------
@@ -17,7 +17,7 @@ Home Screen
 Study Description
 ------------------------
  
-This section should be opened automatically. If you have closed it, select “Study Description” to fill out this section. In this section of the metadata wizard, you describe your study and where the samples were collected.
+This section should be opened automatically. If you have closed it, select “Study Description” to fill out this section. In this section of the interface, you describe your study and where the samples were collected.
  
 .. figure::  images/studydescription.png
    :align:   center
@@ -52,7 +52,7 @@ This section should be opened automatically. If you have closed it, select “St
 Package Fields
 ---------------------
  
-Select “Package Fields” to fill out this section. In this section of the metadata wizard, when you select your sample type,  a set of default fields will be added to your metadata template.
+Select “Package Fields” to fill out this section. In this section of the interface, when you select your sample type,  a set of default fields will be added to your metadata template.
  
 .. figure::  images/packagefields.png
    :align:   center
@@ -212,11 +212,11 @@ Now that you have your default fields added to your metadata template, you can a
 .. figure::  images/allerrors.png
    :align:   center
  
-* If at any point in filling out the metadata wizard you have made a mistake or left a required field empty, an error box will show at the bottom of the screen telling you the exact error and where it can be found.
+* If at any point in filling out the interface you have made a mistake or left a required field empty, an error box will show at the bottom of the screen telling you the exact error and where it can be found.
 
-* If you already have an excel sheet made with the Metadata Wizard, you can also use that to create your custom fields
+* If you already have an excel sheet made with QIIMP, you can also use that to create your custom fields
   
-  * This file MUST be created with the Metadata Wizard
+  * This file MUST be created with QIIMP
 
 .. figure::  images/uploadfile.png
    :align:   center
@@ -239,7 +239,7 @@ Submitting Your Data
 * This will bring you to a new page where you can download your metadata template or make a new template
         	
   * Customized metadata template spreadsheet: Download the metadata sheet created
-  * Here: Return to the metadata wizard to create a new metadata template
+  * Here: Return to the main QIIMP page to create a new metadata template
 
 Your Metadata Spreadsheet
 --------------------------------------
