@@ -371,8 +371,13 @@ def main():
         (r"/(merge)$", MergeHandler)
     ], **settings)
 
+    ssl_options = None
+    if wizard_state.use_ssl:
+        ssl_options = {"certfile": wizard_state.certificate_file,
+                       "keyfile": wizard_state.key_file}
+
     print("server ready")
-    application.listen(wizard_state.listen_port)
+    application.listen(wizard_state.listen_port, ssl_options=ssl_options)
     tornado.ioloop.IOLoop.instance().start()
 
 

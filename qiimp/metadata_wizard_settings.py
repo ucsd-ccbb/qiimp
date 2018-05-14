@@ -169,6 +169,8 @@ class MetadataWizardState(object):
         self.full_merge_url = None
         self.websocket_url = None
         self.listen_port = None
+        self.use_ssl = True
+        self.protocol = None
 
         self.regex_handler = None
 
@@ -192,12 +194,14 @@ class MetadataWizardState(object):
         self.templates_dir_path = os.path.join(self.install_dir, "templates")
         self.client_scripts_dir_path = os.path.join(self.install_dir, "client_scripts")
 
-
         self._get_config_values(is_deployed)
+
+        self.use_ssl = bool(self.certificate_file and self.key_file)
+        self.protocol = "https" if self.use_ssl else "http"
         if self.static_path == "": self.static_path = self.install_dir
         self.main_url = "{0}:{1}".format(self.websocket_url, self.listen_port)
-        self.full_upload_url = "http://{0}/upload".format(self.main_url)
-        self.full_merge_url = "http://{0}/merge".format(self.main_url)
+        self.full_upload_url = "{0}://{1}/upload".format(self.protocol, self.main_url)
+        self.full_merge_url = "{0}://{1}/merge".format(self.protocol, self.main_url)
 
         self.regex_handler = RegexHandler(self._get_settings_item_path(self.REGEX_YAML_PATH))
         self.reserved_words_list = _load_yaml_from_fp(self._get_settings_item_path(self.RESERVED_WORDS_YAML_PATH))
@@ -237,6 +241,17 @@ class MetadataWizardState(object):
         self.static_path = os.path.expanduser(config_parser.get(section_name, "static_path"))
         self.listen_port = os.path.expanduser(config_parser.get(section_name, "listen_port"))
         self.websocket_url = os.path.expanduser(config_parser.get(section_name, "websocket_url"))
+        self.certificate_file = self._apply_default_path(os.path.expanduser(config_parser.get(section_name, 'CERTIFICATE_FILE')))
+        self.key_file = self._apply_default_path(os.path.expanduser(config_parser.get(section_name, 'KEY_FILE')))
+
+    def _apply_default_path(self, file_name):
+        # assume that, if the file name doesn't already include a path,
+        # the file is located in the settings directory
+        result = file_name
+        if result:
+            if not os.path.dirname(file_name):
+                result = os.path.join(self.settings_dir_path, file_name)
+        return result
 
     def _get_settings_item_path(self, item_file_name):
         return self._get_item_path(self.settings_dir_path, item_file_name)
