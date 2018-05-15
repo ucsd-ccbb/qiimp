@@ -89,6 +89,9 @@ setup(
             'templates/*.*',
             # man, I *hate* that there's no way to do recursive directory inclusion with package_data!
             'third-party/*.*',
+            'third-party/bootstrap-3.3.7-dist/css/*.*',
+            'third-party/bootstrap-3.3.7-dist/fonts/*.*',
+            'third-party/bootstrap-3.3.7-dist/js/*.*',
             'third-party/jQuery-File-Upload-9.19.2/cors/*.*',
             'third-party/jQuery-File-Upload-9.19.2/css/*.*',
             'third-party/jQuery-File-Upload-9.19.2/img/*.*',
@@ -96,10 +99,10 @@ setup(
             'third-party/jQuery-File-Upload-9.19.2/js/cors/*.*',
             'third-party/jQuery-File-Upload-9.19.2/js/vendor/*.*',
             # I am leaving out the server and test sub-folders on the theory I don't need them for deployment ...
+            'third-party/jquery-ui-1.12.1/external/jquery/*.*',
+            'third-party/jquery-ui-1.12.1/images/*.*',
+            'third-party/jquery-ui-1.12.1/*.*',
             'third-party/jquery_validation/*.*',
-            'third-party/microbiome/*.*',
-            'third-party/microbiome/css/*.*',
-            'third-party/microbiome/img/*.*'
         ]
     },
 
