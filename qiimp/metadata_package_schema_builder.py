@@ -3,6 +3,7 @@ import os
 import warnings
 
 import qiimp.metadata_wizard_settings as mws
+import qiimp.xlsx_basics as xlsxbasics
 
 # NOTE: The xlsx_validation_builder.py module's handling of allowed values requires that the
 # data type of a schema NOT be defined outside of an anyof, EVEN IF the type of all of the anyof options are the same.
@@ -163,7 +164,7 @@ def _load_schema_from_filename_val(base_dir, a_dict, context_description):
         warnings.warn("No filename specified for {0}.".format(context_description))
     else:
         a_filepath = os.path.join(base_dir, a_filename)
-        a_schema = mws.load_yaml_from_wizard_xlsx(a_filepath, mws.METADATA_SCHEMA_SHEET_NAME)
+        a_schema = xlsxbasics.load_yaml_from_wizard_xlsx(a_filepath, xlsxbasics.SheetNames.schema.value)
     return a_schema
 
 

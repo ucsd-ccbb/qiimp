@@ -17,10 +17,6 @@ yaml.add_representer(collections.defaultdict, Representer.represent_dict)
 
 
 def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings):
-    SCHEMA_SHEET_NAME = "metadata_schema"
-    FORM_SHEET_NAME = "metadata_form"
-    README_SHEET_NAME = "Instructions"
-
     num_allowable_samples = 1000
     # TODO: someday: either expand code to use num_samples and add real code to get in from interface, or take out unused hook
     num_samples = 0
@@ -63,19 +59,19 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
         descriptions_worksheet.worksheet.write("B{0}".format(row_num), message)
 
     # write schema worksheet--note, don't use the phi_renamed_schema_dict but the original schema_dict
-    schema_worksheet = xlsxbasics.create_worksheet(workbook, SCHEMA_SHEET_NAME)
+    schema_worksheet = xlsxbasics.create_worksheet(workbook, xlsxbasics.SheetNames.schema.value)
     schema_worksheet.write_string("A1", yaml.dump(schema_dict, default_flow_style=False))
     schema_worksheet.hide()
 
     # write form worksheet
-    form_worksheet = xlsxbasics.create_worksheet(workbook, FORM_SHEET_NAME)
+    form_worksheet = xlsxbasics.create_worksheet(workbook, xlsxbasics.SheetNames.form.value)
     form_worksheet.write_string("A1", yaml.dump(form_dict, default_flow_style=False))
     form_worksheet.hide()
 
     # write readme worksheet
     readme_format = workbook.add_format({'align': 'left', 'valign': 'top'})
     readme_format.set_text_wrap()
-    readme_worksheet = xlsxbasics.create_worksheet(workbook, README_SHEET_NAME)
+    readme_worksheet = xlsxbasics.create_worksheet(workbook, xlsxbasics.SheetNames.readme.value)
     readme_worksheet.set_column(0, 0, 100)  # Width of column A set to 100.
     tutorial_hyperlink_str = "=HYPERLINK(\"{0}\", \"Click here for instructions on using this spreadsheet.\")".format(
                                        metadata_wizard_settings.TUTORIAL_LINK)

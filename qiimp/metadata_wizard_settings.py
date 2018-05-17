@@ -16,7 +16,7 @@ PHI_SUFFIX = SEPARATOR + "phi"
 FIELD_NAME_REGEX = "^[a-z][a-z0-9_]*$"
 NON_WIZARD_XLSX_ERROR_PREFIX = "Spreadsheet does not appear to have been produced by QIIMP: "
 # TODO: someday: this duplicates a definition in xlsx_builder, which would be a circular reference here; refactor!
-METADATA_SCHEMA_SHEET_NAME = "metadata_schema"
+WORKBOOK_PASSWORD = "kpcofGs"  # Kingdom phylum class order family Genus species
 SAMPLE_NAME_HEADER = "sample_name"
 NAME_KEY = "name"
 DISPLAY_NAME_KEY = "display_name"

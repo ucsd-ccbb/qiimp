@@ -1,12 +1,42 @@
+from enum import Enum
 import string
+import yaml
+
+import openpyxl
 
 import qiimp.metadata_wizard_settings as mws
 
 
+class SheetNames(Enum):
+    # Note: these are in the order they appear in the workbook
+    metadata = "Metadata"
+    validation = "Validation"
+    schema = "metadata_schema"
+    form = "metadata_form"
+    readme = "Instructions"
+
+
 # region general functions for working with worksheets and formulas
 def get_worksheet_password():
-    return ""
-    # return "kpcofGs"  # Kingdom phylum class order family Genus species
+    return mws.WORKBOOK_PASSWORD
+
+
+def load_yaml_from_wizard_xlsx(filepath, yaml_sheetname):
+    assumed_cell = "A1"
+    wb = openpyxl.load_workbook(filename=filepath)
+    check_is_metadata_wizard_file(wb, yaml_sheetname, filepath)
+
+    yaml_sheet = wb[yaml_sheetname]
+    yaml_string = yaml_sheet[assumed_cell].value
+    yaml_dict = yaml.load(yaml_string)
+    return yaml_dict
+
+
+def check_is_metadata_wizard_file(openpyxl_workbook, yaml_sheetname, filepath):
+    sheet_names = openpyxl_workbook.sheetnames
+    if yaml_sheetname not in sheet_names:
+        error_msg = "{0}'{1}' .".format(mws.NON_WIZARD_XLSX_ERROR_PREFIX, filepath)
+        raise ValueError(error_msg)
 
 
 def create_worksheet(workbook, sheet_name, protect_options=None, num_cols_to_freeze=1):
@@ -144,7 +174,7 @@ class MetadataWorksheet(object):
 
         :type a_regex_handler: regex_handler.RegexHandler
         """
-        SHEET_NAME = "Metadata"
+        SHEET_NAME = SheetNames.metadata.value
 
         self.workbook = workbook
         self.metadata_sheet_name = SHEET_NAME

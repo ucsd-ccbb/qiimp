@@ -7,7 +7,7 @@ class ValidationWorksheet(xlsxbasics.MetadataWorksheet):
     def __init__(self, workbook, num_attributes, num_samples, a_regex_handler):
         super().__init__(workbook, num_attributes, num_samples, a_regex_handler, make_sheet=False)
 
-        SHEET_NAME = "Validation"
+        SHEET_NAME = xlsxbasics.SheetNames.validation.value
 
         self.SAMPLE_NAME_HEADER = qiimp.metadata_wizard_settings.SAMPLE_NAME_HEADER
         self.IS_ABSENT_HEADER = "is_absent"
