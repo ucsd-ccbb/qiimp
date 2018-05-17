@@ -11,6 +11,7 @@ class SheetNames(Enum):
     # Note: these are in the order they appear in the workbook
     metadata = "Metadata"
     validation = "Validation"
+    data_dictionary = "Data Dictionary"
     schema = "metadata_schema"
     form = "metadata_form"
     readme = "Instructions"

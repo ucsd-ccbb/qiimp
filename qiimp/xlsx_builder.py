@@ -92,8 +92,8 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
 
 class DescriptionWorksheet(xlsxbasics.MetadataWorksheet):
     @classmethod
-    def get_sheet_name(self):
-        return "Data Dictionary"
+    def get_sheet_name(cls):
+        return xlsxbasics.SheetNames.data_dictionary.value
 
     def __init__(self, workbook, num_attributes, num_samples, a_regex_handler):
         super().__init__(workbook, num_attributes, num_samples, a_regex_handler, make_sheet=False)
