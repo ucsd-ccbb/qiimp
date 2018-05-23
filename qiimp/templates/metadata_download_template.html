@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QIIMP Metadata Template Download</title>
+    <link href="{{ static_url("third-party/favicon.ico") }}" rel="icon" type="image/x-icon" />
+    <!--Below included for consistency with Qiita "look"-->
+    <link rel="stylesheet" href="{{ static_url("third-party/jquery-ui-1.12.1/jquery-ui.min.css") }}" type="text/css">
+    <link rel="stylesheet" href="{{ static_url("third-party/jquery-ui-1.12.1/jquery-ui.structure.min.css") }}" type="text/css">
+    <link rel="stylesheet" href="{{ static_url("third-party/jquery-ui-1.12.1/jquery-ui.theme.min.css") }}" type="text/css">
+    <link rel="stylesheet" href="{{ static_url("third-party/bootstrap-3.3.7-dist/css/bootstrap.min.css") }}" type="text/css">
+    <link rel="stylesheet" href="{{ static_url("third-party/bootstrap-3.3.7-dist/css/bootstrap-theme.min.css") }}" type="text/css">
+</head>
+<body>
+    <div class="container" id="container">
+        <div class="row">
+            <div class="col-sm-4">
+            </div>
+            <div class="col-sm-8">
+                <h1>QIIMP Metadata Template Download</h1>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <strong>Download your <a href="{{ static_url(template_file_partial_path) }}">customized metadata template spreadsheet</a> now!</strong>
+                <br />
+                <br />
+                {% raw wiz_state.TUTORIAL_BLURB %}
+                <br />
+                <br />
+                To make another metadata template, click <a href="{{ wiz_state.protocol }}://{{ wiz_state.main_url }}">here</a>.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

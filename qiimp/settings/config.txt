@@ -1,0 +1,18 @@
+[DEPLOYED]
+static_path:
+websocket_url: 
+listen_port: 8183
+
+# Webserver certificate file paths;
+# Empty paths indicate program should use http instead of https.
+# A file name without a path is interpreted to refer to a file of that name
+# in the settings directory.
+CERTIFICATE_FILE = server.crt
+KEY_FILE = server.key
+
+[LOCAL]
+static_path:
+websocket_url: localhost
+listen_port: 8898
+CERTIFICATE_FILE =
+KEY_FILE =

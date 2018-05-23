@@ -16,7 +16,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='cmi_metadata_wizard',
+    name='qiimp',
 
     # Versions should comply with PEP440.
     version='0.3',
@@ -25,7 +25,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url="https://github.com/ucsd-ccbb/cmi_metadata_wizard",
+    url="https://github.com/ucsd-ccbb/qiimp",
 
     # Author details
     author='The Center for Computational Biology and Bioinformatics',
@@ -81,7 +81,7 @@ setup(
     },
 
     package_data={
-        'metadata_wizard': [
+        'qiimp': [
             'output/*.*',
             'client_scripts/*.*',
             'settings/*.*',
@@ -89,6 +89,9 @@ setup(
             'templates/*.*',
             # man, I *hate* that there's no way to do recursive directory inclusion with package_data!
             'third-party/*.*',
+            'third-party/bootstrap-3.3.7-dist/css/*.*',
+            'third-party/bootstrap-3.3.7-dist/fonts/*.*',
+            'third-party/bootstrap-3.3.7-dist/js/*.*',
             'third-party/jQuery-File-Upload-9.19.2/cors/*.*',
             'third-party/jQuery-File-Upload-9.19.2/css/*.*',
             'third-party/jQuery-File-Upload-9.19.2/img/*.*',
@@ -96,10 +99,10 @@ setup(
             'third-party/jQuery-File-Upload-9.19.2/js/cors/*.*',
             'third-party/jQuery-File-Upload-9.19.2/js/vendor/*.*',
             # I am leaving out the server and test sub-folders on the theory I don't need them for deployment ...
+            'third-party/jquery-ui-1.12.1/external/jquery/*.*',
+            'third-party/jquery-ui-1.12.1/images/*.*',
+            'third-party/jquery-ui-1.12.1/*.*',
             'third-party/jquery_validation/*.*',
-            'third-party/microbiome/*.*',
-            'third-party/microbiome/css/*.*',
-            'third-party/microbiome/img/*.*'
         ]
     },
 
@@ -112,7 +115,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'start_metadata_wizard_server=metadata_wizard.metadata_wizard_server:main'
+            'start_qiimp_server=qiimp.metadata_wizard_server:main'
         ]
     }
 )
