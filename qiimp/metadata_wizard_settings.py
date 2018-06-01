@@ -20,6 +20,9 @@ WORKBOOK_PASSWORD = "kpcofGs"  # Kingdom phylum class order family Genus species
 SAMPLE_NAME_HEADER = "sample_name"
 NAME_KEY = "name"
 DISPLAY_NAME_KEY = "display_name"
+DOWNLOAD_URL_FOLDER = "/download"
+PACKAGE_URL_FOLDER = "/upload"
+UPLOAD_URL_FOLDER = "/package"
 
 
 def get_single_key_and_subdict(a_dict):
@@ -131,6 +134,7 @@ def _get_field_type_to_tooltip_dict():
         FieldTypes.Continuous.value: "Continous (Numbers, dates, etc.)"
     }
 
+
 class DefaultTypes(Enum):
     no_default = "no_default"
     boolean_default = "boolean_default"
@@ -159,14 +163,20 @@ class MetadataWizardState(object):
 
         self.install_dir = None
         self.static_path = None
+        self.url_subfolder = None
+        self.static_url_folder = None
+        self.static_url_prefix = None
         self.packages_dir_path = None
         self.settings_dir_path = None
         self.templates_dir_path = None
         self.client_scripts_dir_path = None
 
         self.main_url = None
+        self.partial_package_url = None
+        self.partial_download_url = None
+        self.partial_upload_url = None
         self.full_upload_url = None
-        self.full_merge_url = None
+        #self.full_merge_url = None
         self.websocket_url = None
         self.listen_port = None
         self.use_ssl = True
@@ -185,7 +195,7 @@ class MetadataWizardState(object):
         self.parent_stack_by_env_name = None
         self.env_schemas = None
 
-        self.merge_info_by_merge_id = {}
+        # self.merge_info_by_merge_id = {}
 
     def set_up(self, is_deployed):
         self.install_dir = os.path.dirname(__file__)
@@ -199,9 +209,14 @@ class MetadataWizardState(object):
         self.use_ssl = bool(self.certificate_file and self.key_file)
         self.protocol = "https" if self.use_ssl else "http"
         if self.static_path == "": self.static_path = self.install_dir
+
         self.main_url = "{0}:{1}".format(self.websocket_url, self.listen_port)
-        self.full_upload_url = "{0}://{1}/upload".format(self.protocol, self.main_url)
-        self.full_merge_url = "{0}://{1}/merge".format(self.protocol, self.main_url)
+        self.static_url_prefix = self._get_url(self.static_url_folder)
+        self.partial_package_url = self._get_url(PACKAGE_URL_FOLDER)
+        self.partial_download_url = self._get_url(DOWNLOAD_URL_FOLDER)
+        self.partial_upload_url = self._get_url(UPLOAD_URL_FOLDER)
+        self.full_upload_url = self._get_url(UPLOAD_URL_FOLDER, True)
+        # self.full_merge_url = "{0}://{1}/merge".format(self.protocol, self.main_url)
 
         self.regex_handler = RegexHandler(self._get_settings_item_path(self.REGEX_YAML_PATH))
         self.reserved_words_list = _load_yaml_from_fp(self._get_settings_item_path(self.RESERVED_WORDS_YAML_PATH))
@@ -239,6 +254,8 @@ class MetadataWizardState(object):
         config_parser.read_file(open(os.path.join(self.settings_dir_path, 'config.txt')))
 
         self.static_path = os.path.expanduser(config_parser.get(section_name, "static_path"))
+        self.url_subfolder = config_parser.get(section_name, "url_subfolder")
+        self.static_url_folder = config_parser.get(section_name, "static_url_folder")
         self.listen_port = os.path.expanduser(config_parser.get(section_name, "listen_port"))
         self.websocket_url = os.path.expanduser(config_parser.get(section_name, "websocket_url"))
         self.certificate_file = self._apply_default_path(os.path.expanduser(config_parser.get(section_name, 'CERTIFICATE_FILE')))
@@ -255,6 +272,12 @@ class MetadataWizardState(object):
 
     def _get_settings_item_path(self, item_file_name):
         return self._get_item_path(self.settings_dir_path, item_file_name)
+
+    def _get_url(self, desired_subfolder, make_full_url=False):
+        result = self.url_subfolder + desired_subfolder
+        if make_full_url:
+            result = "{0}://{1}{2}".format(self.protocol, self.main_url, result)
+        return result
 
     @staticmethod
     def _get_item_path(parent_dir, file_name):

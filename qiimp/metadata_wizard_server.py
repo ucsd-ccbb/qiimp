@@ -1,7 +1,7 @@
 import argparse
 from collections import defaultdict
 import copy
-import itertools
+# import itertools
 import json
 import sys
 import traceback
@@ -9,8 +9,9 @@ import tempfile
 
 from urllib.parse import quote
 
-import openpyxl
-import pandas
+# import openpyxl
+# import pandas
+import re
 import tornado.ioloop  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.web  # Note: Pycharm thinks this import isn't used, but it is
 import tornado.websocket
@@ -117,96 +118,96 @@ class UploadHandler(tornado.web.RequestHandler):
         pass
 
 
-class MergeHandler(tornado.web.RequestHandler):
-    def get(self, *args, **kwargs):
-        wiz_state = self.application.settings["wizard_state"]
-        self.render("metadata_merge_template.html", wiz_state=wiz_state)
-
-    def post(self, *args):
-        wiz_state = self.application.settings["wizard_state"]
-
-        # TODO: someday: refactor hard-coding of element names
-        files_element_name = "files[]"
-        merge_id_element_name = "merge_id"
-        filename_key = "filename"
-        body_key = "body"
-
-        merge_id = _parse_form_value(self.request.arguments[merge_id_element_name])
-
-        # if there is a files element in the submit
-        if files_element_name in self.request.files:
-            # get the files, save them under the merge_id
-            file_names_dict_list = []
-            fileinfo_dicts_list = self.request.files[files_element_name]
-            for curr_fileinfo_dict in fileinfo_dicts_list:
-                # store the uploaded file(s) for use when we know all have been submitted, at which point we will merge
-                if not merge_id in wiz_state.merge_info_by_merge_id:
-                    wiz_state.merge_info_by_merge_id[merge_id] = []
-                wiz_state.merge_info_by_merge_id[merge_id].append(curr_fileinfo_dict)
-
-                # build up a list of the file name(s) uploaded to send back to the front-end
-                file_names_dict_list.append({"name": curr_fileinfo_dict[filename_key]})
-
-            # send back name(s) of file(s) uploaded
-            self.write(json.dumps({"files": file_names_dict_list}))
-            self.finish()
-        else:
-            # all file uploads are done; do the actual merge and redirect to the download page;
-            # get all the files that were uploaded, merge them into a tsv, and present for download
-            file_info_dicts_list = wiz_state.merge_info_by_merge_id[merge_id]
-            merge_filename = self._merge_xlsxs(file_info_dicts_list, filename_key, body_key, ".xlsx", wiz_state)
-            self.redirect("/download/{0}".format(merge_filename))
-
-    def data_received(self, chunk):
-        # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
-        pass
-
-    def _merge_xlsxs(self, file_info_dicts_list, filename_key, body_key, xlsx_suffix, wizard_state):
-        # create a dummy dataframe for the first merger
-        combined_sheet = pandas.DataFrame()
-
-        merged_filenames = []
-        for curr_file_info_dict in file_info_dicts_list:
-            merged_filenames.append(curr_file_info_dict[filename_key])
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=xlsx_suffix)
-            temp_file.write(curr_file_info_dict[body_key])
-            temp_file.close()  # but DON'T delete yet
-
-            # TODO: someday: these hard-coded sheet names should be refactored
-            combined_sheet = self._merge_xlsx(temp_file.name, 'metadata', 'validation', combined_sheet)
-
-        merge_filename = "_".join([x.replace(xlsx_suffix, "") for x in merged_filenames]) + ".tsv"
-        merge_filepath = wizard_state.get_output_path(merge_filename)
-        combined_sheet.to_csv(path_or_buf=merge_filepath, sep='\t', na_rep='not applicable', header=True, index=False)
-        return merge_filename
-
-    # TODO: someday: refactor so this can move into xlsx_basics?
-    def _merge_xlsx(self, filepath, metadata_sheetname, validation_sheetname, merged_df):
-        # load workbook
-        wb = openpyxl.load_workbook(filename=filepath)
-        mws.check_is_metadata_wizard_file(wb, metadata_sheetname, filepath)
-
-        validation_sheet = wb[validation_sheetname]
-        for row in validation_sheet.rows:
-            for cell in row:
-                # TODO: someday: remove hard-code of Fix
-                if str(cell.value) == 'Fix':
-                    fix_error_msg = "{0}'{1}' .".format('There is an invalid cell in ', filepath)
-                    raise ValueError(fix_error_msg)
-
-        # read in the metadata and process to DataFrame
-        metadata_sheet = wb[metadata_sheetname]
-        metadata = metadata_sheet.values
-        cols = next(metadata)[0:]
-        metadata = list(metadata)
-        metadata = (itertools.islice(r, 0, None) for r in metadata)
-        adding_df = pandas.DataFrame(metadata, columns=cols)
-
-        # combine the newly created DataFrame with the previous DataFrame, then update it
-        merged_df = merged_df.combine_first(adding_df)
-        merged_df.update(adding_df)
-
-        return merged_df
+# class MergeHandler(tornado.web.RequestHandler):
+#     def get(self, *args, **kwargs):
+#         wiz_state = self.application.settings["wizard_state"]
+#         self.render("metadata_merge_template.html", wiz_state=wiz_state)
+#
+#     def post(self, *args):
+#         wiz_state = self.application.settings["wizard_state"]
+#
+#         # TODO: someday: refactor hard-coding of element names
+#         files_element_name = "files[]"
+#         merge_id_element_name = "merge_id"
+#         filename_key = "filename"
+#         body_key = "body"
+#
+#         merge_id = _parse_form_value(self.request.arguments[merge_id_element_name])
+#
+#         # if there is a files element in the submit
+#         if files_element_name in self.request.files:
+#             # get the files, save them under the merge_id
+#             file_names_dict_list = []
+#             fileinfo_dicts_list = self.request.files[files_element_name]
+#             for curr_fileinfo_dict in fileinfo_dicts_list:
+#                 # store the uploaded file(s) for use when we know all have been submitted, at which point we will merge
+#                 if not merge_id in wiz_state.merge_info_by_merge_id:
+#                     wiz_state.merge_info_by_merge_id[merge_id] = []
+#                 wiz_state.merge_info_by_merge_id[merge_id].append(curr_fileinfo_dict)
+#
+#                 # build up a list of the file name(s) uploaded to send back to the front-end
+#                 file_names_dict_list.append({"name": curr_fileinfo_dict[filename_key]})
+#
+#             # send back name(s) of file(s) uploaded
+#             self.write(json.dumps({"files": file_names_dict_list}))
+#             self.finish()
+#         else:
+#             # all file uploads are done; do the actual merge and redirect to the download page;
+#             # get all the files that were uploaded, merge them into a tsv, and present for download
+#             file_info_dicts_list = wiz_state.merge_info_by_merge_id[merge_id]
+#             merge_filename = self._merge_xlsxs(file_info_dicts_list, filename_key, body_key, ".xlsx", wiz_state)
+#             self.redirect("{0}{1}".format(_download_partial_url, merge_filename))
+#
+#     def data_received(self, chunk):
+#         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
+#         pass
+#
+#     def _merge_xlsxs(self, file_info_dicts_list, filename_key, body_key, xlsx_suffix, wizard_state):
+#         # create a dummy dataframe for the first merger
+#         combined_sheet = pandas.DataFrame()
+#
+#         merged_filenames = []
+#         for curr_file_info_dict in file_info_dicts_list:
+#             merged_filenames.append(curr_file_info_dict[filename_key])
+#             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=xlsx_suffix)
+#             temp_file.write(curr_file_info_dict[body_key])
+#             temp_file.close()  # but DON'T delete yet
+#
+#             # TODO: someday: these hard-coded sheet names should be refactored
+#             combined_sheet = self._merge_xlsx(temp_file.name, 'metadata', 'validation', combined_sheet)
+#
+#         merge_filename = "_".join([x.replace(xlsx_suffix, "") for x in merged_filenames]) + ".tsv"
+#         merge_filepath = wizard_state.get_output_path(merge_filename)
+#         combined_sheet.to_csv(path_or_buf=merge_filepath, sep='\t', na_rep='not applicable', header=True, index=False)
+#         return merge_filename
+#
+#     # TODO: someday: refactor so this can move into xlsx_basics?
+#     def _merge_xlsx(self, filepath, metadata_sheetname, validation_sheetname, merged_df):
+#         # load workbook
+#         wb = openpyxl.load_workbook(filename=filepath)
+#         mws.check_is_metadata_wizard_file(wb, metadata_sheetname, filepath)
+#
+#         validation_sheet = wb[validation_sheetname]
+#         for row in validation_sheet.rows:
+#             for cell in row:
+#                 # TODO: someday: remove hard-code of Fix
+#                 if str(cell.value) == 'Fix':
+#                     fix_error_msg = "{0}'{1}' .".format('There is an invalid cell in ', filepath)
+#                     raise ValueError(fix_error_msg)
+#
+#         # read in the metadata and process to DataFrame
+#         metadata_sheet = wb[metadata_sheetname]
+#         metadata = metadata_sheet.values
+#         cols = next(metadata)[0:]
+#         metadata = list(metadata)
+#         metadata = (itertools.islice(r, 0, None) for r in metadata)
+#         adding_df = pandas.DataFrame(metadata, columns=cols)
+#
+#         # combine the newly created DataFrame with the previous DataFrame, then update it
+#         merged_df = merged_df.combine_first(adding_df)
+#         merged_df.update(adding_df)
+#
+#         return merged_df
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -285,7 +286,7 @@ class MainHandler(tornado.web.RequestHandler):
                                                                     dict_of_field_schemas_by_index,
                                                                     wiz_state)
 
-            self.redirect("/download/{0}".format(file_name))
+            self.redirect("{0}/{1}".format(wiz_state.partial_download_url, file_name))
         except Exception as e:
             self.send_error(exc_info=sys.exc_info())
 
@@ -360,15 +361,16 @@ def main():
 
     settings = {
         "static_path": wizard_state.static_path,
+        "static_url_prefix": wizard_state.static_url_prefix,
         "template_path": wizard_state.templates_dir_path,
         "wizard_state": wizard_state,
     }
+
     application = tornado.web.Application([
         (r"/", MainHandler),
-        (r"/download/([^/]+)", DownloadHandler),
-        (r"/(upload)$", UploadHandler),
-        (r"/(package)$", PackageHandler),
-        (r"/(merge)$", MergeHandler)
+        (re.escape(wizard_state.partial_download_url) + r"/([^/]+)", DownloadHandler),
+        (re.escape(wizard_state.partial_upload_url) +  r"$", UploadHandler),
+        (re.escape(wizard_state.partial_package_url) + r"$", PackageHandler)
     ], **settings)
 
     ssl_options = None

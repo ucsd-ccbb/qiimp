@@ -71,7 +71,7 @@ function onSelectPackage(){
 
     // Make an ajax call to get the list of field names for this package and the list of reserved words
     $.ajax({
-        url : '/package',
+        url : g_transferred_variables.PACKAGE_PARTIAL_URL,
         type : 'POST',
         data : package_info,
         dataType: 'json',

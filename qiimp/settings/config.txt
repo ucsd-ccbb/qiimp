@@ -1,5 +1,7 @@
 [DEPLOYED]
+url_subfolder: /qiimp
 static_path:
+static_url_folder: /static/
 websocket_url: 
 listen_port: 8183
 
@@ -11,7 +13,9 @@ CERTIFICATE_FILE = server.crt
 KEY_FILE = server.key
 
 [LOCAL]
+url_subfolder:
 static_path:
+static_url_folder: /static/
 websocket_url: localhost
 listen_port: 8898
 CERTIFICATE_FILE =
