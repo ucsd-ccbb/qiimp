@@ -55,13 +55,7 @@
 - non-vertebrate:
     display_name: Non-Vertebrate Animal Host
     filename: non-vertebrate-animal.xlsx
-    filename_by_sampletypes_list:
-    - {sponge: null}
-    - {coral: null}
-    - {biofilm: null}
-    - {whole-gut: null}
-    - {insect: null}
-    - {insect-gut: null}
+    filename_by_sampletypes_list: []
     parent: animal
 - animal:
     display_name: null
@@ -71,13 +65,7 @@
 - plant:
     display_name: Plant Host
     filename: plant.xlsx
-    filename_by_sampletypes_list:
-    - {fruit: null}
-    - {seed: null}
-    - {leaf: null}
-    - {stem: null}
-    - {root: null}
-    - {rhizome: null}
+    filename_by_sampletypes_list: []
     parent: host_associated
 - fungus:
     display_name: Fungus Host
@@ -94,27 +82,17 @@
     filename: built-environment.xlsx
     filename_by_sampletypes_list:
     - {air: free-living-air.xlsx}
-    - {anaerobic-digester-content: null}
     parent: free-living
 - other_env:
     display_name: Other Free-Living Environment
     filename: other-environment.xlsx
     filename_by_sampletypes_list:
     - {air: free-living-air.xlsx}
-    - {beer: null}
-    - {cheese: null}
-    - {fresh-water: null}
-    - {marine-sediment: null}
-    - {sea-water: null}
-    - {sediment: null}
-    - {soil: null}
-    - {waste-water: null}
     parent: free-living
 - free-living:
     display_name: null
     filename: free-living.xlsx
     filename_by_sampletypes_list:
-    - {dust: null}
     - {air: free-living-air.xlsx}
     parent: ebi_submittable
 - ebi_submittable:
