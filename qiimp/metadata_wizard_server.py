@@ -286,7 +286,7 @@ class MainHandler(tornado.web.RequestHandler):
                                                                     dict_of_field_schemas_by_index,
                                                                     wiz_state)
 
-            self.redirect("{0}/{1}".format(wiz_state.partial_download_url, file_name))
+            self.redirect("{0}{1}".format(wiz_state.partial_download_url, file_name))
         except Exception as e:
             self.send_error(exc_info=sys.exc_info())
 
@@ -339,7 +339,7 @@ class DownloadHandler(tornado.web.RequestHandler):
         wiz_state = self.application.settings["wizard_state"]
         template_file_partial_path =wiz_state.get_partial_output_path(slug)
         self.render("metadata_download_template.html", template_file_partial_path=template_file_partial_path,
-                    wiz_state=wiz_state)
+                    full_main_url=wiz_state._get_url(make_full_url=True), wiz_state=wiz_state)
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
@@ -367,9 +367,9 @@ def main():
     }
 
     application = tornado.web.Application([
-        (r"/", MainHandler),
-        (re.escape(wizard_state.partial_download_url) + r"/([^/]+)", DownloadHandler),
-        (re.escape(wizard_state.partial_upload_url) +  r"$", UploadHandler),
+        (re.escape(wizard_state._get_url()), MainHandler),
+        (re.escape(wizard_state.partial_download_url) + r"([^/]+)", DownloadHandler),
+        (re.escape(wizard_state.partial_upload_url) + r"$", UploadHandler),
         (re.escape(wizard_state.partial_package_url) + r"$", PackageHandler)
     ], **settings)
 

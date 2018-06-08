@@ -32,9 +32,11 @@ Note that this repository contains the full code necessary for QIIMP to function
     
 6. Edit the `[DEPLOYED]` section of the `config.txt` file to set the appropriate values for your installation
 
-    * Set the `websocket_url` variable to the public hostname of the machine/instance (e.g., `ec2-34-215-148-70.us-west-2.compute.amazonaws.com`).  
-    * If you want the port used to be something other than the default (8183), set the `listen_port` variable to the desired port. **Be sure that public access to this port is enabled on your machine!**
-    
+    * Set the `main_url` variable to the public hostname of the machine/instance (e.g., `ec2-34-215-148-70.us-west-2.compute.amazonaws.com`).
+    * If you want the port used to be something other than the default (e.g., 8183), 
+        * If you want the user to access this port directly, add it to the `main_url` (e.g., `ec2-34-215-148-70.us-west-2.compute.amazonaws.com:8183`)
+        * Regardless of whether you want the user to access the port directly or be redirected to it internally, set the `listen_port` variable to the desired port. 
+        * **Be sure that public access to this port is enabled on your machine!**
 7. Start the QIIMP server
 
         start_qiimp_server --deployed

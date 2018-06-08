@@ -1,8 +1,8 @@
 [DEPLOYED]
 url_subfolder: /qiimp
 static_path:
-static_url_folder: /static/
-websocket_url: 
+static_url_folder: /static
+main_url: qiita-rc.ucsd.edu
 listen_port: 8183
 
 # Webserver certificate file paths;
@@ -13,10 +13,10 @@ CERTIFICATE_FILE = server.crt
 KEY_FILE = server.key
 
 [LOCAL]
-url_subfolder:
+url_subfolder: /qiimp
 static_path:
-static_url_folder: /static/
-websocket_url: localhost
+static_url_folder: /static
+main_url: localhost:8898
 listen_port: 8898
 CERTIFICATE_FILE =
 KEY_FILE =

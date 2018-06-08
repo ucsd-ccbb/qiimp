@@ -21,8 +21,8 @@ SAMPLE_NAME_HEADER = "sample_name"
 NAME_KEY = "name"
 DISPLAY_NAME_KEY = "display_name"
 DOWNLOAD_URL_FOLDER = "/download"
-PACKAGE_URL_FOLDER = "/upload"
-UPLOAD_URL_FOLDER = "/package"
+PACKAGE_URL_FOLDER = "/package"
+UPLOAD_URL_FOLDER = "/upload"
 
 
 def get_single_key_and_subdict(a_dict):
@@ -177,7 +177,6 @@ class MetadataWizardState(object):
         self.partial_upload_url = None
         self.full_upload_url = None
         #self.full_merge_url = None
-        self.websocket_url = None
         self.listen_port = None
         self.use_ssl = True
         self.protocol = None
@@ -210,7 +209,6 @@ class MetadataWizardState(object):
         self.protocol = "https" if self.use_ssl else "http"
         if self.static_path == "": self.static_path = self.install_dir
 
-        self.main_url = "{0}:{1}".format(self.websocket_url, self.listen_port)
         self.static_url_prefix = self._get_url(self.static_url_folder)
         self.partial_package_url = self._get_url(PACKAGE_URL_FOLDER)
         self.partial_download_url = self._get_url(DOWNLOAD_URL_FOLDER)
@@ -257,7 +255,7 @@ class MetadataWizardState(object):
         self.url_subfolder = config_parser.get(section_name, "url_subfolder")
         self.static_url_folder = config_parser.get(section_name, "static_url_folder")
         self.listen_port = os.path.expanduser(config_parser.get(section_name, "listen_port"))
-        self.websocket_url = os.path.expanduser(config_parser.get(section_name, "websocket_url"))
+        self.main_url = config_parser.get(section_name, "main_url")
         self.certificate_file = self._apply_default_path(os.path.expanduser(config_parser.get(section_name, 'CERTIFICATE_FILE')))
         self.key_file = self._apply_default_path(os.path.expanduser(config_parser.get(section_name, 'KEY_FILE')))
 
@@ -273,8 +271,8 @@ class MetadataWizardState(object):
     def _get_settings_item_path(self, item_file_name):
         return self._get_item_path(self.settings_dir_path, item_file_name)
 
-    def _get_url(self, desired_subfolder, make_full_url=False):
-        result = self.url_subfolder + desired_subfolder
+    def _get_url(self, desired_subfolder="", make_full_url=False):
+        result = self.url_subfolder + desired_subfolder + "/"
         if make_full_url:
             result = "{0}://{1}{2}".format(self.protocol, self.main_url, result)
         return result
