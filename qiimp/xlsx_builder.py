@@ -1,4 +1,5 @@
 import collections
+from random import randrange
 import re
 import unicodedata
 import xlsxwriter
@@ -25,7 +26,7 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
 
     # create workbook
     file_base_name = slugify(study_name)
-    file_name = '{0}.xlsx'.format(file_base_name)
+    file_name = '{0}_{1}.xlsx'.format(file_base_name, randrange(1000, 9999))
     output_path = metadata_wizard_settings.get_output_path(file_name)
     workbook = xlsxwriter.Workbook(output_path, {'strings_to_numbers': False,
                                                'strings_to_formulas': True,
