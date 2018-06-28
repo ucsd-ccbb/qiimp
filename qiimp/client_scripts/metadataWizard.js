@@ -257,6 +257,8 @@ function makeFileUploadSettings(uploadUrl) {
             if (data.result["fields"]){
                 addFields(data.result["fields"]);
             }
+
+            $('#progress').addClass('hidden');
         },
         fail: function (ev, data) {
             if (data.jqXHR) {
@@ -264,11 +266,13 @@ function makeFileUploadSettings(uploadUrl) {
             }
         },
         progressall: function (e, data) {
-            var progress = parseInt(data.loaded / data.total * 100, 10);
-            $('#progress .progress-bar').css(
-                'width',
-                progress + '%'
-            );
+            $('#progress').removeClass('hidden');
+
+            // var progress = parseInt(data.loaded / data.total * 100, 10);
+            // $('#progress .bar').css(
+            //    'width',
+            //    progress + '%'
+            // );
         }
     };
 }
@@ -401,7 +405,14 @@ function makeValidationSettings(){
             } else {
                 error.insertAfter(element);
             }
-          }
+        },
+        submitHandler: function(form) {
+            // show the wait message
+            $("#loading-overlay").removeClass("hidden");
+
+            // submit the form
+            form.submit();
+        }
     };
 }
 
