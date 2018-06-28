@@ -82,6 +82,7 @@ setup(
 
     package_data={
         'qiimp': [
+            '*.*',
             'output/*.*',
             'client_scripts/*.*',
             'settings/*.*',
