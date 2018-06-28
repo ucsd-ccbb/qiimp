@@ -68,6 +68,7 @@ function onSelectPackage(){
     }
 
     resetFieldsAndDivs(package_info);
+    $("#package-progress").removeClass("hidden");
 
     // Make an ajax call to get the list of field names for this package and the list of reserved words
     $.ajax({
@@ -76,7 +77,8 @@ function onSelectPackage(){
         data : package_info,
         dataType: 'json',
         success : ajax_ok,
-        error: ajax_err
+        error: ajax_err,
+        complete: function (data) {$("#package-progress").addClass("hidden");}
     });
 }
 

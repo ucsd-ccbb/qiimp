@@ -427,6 +427,12 @@
                                                 onclick="onSelectPackage();validateFormIfSubmitted();" disabled>Select Package</button>
                                     </div>
                                 </div>
+                                <div id="package-progress" class="row hidden">
+                                    <div class="col-sm-12">
+                                        Identifying your package fields: please wait
+                                        <img src = "{{ static_url("ajax_loader_gray_small_line.gif") }}" />
+                                    </div>
+                                </div>
                                 <div class="row" id="package_details_div">
                                     <br />
                                     <br />
