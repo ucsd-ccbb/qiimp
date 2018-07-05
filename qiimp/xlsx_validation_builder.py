@@ -64,7 +64,7 @@ def get_default_formula(field_schema_dict, trigger_col_letter, make_text=False):
         else:
             # at this point I don't need the field type of the field but rather the data type of the *default* value:
             # for example, a field with the data type integer could nonetheless have a *string* default of
-            # missing: not provided, and that value would need to be written in as a string with quotes around it.
+            # not provided, and that value would need to be written in as a string with quotes around it.
 
             data_type_of_default = None
             # NB: Per check in _get_data_types_and_allowed_vals, there may not be more than 2 options in this list.

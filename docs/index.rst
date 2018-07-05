@@ -40,7 +40,7 @@ This section should be opened automatically. If you have closed it, select “St
 
   * San Diego PHI Compliant: All samples will originally be provided with UCSD standard coordinates
   
-* Downstream tools will be notified to mask these coordinates with “missing: restricted access” before the data is made public
+* Downstream tools will be notified to mask these coordinates with “restricted access” before the data is made public
  
 .. figure::  images/studydescriptionerror.png
    :align:   center

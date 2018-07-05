@@ -86,9 +86,9 @@ class CerberusDataTypes(Enum):
 class EbiMissingValues(Enum):
     # values from https://www.ebi.ac.uk/ena/about/missing-values-reporting
     ebi_not_applicable = "not applicable"
-    ebi_not_collected = "missing: not collected"
-    ebi_not_provided = "missing: not provided"
-    ebi_restricted = "missing: restricted access"
+    ebi_not_collected = "not collected"
+    ebi_not_provided = "not provided"
+    ebi_restricted = "restricted access"
 
 
 class InputNames(Enum):
