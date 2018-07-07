@@ -202,7 +202,8 @@
 
         g_transferred_variables.SHOWN_ELEMENTS_BY_FIELD_TYPE = {
             "":[],
-            "{{mws.FieldTypes.Text.value}}":["text_default_div"],
+            "{{mws.FieldTypes.Text.value}}":["allowed_missing_vals_div",
+                "allowed_missing_default_div", "text_default_div"],
             "{{mws.FieldTypes.Boolean.value}}": ["boolean_div", "allowed_missing_vals_div",
                 "allowed_missing_default_div", "boolean_default_div"],
             "{{mws.FieldTypes.Continuous.value}}": ["continuous_datatype_units_div",
@@ -817,7 +818,8 @@
   {% end %}
 </div>
 <div id="loading-overlay" class="wait-overlay hidden">
-    <h2>Generating your custom metadata template: please wait!</h2>
+    <h2>Generating your custom metadata template.</h2>
+    <h2>This may take up to a minute; please wait!</h2>
     <img src = "{{ static_url("ajax_loader_gray_large_circle.gif") }}" />
     <div class="hidden">Loader image from<a href="http://www.mytreedb.com">http://www.mytreedb.com</a></div>
 </div>
