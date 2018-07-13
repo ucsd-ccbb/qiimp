@@ -117,7 +117,7 @@ Now that you have your default fields added to your metadata template, you can a
 
   * If adding multiple unique fields at a time, be sure to put each field on a separate line
  
-.. figure::  images/fieldnamesadded.png
+.. figure::  images/fieldnamesadded2.png
    :align:   center
  
 * This will prompt 3 columns to appear below “Choose File”
@@ -126,14 +126,14 @@ Now that you have your default fields added to your metadata template, you can a
   * Field Type: The type of field the selected field is
   * Field Details: The details you fill out about the added field
 
-.. figure::  images/fieldselect.png
+.. figure::  images/fieldselect2.png
    :align:   center
 
 * Select the field that you would like to add more information to
 
   * This will open up text boxes for you to fill in both Field Type and Field Details 
  
-.. figure::  images/fieldtype.png
+.. figure::  images/fieldtype2.png
    :align:   center
 
 * Field Type has 4 options
@@ -143,10 +143,10 @@ Now that you have your default fields added to your metadata template, you can a
   * Categorical
   * Continuous
  
-.. figure::  images/boolean.png
+.. figure::  images/boolean2.png
    :align:   center
  
-* Boolean: A data type with only 2 possible options
+* Boolean (True/False): A data type with only 2 possible options
 
   * Description: A description of your field
   * Protected Health Information: Labels this field as PHI or not
@@ -155,19 +155,10 @@ Now that you have your default fields added to your metadata template, you can a
   * False Value: The false option of the 2 Boolean values
   * Default Value: The value that will be automatically inserted into the cell once a sample is added
  
-.. figure::  images/text.png
+.. figure::  images/categorical2.png
    :align:   center
  
-* Text: A description of the sample
-
-  * Description: A description of your field
-  * Protected Health Information: Labels this field as PHI or not
-  * Default Value: The value that will be automatically inserted into the cell once a sample is added
- 
-.. figure::  images/categorical.png
-   :align:   center
- 
-* Categorical: A data type with multiple options
+* Categorical (Group A, B, C etc.): A data type with multiple options
 
   * Description: A description of your field
   * Protected Health Information: Labels this field as PHI or not
@@ -175,11 +166,12 @@ Now that you have your default fields added to your metadata template, you can a
   * Categorical Value: The data type options
   * Make sure that each type is on a different line
   * Default Value: The value that will be automatically inserted into the cell once a sample is added
+
  
-.. figure::  images/continuous.png
+.. figure::  images/continuous2.png
    :align:   center
  
-* Continuous: A data type measured on a continuous range
+* Continuous (Numbers, dates, etc.): A data type measured on a continuous range
 
   * Description: A description of your field
   * Protected Health Information: Labels this field as PHI or not
@@ -206,7 +198,17 @@ Now that you have your default fields added to your metadata template, you can a
           * Required if a comparison is chosen
 
     * Default Value: The value that will be automatically inserted into the cell once a sample is added
- 
+
+
+.. figure::  images/text2.png
+   :align:   center
+   
+* Free Text: A description of the sample
+
+  * Description: A description of your field
+  * Protected Health Information: Labels this field as PHI or not
+  * Default Value: The value that will be automatically inserted into the cell once a sample is added
+  
 * Fill out each field with the information it has asked for 
 
 .. figure::  images/allerrors.png
@@ -233,12 +235,13 @@ Submitting Your Data
  
 * Once all of your fields have been filled out, select the submit button at the bottom of the screen.
  
-.. figure::  images/newwindow.png
+.. figure::  images/newwindow2.png
    :align:   center
  
 * This will bring you to a new page where you can download your metadata template or make a new template
         	
   * Customized metadata template spreadsheet: Download the metadata sheet created
+  * Tutorial: Brings you to this tutorial page
   * Here: Return to the main QIIMP page to create a new metadata template
 
 Your Metadata Spreadsheet
@@ -259,10 +262,11 @@ Your Metadata Spreadsheet
   * To return to the errored cell within the metadata tab, simply select the “Fix” hyperlink within the red cell to be brought there
   * Unlike the metadata tab, if you copy-and-paste information into your metadata tab, you will still see where the errors are 
 
-* Field Descriptions: This tab contains the descriptions of the default and custom fields
-* Metadata_schema: *These are exposed during development and will be hidden in the final version*
-* Metadata_form: *These are exposed during development and will be hidden in the final version*
-* readme: This tab contains instructions on filling our the metadata spreadsheet as well as information on when the spreadsheet was created
+* Data Dictionary: This tab contains descriptions of the fields within your metadata template 
 
-* To upload your file to Qiita, you must return to the metadata tab and “Save As” a .txt or .tsv file  
-* .xlsx files cannot be uploaded to Qiita
+  * Field Names: The field names from your package and your custom field names added to the metadata template
+  * Field Descriptions: This tab contains the descriptions of the default and custom fields
+
+* Instructions: This tab contains instructions on filling our the metadata spreadsheet as well as information on when the spreadsheet was created
+
+* Once filled, your .xlsx files can be uploaded to Qiita
