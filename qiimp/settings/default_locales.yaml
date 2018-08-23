@@ -8,8 +8,12 @@
     geo_loc_name: {default: 'USA:CA: San Diego'}
     latitude: {default: 32.842}
     longitude: {default: -117.258}
-- San Diego phi-compliant:
+- San Diego PHI-compliant:
     elevation: {default: 'restricted access'}
     geo_loc_name: {default: 'USA:CA'}
+    latitude: {default: 'restricted access'}
+    longitude: {default: 'restricted access'}
+- PHI-compliant:
+    elevation: {default: 'restricted access'}
     latitude: {default: 'restricted access'}
     longitude: {default: 'restricted access'}
