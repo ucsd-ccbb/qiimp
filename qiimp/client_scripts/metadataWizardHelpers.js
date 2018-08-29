@@ -208,7 +208,7 @@ function validateNameDoesNotHaveReservedSuffix(putative_field_name) {
 function validateNameMatchesPattern(putative_field_name) {
     var result = null;
     if (!g_transferred_variables.FIELD_NAME_REGEX.test(putative_field_name)) {
-        result = "Only lower-case letters, numbers, and underscores are permitted, and must not start with a number.";
+        result = "Only lower-case letters, numbers, and underscores are permitted, and must not start with a number or an underscore.";
     }
     return result;
 }
