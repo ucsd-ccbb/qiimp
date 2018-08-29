@@ -18,8 +18,11 @@ function addFields(input_field_names_or_dicts){
 
         // TODO: someday: Should I run the usual validations here instead of when adding from form?
         // Basically, question is: do I trust that fields coming in from an existing spreadsheet will be valid?
-        if ((curr_field_name !== "") && (!g_fields_state.hasExistingField(curr_field_name))) {
-            g_fields_state.addExistingField(curr_field_name);
+        if ((curr_field_name !== "") &&
+            (!g_fields_state.hasPackageField(curr_field_name)) &&
+            (!g_fields_state.hasCustomField(curr_field_name))) {
+
+            g_fields_state.addCustomField(curr_field_name);
 
             var new_html = generateFieldHtml(curr_field_name);
             $('<div/>', {html: new_html}).appendTo(getIdSelectorFromId(g_transferred_variables.ELEMENT_IDENTIFIERS.FIELD_DETAILS_DIV));
@@ -176,6 +179,7 @@ function validatePutativeFieldName(putative_field_name){
     error_msgs.push(validateNameIsNotReserved(putative_field_name));
     error_msgs.push(validateNameDoesNotHaveReservedSuffix(putative_field_name));
     error_msgs.push(validateNameMatchesPattern(putative_field_name));
+    error_msgs.push(validateNameIsNotInPackage(putative_field_name));
     error_msgs.push(validateNameIsUnique(putative_field_name));
     // (filter - JS 1.6 and above)
     error_msgs = error_msgs.filter(function(x){ return x !== null });
@@ -213,9 +217,18 @@ function validateNameMatchesPattern(putative_field_name) {
     return result;
 }
 
+function validateNameIsNotInPackage(putative_field_name) {
+    var result = null; // default: assume unique
+    if (g_fields_state.hasPackageField(putative_field_name)){
+        result = "Field name '" + putative_field_name + "' is already in use in the selected package.";
+    }
+    return result;
+}
+
+
 function validateNameIsUnique(putative_field_name) {
     var result = null; // default: assume unique
-    if (g_fields_state.hasExistingField(putative_field_name)){
+    if (g_fields_state.hasCustomField(putative_field_name)){
         result = "Field name must be unique."
     }
     return result;

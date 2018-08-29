@@ -26,12 +26,16 @@ function Fields(){
     this._next_field_num = 0;
 }
 
-Fields.prototype.hasExistingField = function (potential_field_name){
+Fields.prototype.hasPackageField = function(potential_field_name){
+    return this._package_fields[potential_field_name];
+};
+
+Fields.prototype.hasCustomField = function (potential_field_name){
     return this._existing_field_names[potential_field_name];
 };
 
-Fields.prototype.addExistingField = function(potential_field_name){
-  if (!this.hasExistingField(potential_field_name)){
+Fields.prototype.addCustomField = function(potential_field_name){
+  if (!this.hasCustomField(potential_field_name)){
       this._existing_field_names[potential_field_name] = true;
   }
 };
@@ -54,7 +58,6 @@ Fields.prototype.setPackageFields = function(package_fields_list){
     for (var i = 0, len = package_fields_list.length; i < len; i++) {
         var curr_field_name = package_fields_list[i];
         this._package_fields[curr_field_name] = true;
-        this.addExistingField(curr_field_name);
     }
 };
 
