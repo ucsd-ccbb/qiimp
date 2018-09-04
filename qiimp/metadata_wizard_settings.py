@@ -23,6 +23,12 @@ DISPLAY_NAME_KEY = "display_name"
 DOWNLOAD_URL_FOLDER = "/download"
 PACKAGE_URL_FOLDER = "/package"
 UPLOAD_URL_FOLDER = "/upload"
+# Per Austin, make default column width "at least wide enough to handle
+# host_scientific_name <snip> our largest mandatory metadata title";
+# Sizing approach (magic # 1.25 ~= width of 1 character) from
+# https://stackoverflow.com/questions/29463274/simulate-autofit-column-in-
+# xslxwriter#comment90864296_37218180
+MIN_COL_WIDTH = len("host_scientific_name") * 1.25
 
 
 def get_single_key_and_subdict(a_dict):

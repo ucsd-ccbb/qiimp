@@ -65,10 +65,11 @@ def _write_static_validation_grid(val_sheet, schema_dict):
         field_specs_dict = schema_dict[field_name]
         curr_grid_col_index = val_sheet.first_static_grid_col_index + field_index
 
-        xlsxbasics.write_header(val_sheet, field_name, curr_grid_col_index)
+        xlsxbasics.write_header(val_sheet, field_name, curr_grid_col_index,
+                                set_width=False)
 
         unformatted_formula_str = qiimp.xlsx_validation_builder.get_formula_constraint(field_specs_dict,
-                                                                                                 val_sheet.regex_handler)
+                                                                                       val_sheet.regex_handler)
         if unformatted_formula_str is not None:
             curr_metadata_col_index = val_sheet.first_data_col_index + field_index
             # metadata_cell_range_str = xlsxbasics.format_single_col_range(val_sheet, curr_metadata_col_index,
@@ -144,7 +145,8 @@ def _write_static_helper_ranges(val_sheet, header_and_writer_func_tuple_list,
 
         col_index = get_col_index(curr_header_index) if write_col else val_sheet.helper_rows_header_col_index
         row_index = None if write_col else get_row_index(curr_header_index)
-        xlsxbasics.write_header(val_sheet, curr_header, col_index, row_index)
+        xlsxbasics.write_header(val_sheet, curr_header, col_index, row_index,
+                                set_width=False)
 
         curr_range_index = col_index if write_col else row_index
         curr_range_str = curr_write_method(val_sheet, curr_range_index,

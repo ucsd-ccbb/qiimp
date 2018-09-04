@@ -14,7 +14,8 @@ def write_dynamic_validation_grid(val_sheet, index_and_range_str_tuple_by_header
 
     # at outer level, move across columns
     for curr_col_index in range(val_sheet.first_data_col_index, val_sheet.last_data_col_index + 1):
-        val_sheet.worksheet.set_column(curr_col_index, curr_col_index, None, centered_format)
+        val_sheet.worksheet.set_column(curr_col_index, curr_col_index,
+                                       None, centered_format)
 
         curr_static_grid_col_index = val_sheet.first_static_grid_col_index + curr_col_index - 1
         col_rank = _format_dynamic_rank_formula_str(val_sheet, curr_static_grid_col_index,
@@ -86,11 +87,14 @@ def _write_dynamic_name_link_col(val_sheet, index_and_range_str_tuple_by_header_
                                                         index_and_range_str_tuple_by_header_dict, for_row=True)
 
         row_in_metadata_fixed_range_str = index_and_range_str_tuple_by_header_dict[val_sheet.ROW_IN_METADATA_HEADER][1]
-        metadata_row_index_str = "INDEX({row_in_metadata_fixed_range_str},{row_rank_num},0)".format(
+        # the below returns a 1-based row number
+        metadata_row_num = "INDEX({row_in_metadata_fixed_range_str},{row_rank_num},0)".format(
             row_in_metadata_fixed_range_str=row_in_metadata_fixed_range_str, row_rank_num=row_rank_num)
 
-        link_address = "CONCATENATE(\"#metadata!\",ADDRESS({metadata_row_index},{metadata_name_col_index}))".format(
-            metadata_row_index=metadata_row_index_str, metadata_name_col_index=val_sheet.name_col_index)
+        # adding 1 to val_sheet.name_col_index because that value is 0-based
+        # but ADDRESS expects 1-based column (and row--see above) numbers
+        link_address = "CONCATENATE(\"#metadata!\",ADDRESS({metadata_row_num},{metadata_name_col_num}))".format(
+            metadata_row_num=metadata_row_num, metadata_name_col_num=val_sheet.name_col_index+1)
 
         helper_name_fixed_range_str = index_and_range_str_tuple_by_header_dict[val_sheet.SAMPLE_NAME_HEADER][1]
         # this index formula will get the value of the name for this sample from the helper col next to the static grid

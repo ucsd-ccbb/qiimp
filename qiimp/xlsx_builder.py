@@ -56,7 +56,7 @@ def write_workbook(study_name, schema_dict, form_dict, metadata_wizard_settings)
         row_num = field_index + 1 + 1  # plus 1 to move past name row, and plus 1 again because row nums are 1-based
         field_specs_dict = phi_renamed_schema_dict[field_name]
         message = qiimp.xlsx_validation_builder.get_field_constraint_description(field_specs_dict, a_regex_handler)
-        descriptions_worksheet.worksheet.write("A{0}".format(row_num), field_name, metadata_worksheet.bold_format)
+        descriptions_worksheet.worksheet.write("A{0}".format(row_num), field_name, metadata_worksheet.header_format)
         descriptions_worksheet.worksheet.write("B{0}".format(row_num), message)
 
     # write schema worksheet--note, don't use the phi_renamed_schema_dict but the original schema_dict

@@ -24,7 +24,16 @@ def write_metadata_grid(data_worksheet, schema_dict, field_descs_sheet_name):
 
         xlsxbasics.write_header(data_worksheet, field_name, field_index + 1)
         curr_format = unlocked_text if _determine_if_format_should_be_text(field_specs_dict) else unlocked
-        data_worksheet.worksheet.set_column(curr_col_index, curr_col_index, None, curr_format)
+        # Note: although the xlsxwriter docs say
+        # "If you wish to set the format without changing the width you can
+        # pass None as the width parameter" (https://xlsxwriter.readthedocs.io/
+        # worksheet.html), it appears that if I call set_column with None for
+        # the width *after* calling write_header (which sets the width
+        # explicitly), the width of the column is reset to the default, thus
+        # requiring me to explicitly set the min column width here too :(
+        data_worksheet.worksheet.set_column(curr_col_index, curr_col_index,
+                                            xlsxbasics.get_min_col_width(),
+                                            curr_format)
 
         col_range = xlsxbasics.format_range(curr_col_index, None)
         starting_cell_name = xlsxbasics.format_range(curr_col_index, data_worksheet.first_data_row_index)
@@ -54,7 +63,8 @@ def write_metadata_grid(data_worksheet, schema_dict, field_descs_sheet_name):
         max_samples_msg = "No more than {0} samples can be entered in this worksheet.  If you need to submit metadata" \
                           " for >{0} samples, please contact CMI directly.".format(data_worksheet.num_allowable_samples)
         xlsxbasics.write_header(data_worksheet, max_samples_msg, data_worksheet.first_data_col_index,
-                                 data_worksheet.last_allowable_row_for_sample_index + 1)
+                                data_worksheet.last_allowable_row_for_sample_index + 1,
+                                set_width=False)
 
 
 def _write_sample_id_col(data_sheet):
@@ -65,7 +75,8 @@ def _write_sample_id_col(data_sheet):
 
     data_sheet.worksheet.set_column(data_sheet.sample_id_col_index, data_sheet.sample_id_col_index, None, None,
                                     data_sheet.hidden_cell_setting)
-    xlsxbasics.write_header(data_sheet, "sample_id", data_sheet.sample_id_col_index)
+    xlsxbasics.write_header(data_sheet, "sample_id",
+                            data_sheet.sample_id_col_index, set_width=False)
 
     # +1 bc range is exclusive of last number
     for row_index in range(data_sheet.first_data_row_index, data_sheet.last_allowable_row_for_sample_index + 1):

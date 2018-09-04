@@ -22,6 +22,10 @@ def get_worksheet_password():
     return mws.WORKBOOK_PASSWORD
 
 
+def get_min_col_width():
+    return mws.MIN_COL_WIDTH
+
+
 def load_yaml_from_wizard_xlsx(filepath, yaml_sheetname):
     assumed_cell = "A1"
     wb = openpyxl.load_workbook(filename=filepath)
@@ -53,6 +57,8 @@ def make_format(workbook, format_properties_dict=None, is_locked=True):
         format_properties_dict = {}
     format_properties_dict['font_name'] = 'Cambria'
     format_properties_dict['locked'] = int(is_locked)
+    # always hide formulas
+    format_properties_dict['hidden'] = True
     return workbook.add_format(format_properties_dict)
 
 
@@ -185,7 +191,10 @@ class MetadataWorksheet(object):
         # _num_samples not currently used; here as a hook for some of Austin's future requests
         self._num_samples = num_samples
 
-        self.bold_format = make_format(workbook, {'bold': True})
+        self.header_format = make_format(workbook, {
+            'bold': True,
+            'text_wrap': True})
+        # NB: this is for hiding a column, not for hiding formulas
         self.hidden_cell_setting = {'hidden': 1}
         self._permissive_protect_options = {
             'objects': False,
@@ -239,14 +248,19 @@ class MetadataWorksheet(object):
 
 
 # region functions for working with worksheet objects
-def write_header(a_sheet, the_field_name, col_index, row_index=None):
+def write_header(a_sheet, the_field_name, col_index, row_index=None,
+                 set_width=True):
     """
 
     :type a_sheet: ValidationWorksheet or MetadataWorksheet
     """
     row_index = row_index if row_index is not None else a_sheet.name_row_index
     the_col_letter = get_col_letters(col_index)
-    a_sheet.worksheet.write("{0}{1}".format(the_col_letter, row_index), the_field_name, a_sheet.bold_format)
+    a_sheet.worksheet.write("{0}{1}".format(the_col_letter, row_index), the_field_name, a_sheet.header_format)
+    # set the width of the column to be the default minimum unless it is
+    # e.g. a hidden column (width overrides hiding in xlsxwriter :( )
+    if set_width:
+        a_sheet.worksheet.set_column(col_index, col_index, mws.MIN_COL_WIDTH)
 
 
 def format_single_col_range(val_sheet, col_index, sheet_name=None, first_col_fixed=False, first_row_fixed=False,
