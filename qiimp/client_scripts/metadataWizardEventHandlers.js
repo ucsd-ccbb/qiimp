@@ -114,29 +114,54 @@ function updateDefaultsWithBooleanVals(event){
     updateSelectWithNewCategories(default_boolean_id_selector, new_options);
 }
 
-// Reset type validation on minimum, maximum, and continuous default when data type select is changed
+// Reset type validation on minimum, maximum, and continuous default when data type select is changed,
+// reset placeholder values, force validation for any field that is in use
 function updateTypeValidationsAndUnitsDisplay(event){
     // find out what data type was selected
     var field_index = event.data.field_index;
     var data_type_value = $(event.target).val();
 
-    updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, field_index, data_type_value);
-    updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, field_index, data_type_value);
-    updateTypeValidation(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CONTINUOUS, field_index, data_type_value);
+    var placeholders = getPlaceholdersByDataType(data_type_value);
+
+    updateTypeAffectedField(g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, field_index, data_type_value, placeholders[0]);
+    updateTypeAffectedField(g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, field_index, data_type_value, placeholders[1]);
+    updateTypeAffectedField(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CONTINUOUS, field_index, data_type_value, placeholders[0]);
 
     // also show or hide units div based on whether or not type is datetime
     var showUnits = showHideUnits(field_index, data_type_value);
     if (showUnits){
         enableDisableUnitsText(field_index);
     }
+
+    // only validate the comparison block if a data type has already
+    // been selected and is now changing
+    if (event.target.oldvalue !== ""){
+        validateComparisonBlock(event);
+    }
 }
 
+function updateTypeAffectedField(base_name, field_index, data_type_value, placeholder_txt){
+    var eg_prefix = "e.g., ";
+
+    var field_selector = getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index);
+    $(field_selector).prop("placeholder", eg_prefix + placeholder_txt);
+    updateTypeValidation(base_name, field_index, data_type_value);
+}
+
+function validateComparisonBlock(event){
+    var field_index = event.data.field_index;
+    validateIfEnabled(g_transferred_variables.ELEMENT_IDENTIFIERS.DATA_TYPE, field_index);
+    validateIfEnabled(g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, field_index);
+    validateIfEnabled(g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, field_index);
+    validateIfEnabled(g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, field_index);
+    validateIfEnabled(g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, field_index);
+    validateIfEnabled(g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_CONTINUOUS, field_index);
+}
 
 function enableDisableUnitsTextOnIsUnitlessChange(event){
     var field_index = event.data.field_index;
     enableDisableUnitsText(field_index);
 }
-
 
 function removeField(event){
     var field_index = event.data.field_index;

@@ -137,8 +137,22 @@ function decorateNewElements(newest_field_index) {
     }
 }
 
-var allowed_date_formats = ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm", "YYYY-MM-DD HH", "YYYY-MM-DD", "YYYY-MM",
-    "YYYY"];
+var allowed_date_formats = ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm",
+    "YYYY-MM-DD HH", "YYYY-MM-DD", "YYYY-MM", "YYYY"];
+
+function convertToDatetime(putative_datetime) {
+    var return_val = null;  // default assumes validation failure
+    for (var i = 0; i < allowed_date_formats.length; i++) {
+        var curr_format = allowed_date_formats[i];
+        var curr_val = moment.utc(putative_datetime, curr_format, true);
+        if (curr_val.isValid()) {
+            return_val = curr_val;
+            break;
+        }
+    }
+
+    return return_val;
+}
 
 // For JQuery validation plugin, custom validator functions always have
 // first argument: the current value of the validated element. Second argument: the element to be validated
@@ -151,15 +165,9 @@ $.validator.addMethod("isValidDateTime", function(value, element){
     // yyyy-mm or
     // yyyy"
 
-    var return_val = false;  // default assumes validation failure
-    for (i = 0; i < allowed_date_formats.length; i++) {
-        var curr_format = allowed_date_formats[i];
-        var curr_val = moment(value, curr_format, true).isValid();
-        if (curr_val){
-            return_val = curr_val;
-            break;
-        }
-    }
+    // null if isn't a valid one
+    var datetime = convertToDatetime(value);
+    var return_val = datetime !== null;
 
     return this.optional(element) || return_val;
 }, "DateTime must be a valid timestamp in one of these formats: " + allowed_date_formats.join(" or "));
@@ -213,6 +221,48 @@ $.validator.addMethod("hasNoDuplicates", function(value, element) {
 
     return this.optional(element) || return_val;
 }, "Must not contain duplicate items.");
+
+// For JQuery validation plugin, custom validator functions always have
+// first argument: the current value of the validated element (maximum).
+// Second argument: the element to be validated;
+// This also has a third argument, the element to compare to (minimum)
+$.validator.addMethod("greaterThan", function (value, element, param) {
+    var $min = $(param);
+
+    // I haven't tried to figure out what this part is doing; much of this
+    // method comes from https://stackoverflow.com/a/14349660
+    if (this.settings.onfocusout) {
+        $min.off(".validate-greaterThan").on("blur.validate-greaterThan",
+            function () {
+                $(element).valid();
+            });
+    }
+
+    var return_val;
+    var putative_max = value;
+    var putative_min = $min.val();
+    var field_index = findFieldIndexFromNameOrId(element.id);
+    var data_type_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.DATA_TYPE, field_index);
+    var data_type_value = $(data_type_selector).val();
+    if (dataTypeIsDatetime(data_type_value)){
+        putative_max = convertToDatetime(putative_max);
+        putative_min = convertToDatetime(putative_min);
+        if ((putative_max !== null) && (putative_min !== null)){
+            return_val = putative_max.isAfter(putative_min);
+        } else {
+            // if the input "dates" aren't really dates, then something is
+            // wrong, but it will be handled by other validators; this one
+            // should just excuse itself from the fray :)
+            return_val = true;
+        }
+    } else {
+        putative_max = parseFloat(putative_max);
+        putative_min = parseFloat(putative_min);
+        return_val = putative_max > putative_min;
+    }
+
+    return this.optional(element) || return_val;
+}, "Maximum must be greater than minimum.");
 
 function setUpDynamicPlusMinusGlyphsOnAccordionSections(){
     // From https://www.tutorialrepublic.com/twitter-bootstrap-tutorial/bootstrap-accordion.php
@@ -325,7 +375,7 @@ function makeValidationSettings(){
 		},
 		onkeyup: function( element, event ) {
 
-			// Avoid revalidate the field when pressing one of the following keys
+			// Avoid revalidating the field when pressing one of the following keys
 			// Shift       => 16
 			// Ctrl        => 17
 			// Alt         => 18
@@ -459,15 +509,22 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
     },
     function (field_index){ //make minimum required if minimum comparison is not none
          addRequiredIfNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE);
+         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, validateComparisonBlock);
     },
     function (field_index){ //force minimum comparison to be something other than none if minimum is filled in
          addConditionalIsNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM);
+         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, validateComparisonBlock);
     },
     function (field_index){ //make maximum required if maximum comparison is not none
          addRequiredIfNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE);
+         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, validateComparisonBlock);
     },
     function (field_index){ //force maximum comparison to be something other than none if maximum is filled in
          addConditionalIsNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM);
+         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, validateComparisonBlock);
+    },
+    function (field_index){
+        addMaxGreaterThanMinRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM);
     },
     function (field_index) { //make datetime default pass datetime validation
         addDateTimeValidationRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.DEFAULT_DATETIME);

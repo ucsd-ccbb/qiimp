@@ -272,6 +272,17 @@ function addRequiredIfNotNoneRule(field_index, condition_base_name, required_bas
     });
 }
 
+function addMaxGreaterThanMinRule(field_index, max_base_name, min_base_name){
+    var max_selector = getIdSelectorFromBaseNameAndFieldIndex(max_base_name, field_index);
+    var min_selector = getIdSelectorFromBaseNameAndFieldIndex(min_base_name, field_index);
+
+    // For JQuery validation plugin, custom validator functions always have
+    // first argument: the current value of the validated element. Second argument: the element to be validated
+    $(max_selector).rules("add", {
+       greaterThan: min_selector
+    });
+}
+
 function addDateTimeValidationRule(field_index, required_base_name){
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
     $(id_selector).rules("add", {
@@ -299,6 +310,13 @@ function addOnChangeEvent(field_index, base_name, onChangeFunc) {
 function addEventHandler(event_name, field_index, base_name, onEventFunc){
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index);
     $(id_selector).on( event_name, {field_index:field_index}, onEventFunc)
+}
+
+function validateIfEnabled(base_name, field_index){
+    var element_selector = getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index);
+    if (isElementEnabled(element_selector)){
+        $(element_selector).valid();
+    }
 }
 
 function doesElementHaveValue(base_name, field_index) {
@@ -338,12 +356,16 @@ function showEnableOrHideDisable(curr_selector, do_show){
 
 function resetSelectedOptionIfDisabled(select_id_selector){
     var selected_option = $(select_id_selector).find('option:selected');
-    var disabled_val = selected_option.attr('disabled');
-    var enabled = (disabled_val === false) || (disabled_val === undefined);
+    var enabled = isElementEnabled(selected_option);
 
     // if the currently selected option is now disabled, reset which option is selected to be the
     // placeholder option
     if (!enabled) {$(select_id_selector).val("");}
+}
+
+function isElementEnabled(element_selector){
+    var disabled_val = $(element_selector).attr('disabled');
+    return (disabled_val === false) || (disabled_val === undefined);
 }
 
 function updateSelectWithNewCategories(select_id_selector, values_list, selected_value, add_placeholder,

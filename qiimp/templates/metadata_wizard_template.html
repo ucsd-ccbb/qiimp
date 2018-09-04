@@ -280,6 +280,36 @@
             }
         }
 
+        function getPlaceholdersByDataType(data_type_value){
+            var min_val, max_val;
+
+            switch (data_type_value) {
+                case "{{mws.CerberusDataTypes.Integer.value}}":
+                    min_val = "3";
+                    max_val = "10";
+                    break;
+                case "{{mws.CerberusDataTypes.Decimal.value}}":
+                    min_val = "1.5";
+                    max_val = "25.9";
+                    break;
+                case "{{mws.CerberusDataTypes.DateTime.value}}":
+                    min_val = "2007-07-04";
+                    max_val = "2018-01-31";
+                    break;
+                case "{{mws.CerberusDataTypes.Text.value}}":
+                    // no value for text
+                    break;
+                default:
+                    alert("Unexpected data type value: '" + data_type_value + "'");
+            }
+
+            return [min_val, max_val];
+        }
+
+        function dataTypeIsDatetime(data_type_value){
+            return data_type_value === "{{mws.CerberusDataTypes.DateTime.value}}";
+        }
+
         function showHideUnits(field_index, data_type_value) {
             var show_units = !(data_type_value === "{{mws.CerberusDataTypes.DateTime.value}}");
             var units_div_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.UNITS_DIV, field_index);
@@ -318,8 +348,10 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h4 class="panel-title">
-                            <span class="glyphicon glyphicon-plus"></span>
-                            <a data-toggle="collapse" href="#collapseOne">Study Description</a>
+                            <a data-toggle="collapse" href="#collapseOne">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Study Description
+                            </a>
                         </h4>
                     </div>
                     <div id="collapseOne" class="panel-collapse collapse in">
@@ -357,8 +389,10 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h4 class="panel-title">
-                            <span class="glyphicon glyphicon-plus"></span>
-                            <a data-toggle="collapse" href="#collapseTwo">Package Fields</a>
+                            <a data-toggle="collapse" href="#collapseTwo">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Package Fields
+                            </a>
                         </h4>
                     </div>
                     <div id="collapseTwo" class="panel-collapse collapse">
@@ -445,8 +479,10 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h4 class="panel-title">
-                            <span class="glyphicon glyphicon-plus"></span>
-                            <a data-toggle="collapse" href="#collapseThree">Custom Fields</a>
+                            <a data-toggle="collapse" href="#collapseThree">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Custom Fields
+                            </a>
                         </h4>
                     </div>
                     <div id="collapseThree" class="panel-collapse collapse">
@@ -573,7 +609,7 @@
                                                                     <label id="label_{{mws.InputNames.data_type.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.data_type.value}}{{mws.TEMPLATE_SUFFIX}}">Data Type:</label>
                                                                 </div>
                                                                 <div class="Cell interior-cell">
-                                                                    <select name="{{mws.InputNames.data_type.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.data_type.name}}{{mws.TEMPLATE_SUFFIX}}" size="{{len(mws.CerberusDataTypes)-1}}" disabled required>
+                                                                    <select name="{{mws.InputNames.data_type.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.data_type.name}}{{mws.TEMPLATE_SUFFIX}}" size="{{len(mws.CerberusDataTypes)-1}}" onfocus="this.oldvalue = this.value;" disabled required>
                                                                         {% for curr_enum in mws.CerberusDataTypes %}
                                                                             {% if curr_enum is not mws.CerberusDataTypes.Text %}
                                                                                 <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
@@ -618,7 +654,7 @@
                                                                         <label id="label_{{mws.InputNames.minimum_value.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.minimum_value.value}}{{mws.TEMPLATE_SUFFIX}}"><span class="hidden">Minimum</span> Value</label>
                                                                     </div>
                                                                     <div class="Cell interior-cell">
-                                                                        <input type ="text" name="{{mws.InputNames.minimum_value.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.minimum_value.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g., 3"  disabled/>
+                                                                        <input type ="text" name="{{mws.InputNames.minimum_value.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.minimum_value.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="Pick data type"  disabled/>
                                                                     </div>
                                                                 </div>
                                                             </fieldset>
@@ -643,7 +679,7 @@
                                                                         <label id="label_{{mws.InputNames.maximum_value.value}}{{mws.TEMPLATE_SUFFIX}}" for="{{mws.InputNames.maximum_value.value}}{{mws.TEMPLATE_SUFFIX}}"><span class="hidden">Maximum</span> Value</label>
                                                                     </div>
                                                                     <div class="Cell interior-cell">
-                                                                        <input type ="text" name="{{mws.InputNames.maximum_value.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.maximum_value.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g, 10"  disabled/><br />
+                                                                        <input type ="text" name="{{mws.InputNames.maximum_value.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.maximum_value.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="Pick data type"  disabled/><br />
                                                                     </div>
                                                                 </div>
                                                             </fieldset>
@@ -730,7 +766,7 @@
                                                                         <div class="Row">
                                                                                 <div class="Cell interior-cell"></div>
                                                                                 <div class="Cell interior-cell">
-                                                                                    <input type="text" name="{{mws.InputNames.continuous_default.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.continuous_default.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="e.g., 3" disabled required>
+                                                                                    <input type="text" name="{{mws.InputNames.continuous_default.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.continuous_default.name}}{{mws.TEMPLATE_SUFFIX}}" placeholder="Pick data type" disabled required>
                                                                                 </div>
                                                                         </div>
                                                                     </div>
