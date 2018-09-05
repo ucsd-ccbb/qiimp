@@ -9,7 +9,7 @@ function onModeChange(element){
     if (existing_package_info !== null){
         var confirm_msg = "Changing the package selection method will remove all package fields and any custom fields. Go ahead?";
         if (!confirm(confirm_msg)){
-            return;
+            return false;
         }
     }
 
@@ -40,8 +40,9 @@ function onHostChange(event){
     var selected_host = $(event.target).val();
     // TODO: flesh out with getting two-value list
     var values_list = g_transferred_variables.SAMPLETYPES_BY_ENV[selected_host];
-    updateSelectWithNewCategories("#sample_type_select", values_list, null, false,
-                                       true, false, true);
+    var selected_val = (values_list.length === 1) ? values_list[0][0] : null;
+    updateSelectWithNewCategories("#sample_type_select", values_list,
+                                    selected_val, false, true, false, true);
 
     // show the sampletype div
     showEnableOrHideDisable(getIdSelectorFromId("sample_type_div"), true);
