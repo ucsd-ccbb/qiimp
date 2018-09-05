@@ -283,6 +283,15 @@ function addMaxGreaterThanMinRule(field_index, max_base_name, min_base_name){
     });
 }
 
+function addNotEqualRule(field_index, base_name, comparator_base_name){
+    var base_selector = getIdSelectorFromBaseNameAndFieldIndex(base_name, field_index);
+    var comparator_selector = getIdSelectorFromBaseNameAndFieldIndex(comparator_base_name, field_index);
+
+    $(base_selector).rules("add", {
+       notEqualTo: comparator_selector
+    });
+}
+
 function addDateTimeValidationRule(field_index, required_base_name){
     var id_selector = getIdSelectorFromBaseNameAndFieldIndex(required_base_name, field_index);
     $(id_selector).rules("add", {

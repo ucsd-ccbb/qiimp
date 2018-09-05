@@ -495,10 +495,12 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
     },
     function (field_index) { //make boolean true value required and set onchange handler to update defaults
         addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.TRUE_VALUE);
+        addNotEqualRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.TRUE_VALUE, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE);
         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.TRUE_VALUE, updateDefaultsWithBooleanVals);
     },
     function (field_index) { //make boolean false value required and set onchange handler to update defaults
         addAlwaysRequiredRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE);
+        addNotEqualRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE, g_transferred_variables.ELEMENT_IDENTIFIERS.TRUE_VALUE);
         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.FALSE_VALUE, updateDefaultsWithBooleanVals);
     },
     function (field_index) { //make categorical values required, require values must be unique,
