@@ -31,13 +31,6 @@ def _get_special_handling_fields():
             mws.InputNames.minimum_value.value, mws.InputNames.maximum_comparison.value, mws.InputNames.maximum_value.value,
             mws.InputNames.is_phi.value, mws.InputNames.is_unitless.value]
 
-# def _get_cast_func_by_data_type():
-#     return {mws.CerberusDataTypes.Text.value: str,
-#             mws.CerberusDataTypes.Decimal.value: float,
-#             mws.CerberusDataTypes.Integer.value: int,
-#             mws.CerberusDataTypes.DateTime.value: _cast_date_time
-#             }
-
 
 def get_validation_schemas(curr_field_from_form, a_regex_handler):
     field_name_and_schema_tuples_list = []
@@ -152,12 +145,6 @@ def _generate_boolean_schema(curr_field_from_form, a_regex_handler):
         mws.ValidationKeys.allowed.value: [bool_true, bool_false]
     })
     return curr_schema
-
-
-def _generate_datetime_schema(curr_field_from_form, a_regex_handler):
-    return _generate_schema_by_data_type(
-        curr_field_from_form, a_regex_handler,
-        overriding_datatype=mws.CerberusDataTypes.DateTime.value)
 
 
 def _generate_categorical_schema(curr_field_from_form, a_regex_handler):
