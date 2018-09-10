@@ -221,7 +221,8 @@ class MainHandler(tornado.web.RequestHandler):
                     allowed_min_browser_versions=_allowed_min_browser_versions, select_size=10,
                     combinations_list=wiz_state.combinations_display_dicts_list,
                     sampletypes_by_env_json=sampletypes_by_env_json,
-                    hosts_list=wiz_state.envs_display_dicts_list)
+                    hosts_list=wiz_state.envs_display_dicts_list,
+                    full_main_url=wiz_state._get_url(make_full_url=True))
 
     def post(self):
         wiz_state = self.application.settings["wizard_state"]
@@ -308,8 +309,9 @@ class MainHandler(tornado.web.RequestHandler):
         subject = "QIIMP error report"
         mailto_url = "mailto:{0}?subject={1}&body={2}".format(email_addr, quote(subject), quote(error_details))
 
-        self.render("metadata_error_template.html", mailto_url=mailto_url, error_trace=error_details,
-                    wiz_state=wiz_state)
+        self.render("metadata_error_template.html", mailto_url=mailto_url,
+                    error_trace=error_details, wiz_state=wiz_state,
+                    full_main_url=wiz_state._get_url(make_full_url=True))
 
     def data_received(self, chunk):
         # PyCharm tells me that this abstract method must be implemented to derive from RequestHandler ...
