@@ -5,7 +5,15 @@ import qiimp.metadata_wizard_settings as mws
 text_placeholder = "value"
 cell_placeholder = "{cell}"
 col_range_placeholder = "{col_range}"
-    
+# NB: these formats are ALSO defined (in the format syntax of moment.js,
+# which is different than the format syntax of python) in metadataWizard.js .
+# If changed/added to in one place, the analogous action must be taken in the
+# other place as well.
+# Also note that some formats require special handling in _make_date_constraint
+# so if adding formats here, be sure to see if they need to be added there too.
+datetime_formats = ["%Y", "%Y-%m", "%Y-%m-%d", "%Y-%m-%d %H",
+                    "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%H:%M", "%H:%M:%S"]
+
 
 def roll_up_allowed_onlies(field_schema_dict, a_regex_handler):
     all_allowed_vals = []
@@ -78,9 +86,10 @@ def get_default_formula(field_schema_dict, trigger_col_letter, make_text=False):
                     if default_val in curr_allowed_vals:
                         break
 
-            if data_type_of_default == mws.CerberusDataTypes.Text.value or \
-                            data_type_of_default == mws.CerberusDataTypes.DateTime.value:
-                default_val = '"{0}"'.format(default_val)
+            if (data_type_of_default == mws.CerberusDataTypes.Text.value or
+                data_type_of_default == mws.CerberusDataTypes.DateTime.value or
+                data_type_of_default == mws.CerberusDataTypes.Time.value):
+                    default_val = '"{0}"'.format(default_val)
 
             result = '=IF({trigger_col_letter}{{curr_row_index}}="", "", {default_val})'.format(
                 trigger_col_letter=trigger_col_letter, default_val=default_val)
@@ -220,7 +229,8 @@ def _parse_field_type(field_schema_dict, make_text):
                 # integer-based version for use with array formulas
                 # type_constraint = 1
                 python_type = str
-            elif the_type == mws.CerberusDataTypes.DateTime.value:
+            elif the_type == mws.CerberusDataTypes.DateTime.value or \
+                    the_type == mws.CerberusDataTypes.Time.value:
                 type_constraint = "TRUE"  # constraint for date is handled with regular expression
                 # type_constraint = 'NOT(ISERR(DATEVALUE(TEXT({cell}, "YYYY-MM-DD HH:MM:SS"))))'
                 # integer-based version for use with array formulas
@@ -380,80 +390,44 @@ def _make_comparison_constraint(schema_key, comparison_str, field_schema_dict, f
     return constraint
 
 
-# Here's a representative portion of the logic that this constraint is creating a formula to reflect:
-#
-# if year doesn't exist in input
-# 	pass comparison (assume you fail elsewhere)
-# else
-# 	if year in input equals year in limit
-# 		if month doesn't exist in input
-# 			pass (give user the benefit of the doubt)
-# 		else
-# 			if month in input equals month in limit
-# 				if day doesn't exist in input
-# 					pass (give user the benefit of the doubt)
-# 				else
-# 					if day in input equals day in limit
-# 						if hour doesn't exist in input
-# 							pass (give user the benefit of the doubt)
-# 						else
-# 							if hour in input equals hour in limit
-# 								if minute doesn't exist in input
-# 									pass (give user the benefit of the doubt
-# 								else
-# 									if minute in input equals minute in limit
-# 										if second doesn't exist in input
-# 											pass (give user the benefit of the doubt)
-# 										else
-# 											return second in input compared to second in limit
-# 										endif second doesn't/does exist in input
-# 									else
-# 										return minute in input compared to minute in limit
-# 									endif minute in input equals minute in limit
-# 								endif minute doesn't/does exist in input
-#
-# 							else
-# 								return hour in input compared to hour in limit
-# 							endif hour in input equals hour in limit
-# 						endif hour doesn't/does exist in input
-# <etc and so on up the if tree >
 def _make_date_constraint(comparison_str, threshold_val):
-    def get_start_position(limit_index):
-        return 1 if limit_index == 5 else ((5 - limit_index) + 1) * 3
-
     # convert the threshold from whatever format it came in as to a datetime
-    datetime_threshold_val = _cast_date_time(threshold_val)
-    limit_thresholds = [datetime_threshold_val.second, datetime_threshold_val.minute, datetime_threshold_val.hour,
-                     datetime_threshold_val.day, datetime_threshold_val.month, datetime_threshold_val.year]
+    datetime_threshold_val = _cast_date_time(threshold_val, datetime_formats)
+    # TODO: Need to add handling for case where threshold is just a time,
+    # not a datetime, bc python sees such times as being on 01-01-1901 but
+    # Excel sees them as being in year zero -- ugh.
 
-    result = None
-    for curr_index, curr_threshold_val in enumerate(limit_thresholds):
-        startpos = get_start_position(curr_index)
-        # all values are two positions long except for year, which is four
-        val_length = 2 if curr_index < 5 else 4
-        curr_input_val = "INT(MID({cell},{start_pos},{num_chars}))".format(cell=cell_placeholder, start_pos=startpos,
-                                                                           num_chars=val_length)
-        curr_level_check = curr_input_val + "{0}{1}".format(comparison_str, curr_threshold_val)
+    datetime_format = '(IFERROR(DATEVALUE({target}),0)+' \
+                      'IFERROR(TIMEVALUE({target}),0))'
 
-        if result is not None:
-            curr_level_check = "IF({curr_input_val}={curr_threshold_val},{more_granual_check},{curr_level_check})".format(
-                curr_input_val=curr_input_val, curr_threshold_val=curr_threshold_val, more_granual_check=result,
-                curr_level_check=curr_level_check)
+    # Excel cannot automatically convert YYYY, YYYY-MM, YYYY-MM-DD HH, or HH:MM
+    # to dates and/or times, so to make datevalue and timevalue work on these
+    # allowed formats, we have to doctor them into the closest of the formats
+    # that Excel can convert (e.g., YYYY-MM-DD or YYYY-MM-DD HH:mm).
+    # NB that CONCAT (instead of CONCATENATE) *cannot* be used here because
+    # it is not fully supported in xlsxwriter (see
+    # "Formulas added in Excel 2010 and later" at
+    # https://xlsxwriter.readthedocs.io/working_with_formulas.html ).
+    format_normalization = 'IF(LEN({cell})=4,CONCATENATE({cell},"-01-01"),' \
+                           'IF(LEN({cell})=7,CONCATENATE({cell},"-01"),' \
+                           'IF(LEN({cell})=13,CONCATENATE({cell},":00"),' \
+                           '{cell})))'.format(cell=cell_placeholder)
+    input_val_as_date = datetime_format.format(target=format_normalization)
+    threshold_val_as_date = datetime_format.format(
+        target='"' + str(datetime_threshold_val) + '"')
+    comparison_formula = (input_val_as_date + comparison_str +
+                          threshold_val_as_date)
+    return comparison_formula
 
-        result = "IF(ISERROR({curr_input_val}),TRUE,{curr_level_check})".format(curr_input_val=curr_input_val,
-                                                                                curr_level_check=curr_level_check)
 
-    return result
-
-
-def _cast_date_time(datetime_string):
+def _cast_date_time(datetime_string, allowed_formats):
     # by default, assume cast fails
     is_valid = False
     result = None
 
-    allowed_formats = ["%Y", "%Y-%m", "%Y-%m-%d", "%Y-%m-%d %H", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]
     for curr_format in allowed_formats:
         try:
+            # create a python datetime object
             result = datetime.datetime.strptime(datetime_string, curr_format)
             is_valid = True
             break
@@ -462,8 +436,9 @@ def _cast_date_time(datetime_string):
 
     # if none of the formats passed, NOW raise an error
     if not is_valid:
-        raise ValueError("{0} cannot be converted to any of these datetime formats: {1}".format(
-            datetime_string, " or ".join(allowed_formats)))
+        raise ValueError("{0} cannot be converted to any of these datetime "
+                         "formats: {1}".format(
+                            datetime_string, " or ".join(allowed_formats)))
 
     return result
 
