@@ -272,6 +272,9 @@
                 case "{{mws.CerberusDataTypes.DateTime.value}}":
                     $(input_id_selector).rules("add", {isValidDateTime: true});
                     break;
+                case "{{mws.CerberusDataTypes.Time.value}}":
+                    $(input_id_selector).rules("add", {isValidTime: true});
+                    break;
                 case "{{mws.CerberusDataTypes.Text.value}}":
                     // no known validation required for text; perhaps length?
                     break;
@@ -296,6 +299,10 @@
                     min_val = "2007-07-04";
                     max_val = "2018-01-31";
                     break;
+                case "{{mws.CerberusDataTypes.Time.value}}":
+                    min_val = "00:01";
+                    max_val = "23:59";
+                    break;
                 case "{{mws.CerberusDataTypes.Text.value}}":
                     // no value for text
                     break;
@@ -306,12 +313,12 @@
             return [min_val, max_val];
         }
 
-        function dataTypeIsDatetime(data_type_value){
-            return data_type_value === "{{mws.CerberusDataTypes.DateTime.value}}";
+        function dataTypeIsDatetimeOrTime(data_type_value){
+            return (data_type_value === "{{mws.CerberusDataTypes.DateTime.value}}" || data_type_value === "{{mws.CerberusDataTypes.Time.value}}");
         }
 
         function showHideUnits(field_index, data_type_value) {
-            var show_units = !(data_type_value === "{{mws.CerberusDataTypes.DateTime.value}}");
+            var show_units = !dataTypeIsDatetimeOrTime(data_type_value);
             var units_div_id_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.UNITS_DIV, field_index);
             showEnableOrHideDisable(units_div_id_selector, show_units);
             return show_units;
@@ -336,7 +343,13 @@
 <div class="container" id="container">
     <div class="row">
         <div class="col-sm-12">
-            <h1>QIIMP <span style="background:dodgerblue; color: white; font-size:smaller;">&nbsp;beta&nbsp;</span></h1>
+            <h1>QIIMP <span style="background:dodgerblue; color: white; font-size:smaller;">&nbsp;beta&nbsp;</span>
+                <button class="btn btn-info btn-sm" type="button"
+                        formnovalidate="formnovalidate"
+                        onclick="window.top.location.href = '{{ full_main_url }}';">
+                    Open QIIMP in a new window
+                </button>
+            </h1>
             <div>
                 {% raw wiz_state.TUTORIAL_BLURB %}
             </div>
@@ -611,7 +624,7 @@
                                                                 <div class="Cell interior-cell">
                                                                     <select name="{{mws.InputNames.data_type.value}}{{mws.TEMPLATE_SUFFIX}}" id="{{mws.InputNames.data_type.name}}{{mws.TEMPLATE_SUFFIX}}" size="{{len(mws.CerberusDataTypes)-1}}" onfocus="this.oldvalue = this.value;" disabled required>
                                                                         {% for curr_enum in mws.CerberusDataTypes %}
-                                                                            {% if curr_enum is not mws.CerberusDataTypes.Text %}
+                                                                            {% if curr_enum is not mws.CerberusDataTypes.Text and curr_enum is not mws.CerberusDataTypes.Time %}
                                                                                 <option value="{{curr_enum.value}}">{{curr_enum.name}}</option>
                                                                             {% end %}
                                                                         {% end %}
