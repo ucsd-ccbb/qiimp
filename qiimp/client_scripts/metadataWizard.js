@@ -137,13 +137,31 @@ function decorateNewElements(newest_field_index) {
     }
 }
 
+// NB: these formats are ALSO defined (in the format syntax of python,
+// which is different than the format syntax of moment.js) in
+// xlsx_validation_builder.py. If changed/added to in one place, the analogous
+// action must be taken in the other place as well.
+// From Austin re collection_timestamp: "The only formats allowed are:
+// yyyy-mm-dd hh:mm:ss or
+// yyyy-mm-dd hh:mm or
+// yyyy-mm-dd hh or
+// yyyy-mm-dd or
+// yyyy-mm or
+// yyyy"
 var allowed_date_formats = ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm",
     "YYYY-MM-DD HH", "YYYY-MM-DD", "YYYY-MM", "YYYY"];
 
-function convertToDatetime(putative_datetime) {
+
+var allowed_time_formats = ["HH:mm", "HH:mm:ss"];
+
+function convertToDatetime(putative_datetime, allowed_formats = null) {
+    if (allowed_formats === null) {
+        allowed_formats = allowed_date_formats.concat(allowed_time_formats)
+    }
+
     var return_val = null;  // default assumes validation failure
-    for (var i = 0; i < allowed_date_formats.length; i++) {
-        var curr_format = allowed_date_formats[i];
+    for (var i = 0; i < allowed_formats.length; i++) {
+        var curr_format = allowed_formats[i];
         var curr_val = moment.utc(putative_datetime, curr_format, true);
         if (curr_val.isValid()) {
             return_val = curr_val;
@@ -157,20 +175,20 @@ function convertToDatetime(putative_datetime) {
 // For JQuery validation plugin, custom validator functions always have
 // first argument: the current value of the validated element. Second argument: the element to be validated
 $.validator.addMethod("isValidDateTime", function(value, element){
-    // From Austin re collection_timestamp: "The only formats allowed are:
-    // yyyy-mm-dd hh:mm:ss or
-    // yyyy-mm-dd hh:mm or
-    // yyyy-mm-dd hh or
-    // yyyy-mm-dd or
-    // yyyy-mm or
-    // yyyy"
-
     // null if isn't a valid one
-    var datetime = convertToDatetime(value);
+    var datetime = convertToDatetime(value, allowed_date_formats);
     var return_val = datetime !== null;
 
     return this.optional(element) || return_val;
 }, "DateTime must be a valid timestamp in one of these formats: " + allowed_date_formats.join(" or "));
+
+$.validator.addMethod("isValidTime", function(value, element){
+    // null if isn't a valid one
+    var datetime = convertToDatetime(value, allowed_time_formats);
+    var return_val = datetime !== null;
+
+    return this.optional(element) || return_val;
+}, "Time must be a valid time in one of these formats: " + allowed_time_formats.join(" or "));
 
 // For JQuery validation plugin, custom validator functions always have
 // first argument: the current value of the validated element. Second argument: the element to be validated
@@ -244,7 +262,7 @@ $.validator.addMethod("greaterThan", function (value, element, param) {
     var field_index = findFieldIndexFromNameOrId(element.id);
     var data_type_selector = getIdSelectorFromBaseNameAndFieldIndex(g_transferred_variables.ELEMENT_IDENTIFIERS.DATA_TYPE, field_index);
     var data_type_value = $(data_type_selector).val();
-    if (dataTypeIsDatetime(data_type_value)){
+    if (dataTypeIsDatetimeOrTime(data_type_value)){
         putative_max = convertToDatetime(putative_max);
         putative_min = convertToDatetime(putative_min);
         if ((putative_max !== null) && (putative_min !== null)){
@@ -511,19 +529,19 @@ var NEW_ELEMENT_SET_UP_FUNCTIONS = [
     },
     function (field_index){ //make minimum required if minimum comparison is not none
          addRequiredIfNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE);
-         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, validateComparisonBlock);
+         //addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM, validateComparisonBlock);
     },
     function (field_index){ //force minimum comparison to be something other than none if minimum is filled in
          addConditionalIsNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM);
-         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, validateComparisonBlock);
+         //addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MIN_COMPARE, validateComparisonBlock);
     },
     function (field_index){ //make maximum required if maximum comparison is not none
          addRequiredIfNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE);
-         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, validateComparisonBlock);
+         //addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, validateComparisonBlock);
     },
     function (field_index){ //force maximum comparison to be something other than none if maximum is filled in
          addConditionalIsNotNoneRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM);
-         addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, validateComparisonBlock);
+         //addOnChangeEvent(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAX_COMPARE, validateComparisonBlock);
     },
     function (field_index){
         addMaxGreaterThanMinRule(field_index, g_transferred_variables.ELEMENT_IDENTIFIERS.MAXIMUM, g_transferred_variables.ELEMENT_IDENTIFIERS.MINIMUM);
