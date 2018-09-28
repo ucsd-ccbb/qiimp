@@ -384,7 +384,7 @@ function makeValidationSettings(){
         },
 		onfocusout: function( element ) {
             if (g_submitted){
-                $('#metadata_form').valid();
+                $('#metadata_form_do_not_delete').valid();
             } else {
                 if ( !this.checkable( element ) && ( element.name in this.submitted || !this.optional( element ) ) ) {
                     this.element( element );
@@ -415,14 +415,14 @@ function makeValidationSettings(){
 			if ( event.which === 9 && this.elementValue( element ) === "" || $.inArray( event.keyCode, excludedKeys ) !== -1 ) {
 				return;
 			} else if (g_submitted){
-                $('#metadata_form').valid();
+                $('#metadata_form_do_not_delete').valid();
             } else if ( element.name in this.submitted || element.name in this.invalid ) {
 				this.element( element );
 			}
 		},
         onclick: function( element ) {
             if (g_submitted){
-                $('#metadata_form').valid();
+                $('#metadata_form_do_not_delete').valid();
             } else {
                 // Click on selects, radiobuttons and checkboxes
                 if (element.name in this.submitted) {
@@ -489,7 +489,7 @@ function makeValidationSettings(){
 
 function validateFormIfSubmitted(){
     if (g_submitted) {
-        $('#metadata_form').valid();
+        $('#metadata_form_do_not_delete').valid();
     }
 }
 
@@ -565,7 +565,7 @@ $(document).ready(function () {
     // From https://blueimp.github.io/jQuery-File-Upload/basic.html
     $('#fileupload').fileupload(makeFileUploadSettings(g_transferred_variables.UPLOAD_URL)).prop('disabled', !$.support.fileInput).parent().addClass($.support.fileInput ? undefined : 'disabled');
 
-    $("#metadata_form").validate(makeValidationSettings());
+    $("#metadata_form_do_not_delete").validate(makeValidationSettings());
 
     g_fields_state = new Fields();
 });
