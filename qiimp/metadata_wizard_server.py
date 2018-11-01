@@ -100,8 +100,8 @@ class UploadHandler(tornado.web.RequestHandler):
         temp_file.close()  # but DON'T delete yet
 
         try:
-            # TODO: someday: refactor hardcoding of spreadsheet name
-            form_dict = mws.load_yaml_from_wizard_xlsx(temp_file.name, "metadata_form")
+            form_dict = mws.load_yaml_from_wizard_xlsx(
+                temp_file.name, qiimp.xlsx_basics.SheetNames.form.value)
             result_dict["fields"] = form_dict
         except ValueError as e:
             if str(e).startswith(mws.NON_WIZARD_XLSX_ERROR_PREFIX):
