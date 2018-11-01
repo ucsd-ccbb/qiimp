@@ -12,8 +12,8 @@ class SheetNames(Enum):
     metadata = "Metadata"
     validation = "Validation"
     data_dictionary = "Data Dictionary"
-    schema = "metadata_schema_do_not_delete"
-    form = "metadata_form_do_not_delete"
+    schema = "metadata_schema"
+    form = "metadata_form"
     readme = "Instructions"
 
 
